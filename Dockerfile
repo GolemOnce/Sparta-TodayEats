@@ -1,10 +1,3 @@
-FROM eclipse-temurin:17-jdk-alpine AS build
-WORKDIR /app
-COPY build.gradle settings.gradle gradlew ./
-COPY gradle ./gradle
-COPY src ./src
-RUN chmod +x gradlew && ./gradlew build -x test --no-daemon
-
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
