@@ -167,19 +167,20 @@ class UserServiceTest {
 
 * `main` : 운영(배포) 브랜치
 * `develop` : 개발 통합 브랜치
-* `feature/*` : 기능 개발 브랜치
+* `feature/#이슈번호-*` : 기능 개발 브랜치
 
-    * 예: `feature/login`, `feature/payment-api`
-* `fix/*` : 버그 수정 브랜치
-* `refactor/*` : 리팩토링 브랜치
+    * 예: `feature/#5-login`, `feature/6-payment-api`
+* `fix/#이슈번호-*` : 버그 수정 브랜치
+* `refactor/#이슈번호-*` : 리팩토링 브랜치
 
 ---
 
 ### 2. 브랜치 흐름
 
-1. `develop`에서 `feature/*` 브랜치 생성
-2. 기능 개발 후 `develop`으로 PR
-3. 테스트 완료 후 `main`으로 배포
+1. `develop`에서 `feature/#이슈번호-*` 브랜치 생성
+2. 기능 개발 후 `develop`으로 PR (PR시 `Closes #이슈번호`)
+3. 코드 리뷰(CodeRabbit활용) 후 머지
+4. `develop` -> `main`으로 PR, 머지(CI/CD 자동 배포)
 
 ---
 
@@ -191,9 +192,7 @@ class UserServiceTest {
 (선택) 상세 설명
 ```
 
----
-
-### 4. 커밋 타입
+- 커밋 타입
 
 | 타입                 | 설명                   |
 | ------------------ | -------------------- |
@@ -213,7 +212,7 @@ class UserServiceTest {
 
 ---
 
-### 5. Pull Request 규칙
+### 4. Pull Request 규칙
 
 * 제목: `[타입] 작업 내용`
 
