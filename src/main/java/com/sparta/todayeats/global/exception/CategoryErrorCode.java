@@ -7,7 +7,8 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum CategoryErrorCode implements ErrorCode {
-    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CAT-001", "카테고리를 찾을 수 없습니다.");
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CAT-001", "카테고리를 찾을 수 없습니다."),
+    CATEGORY_ALREADY_EXISTS(HttpStatus.CONFLICT, "CAT-002", "이미 존재하는 카테고리입니다.");
 
     private final HttpStatus status;
     private final String code;
