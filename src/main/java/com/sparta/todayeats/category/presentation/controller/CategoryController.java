@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-
 @RestController
 @RequestMapping("/api/v1/categories")
 @RequiredArgsConstructor
@@ -21,6 +20,7 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
+    // TODO: 권한 처리, Auditing
     // 카테고리 생성
     @PostMapping
     public ResponseEntity<ApiResponse<CategoryCreateResponse>> createCategory(@RequestBody CategoryCreateRequest request) {
@@ -31,6 +31,7 @@ public class CategoryController {
                 .body(ApiResponse.created(response));
     }
 
+    // TODO: Auditing
     // 카테고리 목록 조회 + 검색
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<CategoryResponse>>> getCategories(
@@ -43,6 +44,7 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    // TODO: Auditing
     // 카테고리 상세 조회
     @GetMapping("/{categoryId}")
     public ResponseEntity<ApiResponse<CategoryResponse>> getCategory(@PathVariable UUID categoryId) {
@@ -52,6 +54,7 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    // TODO: 권한 처리, Auditing
     // 카테고리 수정
     @PutMapping("/{categoryId}")
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(@PathVariable UUID categoryId, @RequestBody CategoryUpdateRequest request) {
@@ -59,5 +62,15 @@ public class CategoryController {
         CategoryResponse response = categoryService.updateCategory(categoryId, request);
 
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // TODO: 권한 처리, Auditing (+ softDelete)
+    // 카테고리 삭제
+    @DeleteMapping("/{categoryId}")
+    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable UUID categoryId) {
+
+        categoryService.deleteCategory(categoryId);
+
+        return ResponseEntity.ok(ApiResponse.deleted(null));
     }
 }

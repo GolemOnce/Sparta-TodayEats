@@ -3,6 +3,7 @@ package com.sparta.todayeats.category.domain.entity;
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Where;
 
 import java.util.UUID;
 
@@ -11,6 +12,7 @@ import java.util.UUID;
 @Getter
 @Builder
 @AllArgsConstructor
+@Where(clause = "deleted_at is null")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Category extends BaseEntity {
 
