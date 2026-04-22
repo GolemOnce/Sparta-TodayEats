@@ -91,6 +91,15 @@ public class CategoryService {
     }
 
 
+    // 카테고리 삭제
+    @Transactional
+    public void deleteCategory(UUID categoryId) {
+        Category category = getCategoryEntity(categoryId);
+
+        category.softDelete(null);
+    }
+
+
     // Category 엔티티 → 목록 응답 DTO 변환
     private CategoryResponse toResponse(Category category) {
         return CategoryResponse.builder()
@@ -114,7 +123,6 @@ public class CategoryService {
 
     // 카테고리 조회
     private Category getCategoryEntity(UUID categoryId) {
-
         return categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new BaseException(CategoryErrorCode.CATEGORY_NOT_FOUND));
     }
