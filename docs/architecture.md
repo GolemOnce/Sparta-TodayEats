@@ -1,20 +1,20 @@
 ## 기술 스택
 
-| 구분 | 기술 | 버전 | 설명 |
-|------|------|--|------|
-| Language | Java | 17 (LTS) | 백엔드 개발 언어 |
-| Framework | Spring Boot | 3.5.13 | 주요 백엔드 프레임워크 |
-| Security | Spring Security + JWT | jjwt | 인증 및 권한 관리, 매 요청 DB 권한 재검증 |
-| Validation | Spring Validation | - | DTO 유효성 검증 |
-| ORM | JPA / Hibernate | - | 객체-관계 매핑 |
-| Query | QueryDSL JPA | - | [도전] 복합 검색 구현 |
-| Database | PostgreSQL | 18.3 | AWS EC2 직접 설치 및 운영 |
-| Build Tool | Gradle | 9.4.1 | 빌드 및 의존성 관리 |
-| API Docs | springdoc-openapi (Swagger) | - | API 문서 자동화 |
-| AI | Google Gemini 1.5 Flash | - | 메뉴 설명 생성 및 분석 |
-| HTTP Client | WebClient / RestTemplate | - | AI API 호출용 |
-| Logging | Logback | - | [도전] 로그 관리 |
-| Server | AWS EC2 | t2.micro / Ubuntu 22.04 | 배포 환경 |
+| 구분 | 기술 | 버전                      | 설명 |
+|------|------|-------------------------|------|
+| Language | Java | 17 (LTS)                | 백엔드 개발 언어 |
+| Framework | Spring Boot | 3.5.13                  | 주요 백엔드 프레임워크 |
+| Security | Spring Security + JWT | jjwt                    | 인증 및 권한 관리, 매 요청 DB 권한 재검증 |
+| Validation | Spring Validation | -                       | DTO 유효성 검증 |
+| ORM | JPA / Hibernate | -                       | 객체-관계 매핑 |
+| Query | QueryDSL JPA | -                       | [도전] 복합 검색 구현 |
+| Database | PostgreSQL | 15.17                   | AWS EC2 직접 설치 및 운영 |
+| Build Tool | Gradle | 9.4.1                   | 빌드 및 의존성 관리 |
+| API Docs | springdoc-openapi (Swagger) | -                       | API 문서 자동화 |
+| AI | Google Gemini 1.5 Flash | -                       | 메뉴 설명 생성 및 분석 |
+| HTTP Client | WebClient / RestTemplate | -                       | AI API 호출용 |
+| Logging | Logback | -                       | [도전] 로그 관리 |
+| Server | AWS EC2 | t3.micro / Ubuntu 22.04 | 배포 환경 |
 
 
 ---
