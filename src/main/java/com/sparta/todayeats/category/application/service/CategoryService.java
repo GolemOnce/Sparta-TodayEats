@@ -2,10 +2,7 @@ package com.sparta.todayeats.category.application.service;
 
 import com.sparta.todayeats.category.domain.entity.Category;
 import com.sparta.todayeats.category.domain.repository.CategoryRepository;
-import com.sparta.todayeats.category.presentation.dto.CategoryCreateRequest;
-import com.sparta.todayeats.category.presentation.dto.CategoryCreateResponse;
-import com.sparta.todayeats.category.presentation.dto.CategoryResponse;
-import com.sparta.todayeats.category.presentation.dto.PageResponse;
+import com.sparta.todayeats.category.presentation.dto.*;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.CategoryErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -78,6 +75,18 @@ public class CategoryService {
     public CategoryResponse getCategory(UUID categoryId) {
 
         Category category = getCategoryEntity(categoryId);
+        return toResponse(category);
+    }
+
+
+    // 카테고리 수정
+    @Transactional
+    public CategoryResponse updateCategory(UUID categoryId, CategoryUpdateRequest request) {
+
+        Category category = getCategoryEntity(categoryId);
+
+        category.updateName(request.getName());
+
         return toResponse(category);
     }
 

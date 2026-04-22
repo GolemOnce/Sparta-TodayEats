@@ -1,10 +1,7 @@
 package com.sparta.todayeats.category.presentation.controller;
 
 import com.sparta.todayeats.category.application.service.CategoryService;
-import com.sparta.todayeats.category.presentation.dto.CategoryCreateRequest;
-import com.sparta.todayeats.category.presentation.dto.CategoryCreateResponse;
-import com.sparta.todayeats.category.presentation.dto.CategoryResponse;
-import com.sparta.todayeats.category.presentation.dto.PageResponse;
+import com.sparta.todayeats.category.presentation.dto.*;
 import com.sparta.todayeats.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -51,6 +48,15 @@ public class CategoryController {
     public ResponseEntity<ApiResponse<CategoryResponse>> getCategory(@PathVariable UUID categoryId) {
 
         CategoryResponse response = categoryService.getCategory(categoryId);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // 카테고리 수정
+    @PutMapping("/{categoryId}")
+    public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(@PathVariable UUID categoryId, @RequestBody CategoryUpdateRequest request) {
+
+        CategoryResponse response = categoryService.updateCategory(categoryId, request);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
