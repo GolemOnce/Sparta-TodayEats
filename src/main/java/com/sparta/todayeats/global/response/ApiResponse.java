@@ -15,7 +15,7 @@ public class ApiResponse<T> {
         return new ApiResponse<>(201, "CREATED", data);
     }
 
-    public static <T> ApiResponse<T> ok(T data) {
+    public static <T> ApiResponse<T> success(T data) {
         return new ApiResponse<>(200, "SUCCESS", data);
     }
 

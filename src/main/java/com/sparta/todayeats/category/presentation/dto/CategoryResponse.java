@@ -6,10 +6,10 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-// 카테고리 목록 조회 DTO
+// 카테고리 정보 응답 DTO
 @Getter
 @Builder
-public class CategoryListResponse {
+public class CategoryResponse {
 
     private UUID categoryId;
     private String name;

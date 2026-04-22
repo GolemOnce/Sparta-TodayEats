@@ -4,7 +4,7 @@ import com.sparta.todayeats.category.domain.entity.Category;
 import com.sparta.todayeats.category.domain.repository.CategoryRepository;
 import com.sparta.todayeats.category.presentation.dto.CategoryCreateRequest;
 import com.sparta.todayeats.category.presentation.dto.CategoryCreateResponse;
-import com.sparta.todayeats.category.presentation.dto.CategoryListResponse;
+import com.sparta.todayeats.category.presentation.dto.CategoryResponse;
 import com.sparta.todayeats.category.presentation.dto.PageResponse;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.CategoryErrorCode;
@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -43,8 +44,9 @@ public class CategoryService {
                 .build();
     }
 
+
     // 카테고리 목록 조회 && 검색
-    public PageResponse<CategoryListResponse> getCategories(String keyword, Pageable pageable) {
+    public PageResponse<CategoryResponse> getCategories(String keyword, Pageable pageable) {
 
         Page<Category> result;
 
@@ -56,12 +58,12 @@ public class CategoryService {
         }
 
         // DTO 리스트로 변환
-        List<CategoryListResponse> content = result.getContent()
+        List<CategoryResponse> content = result.getContent()
                 .stream()
                 .map(this::toResponse)
                 .toList();
 
-        return PageResponse.<CategoryListResponse>builder()
+        return PageResponse.<CategoryResponse>builder()
                 .content(content)
                 .page(result.getNumber())
                 .size(result.getSize())
@@ -71,9 +73,18 @@ public class CategoryService {
                 .build();
     }
 
+
+    // 카테고리 상세 조회
+    public CategoryResponse getCategory(UUID categoryId) {
+
+        Category category = getCategoryEntity(categoryId);
+        return toResponse(category);
+    }
+
+
     // Category 엔티티 → 목록 응답 DTO 변환
-    private CategoryListResponse toResponse(Category category) {
-        return CategoryListResponse.builder()
+    private CategoryResponse toResponse(Category category) {
+        return CategoryResponse.builder()
                 .categoryId(category.getId())
                 .name(category.getName())
                 .createdAt(category.getCreatedAt())
@@ -83,10 +94,19 @@ public class CategoryService {
                 .build();
     }
 
-    // 동일한 이름의 카테고리가 존재하는지 확인
+
+    // 카테고리 이름 기준 중복 조회 (존재 여부 확인)
     private void validateDuplicateCategory(String name) {
         if (categoryRepository.existsByName(name)) {
             throw new BaseException(CategoryErrorCode.CATEGORY_ALREADY_EXISTS);
         }
+    }
+
+
+    // 카테고리 조회
+    private Category getCategoryEntity(UUID categoryId) {
+
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new BaseException(CategoryErrorCode.CATEGORY_NOT_FOUND));
     }
 }
