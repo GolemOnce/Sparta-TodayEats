@@ -129,7 +129,7 @@ public class CategoryService {
 
     // 카테고리 이름 기준 중복 조회 (존재 여부 확인)
     private void validateDuplicateCategory(String name) {
-        if (categoryRepository.existsByName(name)) {
+        if (categoryRepository.existsByNameIgnoreCase(name)) {
             throw new BaseException(CategoryErrorCode.CATEGORY_ALREADY_EXISTS);
         }
     }
@@ -139,8 +139,8 @@ public class CategoryService {
         // null인 경우 예외 처리
         if (name == null) throw new BaseException(CategoryErrorCode.INVALID_CATEGORY_NAME);
 
-        // 앞뒤 공백 제거, 영문은 소문자로 통일
-        String normalized = name.trim().toLowerCase();
+        // 앞뒤 공백 제거
+        String normalized = name.trim();
 
         // 공백일 경우 예외처리
         if (normalized.isBlank()) throw new BaseException(CategoryErrorCode.INVALID_CATEGORY_NAME);

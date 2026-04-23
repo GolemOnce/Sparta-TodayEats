@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface CategoryRepository extends JpaRepository<Category, UUID> {
     // 카테고리 이름 중복 여부 확인
-    boolean existsByName(String name);
+    boolean existsByNameIgnoreCase(String name);
 
     // 카테고리 이름 기준 부분 일치(대소문자 무시) 검색 + 페이징 조회
     Page<Category> findByNameContainingIgnoreCase(String name, Pageable pageable);
