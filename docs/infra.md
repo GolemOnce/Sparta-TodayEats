@@ -67,22 +67,58 @@ REDIS_PASSWORD=
 ---
 
 ### 5. CI/CD 파이프라인
-- 트리거 
+#### 트리거 
   - main, develop(CI) 브랜치에 push(머지) 시 자동 실행
 <br></br>
-- 파이프라인 흐름
+#### 파이프라인 흐름
 ```
 1. 코드 체크아웃
 2. JDK 17 세팅
 3. 테스트 실행 (실패 시 중단)
-(develop은 여기서 종료)
+(develop(CI)은 여기서 종료)
 4. bootJar 빌드
-5. EC2 SSH 접속
-6. git pull
+5. SCP로 jar 파일 EC2 전송
+6. EC2 SSH 접속
 7. docker-compose down → up --build
 ```
 
-- GitHub Secrets 설정
+#### 테스트
+  - `JaCoCo` 코드 커버리지 리포트 활용(build/reports/jacoco/)
+  - 우선 유닛 테스트만 작성해 Mock데이터로 비즈니스 로직 검증, 추후 통합테스트 도입을 대비해 CI 환경에 미리 PostgreSQL 컨테이너 도입함
+  - 정상 케이스 + 예외 케이스 검증 가능한 테스트 작성
+1. 테스트 작성 범위
+- 필수) Service 레이어 유닛 테스트 
+- 선택) Repository, Controller 레이어 유닛 테스트
+
+2. 테스트 메서드명
+```java
+//한글로 가독성 있게 테스트 메서드명 작성
+@Test
+void 주문_수량이_0이면_예외발생() { }
+
+@Test
+void 정상_주문_생성_성공() { }
+```
+3. 테스트 구조 (given/when/then)
+```java
+@Test
+void 식당_생성_성공() {
+  // given
+  CreateRestaurantRequest request = new CreateRestaurantRequest("맛집");
+
+  // when
+  Restaurant result = restaurantService.create(request);
+
+  // then
+  assertThat(result.getName()).isEqualTo("맛집");
+}
+``` 
+4. 통합테스트 도입 시기
+- 유닛 테스트 Mock데이터로 검증하지 못하는 문제 발생 시 통합테스트 도입 고려.
+- 여러 레이어를 거치는 핵심 비즈니스로직이 한 트랜잭션 내에서 일어날 때.
+- 타인의 코드에 영향을 주기 시작하는 시기
+
+#### GitHub Secrets 설정
   - `EC2_HOST` : EC2 퍼블릭 IP
   - `EC2_USERNAME` : EC2 접속 유저명 (ubuntu)
   - `EC2_SSH_KEY` : .pem 파일 전체 내용
@@ -91,19 +127,7 @@ REDIS_PASSWORD=
   - `SPRING_DATASOURCE_PASSWORD` : 운영 DB 비밀번호
   - `REDIS_PASSWORD` : Redis 비밀번호
 ---
-### 6. 브랜치 전략
-```
-main        ← 운영 배포 브랜치 (CI/CD 트리거)
-develop     ← 개발 통합 브랜치 (CI 트리거)
-feat/#이슈번호-기능명  ← 기능 개발 브랜치
-```
-- 개발 흐름
-```
-feat 브랜치 생성 → 개발 → PR to develop → 코드 리뷰(CodeRabbit) → merge 
-→ merge 시 CI → develop → main PR → merge 시 CI/CD 자동 배포
-```
----
-### 7. 로컬 개발 환경 세팅 가이드
+### 6. 로컬 개발 환경 세팅 가이드
 - 처음 세팅하는 팀원을 위한 가이드.
 1. 레포 클론
 ```bash
