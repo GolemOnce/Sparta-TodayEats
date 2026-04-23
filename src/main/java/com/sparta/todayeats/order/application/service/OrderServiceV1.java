@@ -13,10 +13,13 @@ import com.sparta.todayeats.order.domain.entity.OrderItemEntity;
 import com.sparta.todayeats.order.domain.repository.OrderRepository;
 import com.sparta.todayeats.order.presentation.dto.request.CreateOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.response.CreateOrderResponse;
+import com.sparta.todayeats.order.presentation.dto.response.OrderSummaryResponse;
 import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import com.sparta.todayeats.store.domain.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +37,7 @@ public class OrderServiceV1 {
     private final AddressRepository addressRepository;
 
     // ========================================================
-    // 커밋 3. ✨ feat: 주문 생성 서비스 로직 구현
+    // feat: 주문 생성 서비스 로직 구현
     // ========================================================
 
     /**
@@ -92,5 +95,21 @@ public class OrderServiceV1 {
 
         log.info("주문 생성 완료: orderId={}, userId={}, total={}", saved.getOrderId(), userId, total);
         return CreateOrderResponse.from(saved);
+    }
+
+    // ========================================================
+    // feat: 주문 목록 조회 서비스 로직 추가
+    // ========================================================
+
+    /**
+     * 주문 목록 조회 (본인 주문만)
+     * - customerId 기준으로 조회
+     * - soft delete 제외
+     * - 페이지네이션 (기본 10개, createdAt DESC)
+     * - TODO: CUSTOMER 권한 체크 추가
+     */
+    public Page<OrderSummaryResponse> getOrders(UUID userId, Pageable pageable) {
+        return orderRepository.findAllByCustomerId(userId, pageable)
+                .map(OrderSummaryResponse::from);
     }
 }
