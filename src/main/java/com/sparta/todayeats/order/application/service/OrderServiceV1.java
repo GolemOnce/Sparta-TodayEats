@@ -8,10 +8,7 @@ import com.sparta.todayeats.menu.domain.repository.MenuRepository;
 import com.sparta.todayeats.order.domain.entity.OrderEntity;
 import com.sparta.todayeats.order.domain.entity.OrderItemEntity;
 import com.sparta.todayeats.order.domain.repository.OrderRepository;
-import com.sparta.todayeats.order.presentation.dto.request.CancelOrderRequest;
-import com.sparta.todayeats.order.presentation.dto.request.CreateOrderRequest;
-import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderRequest;
-import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderStatusRequest;
+import com.sparta.todayeats.order.presentation.dto.request.*;
 import com.sparta.todayeats.order.presentation.dto.response.*;
 import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import com.sparta.todayeats.store.domain.repository.StoreRepository;
@@ -99,6 +96,10 @@ public class OrderServiceV1 {
         // 서버에서 계산한 총 금액 세팅
         order.updateTotalPrice(total);
         OrderEntity saved = orderRepository.save(order);
+
+        // TODO: Payment 담당자 코드 완성 후 주석 해제
+        // 주문 생성 시 결제 생성 같이 처리 (트랜잭션 묶음)
+        // paymentService.createPayment(saved.getOrderId(), total);
 
         log.info("주문 생성 완료: orderId={}, userId={}, total={}", saved.getOrderId(), userId, total);
         return CreateOrderResponse.from(saved);
@@ -263,8 +264,52 @@ public class OrderServiceV1 {
 
         order.cancelByCustomer(request != null ? request.cancelReason() : null);
 
+        // TODO: Payment 담당자 코드 완성 후 주석 해제
+        // 주문 취소 시 환불 처리 같이 처리 (트랜잭션 묶음)
+        // paymentService.refund(orderId);
+
         log.info("주문 취소: orderId={}", orderId);
         return CancelOrderResponse.from(order);
+    }
+
+    // ========================================================
+    // feat: 주문 거절 서비스 로직 추가
+    // ========================================================
+
+    /**
+     * 주문 거절
+     * - PENDING 상태만 거절 가능
+     * - status = REJECTED 로 변경
+     * TODO: JWT 완성 후 주석 해제
+     * - OWNER: 본인 가게 주문만 거절 가능
+     * - MANAGER/MASTER: 전체 거절 가능
+     * - CUSTOMER: 거절 불가
+     */
+    @Transactional
+    public RejectOrderResponse rejectOrder(UUID orderId, RejectOrderRequest request
+                                           //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
+    ) {
+        OrderEntity order = findActiveOrder(orderId);
+
+        // TODO: JWT 완성 후 주석 해제
+        // if (role == UserRole.CUSTOMER) {
+        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
+        // } else if (role == UserRole.OWNER) {
+        //     StoreEntity store = storeRepository.findActiveById(order.getStoreId())
+        //             .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
+        //     if (!store.getOwnerId().equals(userId)) {
+        //         throw new BaseException(CommonErrorCode.FORBIDDEN);
+        //     }
+        // }
+
+        order.rejectByOwner(request != null ? request.rejectReason() : null);
+
+        // TODO: Payment 담당자 코드 완성 후 주석 해제
+        // 주문 거절 시 환불 처리 같이 처리 (트랜잭션 묶음)
+        // paymentService.refund(orderId);
+
+        log.info("주문 거절: orderId={}", orderId);
+        return RejectOrderResponse.from(order);
     }
 
 

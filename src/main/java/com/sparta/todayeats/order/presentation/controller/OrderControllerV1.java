@@ -3,10 +3,7 @@ package com.sparta.todayeats.order.presentation.controller;
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.order.application.service.OrderServiceV1;
-import com.sparta.todayeats.order.presentation.dto.request.CancelOrderRequest;
-import com.sparta.todayeats.order.presentation.dto.request.CreateOrderRequest;
-import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderRequest;
-import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderStatusRequest;
+import com.sparta.todayeats.order.presentation.dto.request.*;
 import com.sparta.todayeats.order.presentation.dto.response.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -152,6 +149,26 @@ public class OrderControllerV1 {
         // TODO: JWT 완성 후 아래로 교체
         // CancelOrderResponse data = orderService.cancelOrder(orderId, request, userDetails.getUserId(), userDetails.getRole());
         CancelOrderResponse data = orderService.cancelOrder(orderId, request);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    // ========================================================
+    // PATCH /api/v1/orders/{orderId}/reject
+    // TODO: JWT 완성 후 주석 해제
+    // - OWNER: 본인 가게 주문만 거절 가능
+    // - MANAGER/MASTER: 전체 거절 가능
+    // - CUSTOMER: 거절 불가
+    // ========================================================
+
+    @PatchMapping("/{orderId}/reject")
+    public ResponseEntity<ApiResponse<RejectOrderResponse>> rejectOrder(
+            @PathVariable UUID orderId,
+            @RequestBody(required = false) RejectOrderRequest request
+            //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
+    ) {
+        // TODO: JWT 완성 후 아래로 교체
+        // RejectOrderResponse data = orderService.rejectOrder(orderId, request, userDetails.getUserId(), userDetails.getRole());
+        RejectOrderResponse data = orderService.rejectOrder(orderId, request);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 }
