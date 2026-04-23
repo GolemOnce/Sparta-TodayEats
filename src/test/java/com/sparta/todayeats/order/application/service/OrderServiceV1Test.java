@@ -10,9 +10,11 @@ import com.sparta.todayeats.order.domain.entity.OrderStatus;
 import com.sparta.todayeats.order.domain.entity.OrderType;
 import com.sparta.todayeats.order.domain.repository.OrderRepository;
 import com.sparta.todayeats.order.presentation.dto.request.CreateOrderRequest;
+import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.response.CreateOrderResponse;
 import com.sparta.todayeats.order.presentation.dto.response.OrderDetailResponse;
 import com.sparta.todayeats.order.presentation.dto.response.OrderSummaryResponse;
+import com.sparta.todayeats.order.presentation.dto.response.UpdateOrderResponse;
 import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import com.sparta.todayeats.store.domain.repository.StoreRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -291,6 +293,86 @@ class OrderServiceV1Test {
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
+        }
+    }
+
+    // ========================================================
+    // 🎥 test(#9): 주문 수정 단위 테스트
+    // ========================================================
+
+    @Nested
+    @DisplayName("updateOrder()")
+    class UpdateOrder {
+
+        @Test
+        @DisplayName("성공 - PENDING 상태에서 요청사항 수정")
+        void success() {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when
+            UpdateOrderResponse result = orderService.updateOrder(
+                    orderId, new UpdateOrderRequest("수정된 요청사항"));
+
+            // then
+            assertThat(result.note()).isEqualTo("수정된 요청사항");
+            assertThat(result.status()).isEqualTo(OrderStatus.PENDING);
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 주문")
+        void fail_order_not_found() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> orderService.updateOrder(
+                    orderId, new UpdateOrderRequest("수정된 요청사항")))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
+        }
+
+        @Test
+        @DisplayName("실패 - PENDING이 아닌 상태에서 수정 시도")
+        void fail_not_pending_status() throws Exception {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            order.changeStatus(OrderStatus.ACCEPTED); // ACCEPTED 상태로 변경
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.updateOrder(
+                    orderId, new UpdateOrderRequest("수정된 요청사항")))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.ORDER_UPDATE_NOT_ALLOWED));
         }
     }
 }
