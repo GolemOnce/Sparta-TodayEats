@@ -66,6 +66,9 @@ public class OrderEntity extends BaseEntity {
     @Column(name = "cancel_reason", length = 255)
     private String cancelReason;    // 취소 사유 (선택)
 
+    @Column(name = "reject_reason", length = 255)
+    private String rejectReason;    // 거절 사유 (선택)
+
     @Column(name = "total_price", nullable = false)
     private Long totalPrice;
 
@@ -161,6 +164,32 @@ public class OrderEntity extends BaseEntity {
         // }
         // if (role == UserRole.CUSTOMER && !this.customerId.equals(userId)) {
         //     throw new BaseException(CommonErrorCode.FORBIDDEN);
+        // }
+    }
+
+    /**
+     * 주문 거절 (OWNER 본인 가게 / MANAGER / MASTER만 가능)
+     * 조건: PENDING 상태여야 함
+     * TODO: JWT 완성 후 주석 해제
+     * - OWNER: 본인 가게 주문만 거절 가능
+     * - MANAGER/MASTER: 전체 거절 가능
+     */
+    public void rejectByOwner(String rejectReason) {
+        if (this.status != OrderStatus.PENDING) {
+            throw new BaseException(OrderErrorCode.ORDER_REJECT_NOT_ALLOWED);
+        }
+        this.status = OrderStatus.REJECTED;
+        this.rejectReason = rejectReason;  // null이어도 됨 (선택사항)
+
+        // TODO: JWT 완성 후 주석 해제
+        // if (role == UserRole.CUSTOMER) {
+        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
+        // } else if (role == UserRole.OWNER) {
+        //     StoreEntity store = storeRepository.findActiveById(this.storeId)
+        //             .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
+        //     if (!store.getOwnerId().equals(userId)) {
+        //         throw new BaseException(CommonErrorCode.FORBIDDEN);
+        //     }
         // }
     }
 
