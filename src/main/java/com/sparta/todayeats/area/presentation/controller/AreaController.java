@@ -5,6 +5,7 @@ import com.sparta.todayeats.area.domain.entity.Area;
 import com.sparta.todayeats.area.presentation.dto.AreaCreateRequest;
 import com.sparta.todayeats.area.presentation.dto.AreaCreateResponse;
 import com.sparta.todayeats.area.presentation.dto.AreaResponse;
+import com.sparta.todayeats.area.presentation.dto.AreaUpdateRequest;
 import com.sparta.todayeats.category.presentation.dto.PageResponse;
 import com.sparta.todayeats.global.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -56,6 +57,16 @@ public class AreaController {
     public ResponseEntity<ApiResponse<AreaResponse>> getArea(@PathVariable UUID areaId) {
 
         AreaResponse response = areaService.getArea(areaId);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // TODO: 권한 처리(MANAGER, MASTER), Auditing
+    // 운영 지역 수정
+    @PatchMapping("/{areaId}")
+    public ResponseEntity<ApiResponse<AreaResponse>> updateArea(@PathVariable UUID areaId, @RequestBody AreaUpdateRequest request) {
+
+        AreaResponse response = areaService.updateArea(areaId, request);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }

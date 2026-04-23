@@ -5,6 +5,7 @@ import com.sparta.todayeats.area.domain.repository.AreaRepository;
 import com.sparta.todayeats.area.presentation.dto.AreaCreateRequest;
 import com.sparta.todayeats.area.presentation.dto.AreaCreateResponse;
 import com.sparta.todayeats.area.presentation.dto.AreaResponse;
+import com.sparta.todayeats.area.presentation.dto.AreaUpdateRequest;
 import com.sparta.todayeats.category.presentation.dto.PageResponse;
 import com.sparta.todayeats.global.exception.AreaErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
@@ -88,6 +89,31 @@ public class AreaService {
         Area area = getAreaEntity(areaId);
         return toResponse(area);
     }
+
+    // 운영 지역 수정
+    @Transactional
+    public AreaResponse updateArea(UUID areaId, AreaUpdateRequest request) {
+
+        // 수정 대상 운영 지역 조회
+        Area area = getAreaEntity(areaId);
+
+        // null이면 기존 값 유지
+        String name = request.getName() != null ? normalizeName(request.getName()) : area.getName();
+        String city = request.getCity() != null ? request.getCity() : area.getCity();
+        String district = request.getDistrict() != null ? request.getDistrict() : area.getDistrict();
+        Boolean isActive = request.getIsActive() != null ? request.getIsActive() : area.getIsActive();
+
+        // 기존 이름과 다른 경우에만 중복 검증 수행
+        if (!area.getName().equals(name)) {
+            validateDuplicateArea(name);
+        }
+
+        // 운영 지역 이름 수정
+        area.update(name, city, district, isActive);
+
+        return toResponse(area);
+    }
+
 
 
 
