@@ -3,6 +3,7 @@ package com.sparta.todayeats.category.presentation.controller;
 import com.sparta.todayeats.category.application.service.CategoryService;
 import com.sparta.todayeats.category.presentation.dto.*;
 import com.sparta.todayeats.global.response.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -23,7 +24,7 @@ public class CategoryController {
     // TODO: 권한 처리, Auditing
     // 카테고리 생성
     @PostMapping
-    public ResponseEntity<ApiResponse<CategoryCreateResponse>> createCategory(@RequestBody CategoryCreateRequest request) {
+    public ResponseEntity<ApiResponse<CategoryCreateResponse>> createCategory(@Valid @RequestBody CategoryCreateRequest request) {
         CategoryCreateResponse response = categoryService.createCategory(request);
 
         return ResponseEntity
@@ -57,7 +58,7 @@ public class CategoryController {
     // TODO: 권한 처리, Auditing
     // 카테고리 수정
     @PutMapping("/{categoryId}")
-    public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(@PathVariable UUID categoryId, @RequestBody CategoryUpdateRequest request) {
+    public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(@PathVariable UUID categoryId, @Valid @RequestBody CategoryUpdateRequest request) {
 
         CategoryResponse response = categoryService.updateCategory(categoryId, request);
 

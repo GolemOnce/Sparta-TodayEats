@@ -21,7 +21,7 @@ public class Category extends BaseEntity {
     @Column(name = "category_id")
     private UUID id;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 50, unique = true)
     private String name;
 
     public void updateName(String name) {

@@ -25,12 +25,15 @@ public class CategoryService {
     @Transactional
     public CategoryCreateResponse createCategory(CategoryCreateRequest request) {
 
+        // 입력값 정규화
+        String name = normalizeName(request.getName());
+
         // 카테고리 이름 중복 여부 검증
-        validateDuplicateCategory(request.getName());
+        validateDuplicateCategory(name);
 
         // 카테고리 엔티티 생성
         Category category = Category.builder()
-                .name(request.getName())
+                .name(name)
                 .build();
 
         // DB 저장
@@ -86,13 +89,16 @@ public class CategoryService {
         // 수정 대상 카테고리 조회
         Category category = getCategoryEntity(categoryId);
 
+        // 정규화
+        String name = normalizeName(request.getName());
+
         // 기존 이름과 다른 경우에만 중복 검증 수행
-        if (!category.getName().equals(request.getName())) {
-            validateDuplicateCategory(request.getName());
+        if (!category.getName().equals(name)) {
+            validateDuplicateCategory(name);
         }
 
         // 카테고리 이름 수정
-        category.updateName(request.getName());
+        category.updateName(name);
 
         return toResponse(category);
     }
@@ -126,6 +132,20 @@ public class CategoryService {
         if (categoryRepository.existsByName(name)) {
             throw new BaseException(CategoryErrorCode.CATEGORY_ALREADY_EXISTS);
         }
+    }
+
+    // 카테고리 이름 정규화
+    private String normalizeName(String name) {
+        // null인 경우 예외 처리
+        if (name == null) throw new BaseException(CategoryErrorCode.INVALID_CATEGORY_NAME);
+
+        // 앞뒤 공백 제거, 영문은 소문자로 통일
+        String normalized = name.trim().toLowerCase();
+
+        // 공백일 경우 예외처리
+        if (normalized.isBlank()) throw new BaseException(CategoryErrorCode.INVALID_CATEGORY_NAME);
+
+        return normalized;
     }
 
     // 카테고리 엔티티 조회
