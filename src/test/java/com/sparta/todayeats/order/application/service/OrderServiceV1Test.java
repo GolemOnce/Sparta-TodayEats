@@ -9,6 +9,7 @@ import com.sparta.todayeats.order.domain.entity.OrderEntity;
 import com.sparta.todayeats.order.domain.entity.OrderStatus;
 import com.sparta.todayeats.order.domain.entity.OrderType;
 import com.sparta.todayeats.order.domain.repository.OrderRepository;
+import com.sparta.todayeats.order.presentation.dto.request.CancelOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.request.CreateOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderStatusRequest;
@@ -534,8 +535,8 @@ class OrderServiceV1Test {
     class CancelOrder {
 
         @Test
-        @DisplayName("성공 - 주문 후 5분 이내 취소")
-        void success_cancel_within_5_minutes() throws Exception {
+        @DisplayName("성공 - 주문 후 5분 이내 취소 (사유 있음)")
+        void success_cancel_within_5_minutes_with_reason() throws Exception {
             // given
             OrderEntity order = OrderEntity.builder()
                     .customerId(userId)
@@ -549,7 +550,6 @@ class OrderServiceV1Test {
                     .totalPrice(38000L)
                     .build();
 
-            // 3분 전 생성된 주문 (5분 이내)
             Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
             field.setAccessible(true);
             field.set(order, LocalDateTime.now().minusMinutes(3));
@@ -558,7 +558,38 @@ class OrderServiceV1Test {
                     .willReturn(Optional.of(order));
 
             // when
-            CancelOrderResponse result = orderService.cancelOrder(orderId);
+            CancelOrderResponse result = orderService.cancelOrder(
+                    orderId, new CancelOrderRequest("단순 변심"));
+
+            // then
+            assertThat(result.status()).isEqualTo(OrderStatus.CANCELED);
+        }
+
+        @Test
+        @DisplayName("성공 - 주문 후 5분 이내 취소 (사유 없음)")
+        void success_cancel_within_5_minutes_without_reason() throws Exception {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
+            field.setAccessible(true);
+            field.set(order, LocalDateTime.now().minusMinutes(3));
+
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when
+            CancelOrderResponse result = orderService.cancelOrder(orderId, null);
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.CANCELED);
@@ -580,7 +611,6 @@ class OrderServiceV1Test {
                     .totalPrice(38000L)
                     .build();
 
-            // 6분 전 생성된 주문 (5분 초과)
             Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
             field.setAccessible(true);
             field.set(order, LocalDateTime.now().minusMinutes(6));
@@ -589,7 +619,8 @@ class OrderServiceV1Test {
                     .willReturn(Optional.of(order));
 
             // when & then
-            assertThatThrownBy(() -> orderService.cancelOrder(orderId))
+            assertThatThrownBy(() -> orderService.cancelOrder(
+                    orderId, new CancelOrderRequest("단순 변심")))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.CANCEL_TIME_EXCEEDED));
@@ -615,12 +646,13 @@ class OrderServiceV1Test {
             field.setAccessible(true);
             field.set(order, LocalDateTime.now().minusMinutes(1));
 
-            order.changeStatus(OrderStatus.ACCEPTED); // ACCEPTED 상태로 변경
+            order.changeStatus(OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
 
             // when & then
-            assertThatThrownBy(() -> orderService.cancelOrder(orderId))
+            assertThatThrownBy(() -> orderService.cancelOrder(
+                    orderId, new CancelOrderRequest("단순 변심")))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_CANCEL_NOT_ALLOWED));
@@ -642,17 +674,17 @@ class OrderServiceV1Test {
                     .totalPrice(38000L)
                     .build();
 
-            // 3분 전 생성 (5분 이내)
             Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
             field.setAccessible(true);
             field.set(order, LocalDateTime.now().minusMinutes(3));
 
-            order.changeStatus(OrderStatus.ACCEPTED);  // ACCEPTED 상태로 변경
+            order.changeStatus(OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
 
             // when & then
-            assertThatThrownBy(() -> orderService.cancelOrder(orderId))
+            assertThatThrownBy(() -> orderService.cancelOrder(
+                    orderId, new CancelOrderRequest("단순 변심")))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_CANCEL_NOT_ALLOWED));
@@ -666,7 +698,8 @@ class OrderServiceV1Test {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> orderService.cancelOrder(orderId))
+            assertThatThrownBy(() -> orderService.cancelOrder(
+                    orderId, new CancelOrderRequest("단순 변심")))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
