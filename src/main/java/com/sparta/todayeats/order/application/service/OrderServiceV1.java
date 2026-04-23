@@ -2,10 +2,7 @@ package com.sparta.todayeats.order.application.service;
 
 import com.sparta.todayeats.address.domain.entity.AddressEntity;
 import com.sparta.todayeats.address.domain.repository.AddressRepository;
-import com.sparta.todayeats.global.exception.AddressErrorCode;
-import com.sparta.todayeats.global.exception.BaseException;
-import com.sparta.todayeats.global.exception.MenuErrorCode;
-import com.sparta.todayeats.global.exception.StoreErrorCode;
+import com.sparta.todayeats.global.exception.*;
 import com.sparta.todayeats.menu.domain.entity.MenuEntity;
 import com.sparta.todayeats.menu.domain.repository.MenuRepository;
 import com.sparta.todayeats.order.domain.entity.OrderEntity;
@@ -13,6 +10,7 @@ import com.sparta.todayeats.order.domain.entity.OrderItemEntity;
 import com.sparta.todayeats.order.domain.repository.OrderRepository;
 import com.sparta.todayeats.order.presentation.dto.request.CreateOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.response.CreateOrderResponse;
+import com.sparta.todayeats.order.presentation.dto.response.OrderDetailResponse;
 import com.sparta.todayeats.order.presentation.dto.response.OrderSummaryResponse;
 import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import com.sparta.todayeats.store.domain.repository.StoreRepository;
@@ -45,10 +43,18 @@ public class OrderServiceV1 {
      * - 가게/배송지/메뉴 존재 검증
      * - 주문 시점 스냅샷 저장 (가게명, 배송지, 메뉴명, 단가)
      * - totalPrice 서버에서 계산 (클라이언트 값 신뢰 안 함)
-     * - TODO: CUSTOMER 권한 체크 추가
+     * TODO: JWT 완성 후 주석 해제
+     * - CUSTOMER만 주문 생성 가능
      */
     @Transactional
-    public CreateOrderResponse createOrder(CreateOrderRequest request, UUID userId) {
+    public CreateOrderResponse createOrder(CreateOrderRequest request, UUID userId
+                                           //, UserRole role  // TODO: JWT 완성 후 주석 해제
+    ) {
+        // TODO: JWT 완성 후 주석 해제
+        // if (role != UserRole.CUSTOMER) {
+        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
+        // }
+
         // 가게 조회 및 검증
         StoreEntity store = storeRepository.findActiveById(request.storeId())
                 .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
@@ -102,14 +108,74 @@ public class OrderServiceV1 {
     // ========================================================
 
     /**
-     * 주문 목록 조회 (본인 주문만)
-     * - customerId 기준으로 조회
+     * 주문 목록 조회
      * - soft delete 제외
      * - 페이지네이션 (기본 10개, createdAt DESC)
-     * - TODO: CUSTOMER 권한 체크 추가
+     * TODO: JWT 완성 후 주석 해제
+     * - CUSTOMER: 본인 주문만 조회
+     * - OWNER: 본인 가게 주문만 조회
+     * - MANAGER/MASTER: 전체 조회
      */
-    public Page<OrderSummaryResponse> getOrders(UUID userId, Pageable pageable) {
+    public Page<OrderSummaryResponse> getOrders(UUID userId, Pageable pageable
+                                                //, UserRole role  // TODO: JWT 완성 후 주석 해제
+    ) {
+        // TODO: JWT 완성 후 주석 해제
+        // if (role == UserRole.CUSTOMER) {
+        //     return orderRepository.findAllByCustomerId(userId, pageable)
+        //             .map(OrderSummaryResponse::from);
+        // } else if (role == UserRole.OWNER) {
+        //     return orderRepository.findAllByStoreOwnerId(userId, pageable)
+        //             .map(OrderSummaryResponse::from);
+        // }
+        // // MANAGER/MASTER 전체 조회
+        // return orderRepository.findAllActive(pageable)
+        //         .map(OrderSummaryResponse::from);
+
+        // 임시: JWT 완성 전까지 customerId로 조회
         return orderRepository.findAllByCustomerId(userId, pageable)
                 .map(OrderSummaryResponse::from);
+    }
+
+    // ========================================================
+    // feat: 주문 단건 조회 서비스 로직 추가
+    // ========================================================
+
+    /**
+     * 주문 단건 조회
+     * - soft delete 제외
+     * TODO: JWT 완성 후 주석 해제
+     * - CUSTOMER: 본인 주문만 조회 가능
+     * - OWNER: 본인 가게 주문만 조회 가능
+     * - MANAGER/MASTER: 전체 조회 가능
+     */
+    public OrderDetailResponse getOrder(UUID orderId
+                                        //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
+    ) {
+        OrderEntity order = findActiveOrder(orderId);
+
+        // TODO: JWT 완성 후 주석 해제
+        // if (role == UserRole.CUSTOMER) {
+        //     if (!order.getCustomerId().equals(userId)) {
+        //         throw new BaseException(CommonErrorCode.FORBIDDEN);
+        //     }
+        // } else if (role == UserRole.OWNER) {
+        //     StoreEntity store = storeRepository.findActiveById(order.getStoreId())
+        //             .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
+        //     if (!store.getOwnerId().equals(userId)) {
+        //         throw new BaseException(CommonErrorCode.FORBIDDEN);
+        //     }
+        // }
+
+        return OrderDetailResponse.from(order);
+    }
+
+
+    /**
+     * soft delete 제외 주문 단건 조회
+     * 주문 없으면 BaseException(ORDER_NOT_FOUND) 발생
+     */
+    private OrderEntity findActiveOrder(UUID orderId) {
+        return orderRepository.findActiveById(orderId)
+                .orElseThrow(() -> new BaseException(OrderErrorCode.ORDER_NOT_FOUND));
     }
 }
