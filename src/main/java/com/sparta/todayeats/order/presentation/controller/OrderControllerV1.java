@@ -3,6 +3,7 @@ package com.sparta.todayeats.order.presentation.controller;
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.order.application.service.OrderServiceV1;
+import com.sparta.todayeats.order.presentation.dto.request.CancelOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.request.CreateOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderStatusRequest;
@@ -144,12 +145,13 @@ public class OrderControllerV1 {
 
     @PatchMapping("/{orderId}/cancel")
     public ResponseEntity<ApiResponse<CancelOrderResponse>> cancelOrder(
-            @PathVariable UUID orderId
+            @PathVariable UUID orderId,
+            @RequestBody(required = false) CancelOrderRequest request
             //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
     ) {
         // TODO: JWT 완성 후 아래로 교체
-        // CancelOrderResponse data = orderService.cancelOrder(orderId, userDetails.getUserId(), userDetails.getRole());
-        CancelOrderResponse data = orderService.cancelOrder(orderId);
+        // CancelOrderResponse data = orderService.cancelOrder(orderId, request, userDetails.getUserId(), userDetails.getRole());
+        CancelOrderResponse data = orderService.cancelOrder(orderId, request);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 }
