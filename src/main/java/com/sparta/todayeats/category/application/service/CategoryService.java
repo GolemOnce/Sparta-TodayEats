@@ -25,14 +25,18 @@ public class CategoryService {
     @Transactional
     public CategoryCreateResponse createCategory(CategoryCreateRequest request) {
 
+        // 카테고리 이름 중복 여부 검증
         validateDuplicateCategory(request.getName());
 
+        // 카테고리 엔티티 생성
         Category category = Category.builder()
                 .name(request.getName())
                 .build();
 
+        // DB 저장
         Category saved = categoryRepository.save(category);
 
+        // 응답 DTO로 변환
         return CategoryCreateResponse.builder()
                 .categoryId(saved.getId())
                 .name(saved.getName())
@@ -45,21 +49,16 @@ public class CategoryService {
     // 카테고리 목록 조회 && 검색
     public PageResponse<CategoryResponse> getCategories(String keyword, Pageable pageable) {
 
-        Page<Category> result;
+        // keyword가 없으면 전체 조회, 있으면 이름 기준 검색
+        Page<Category> result = findCategories(keyword, pageable);
 
-        // keyword 유무에 따라 전체 조회 또는 이름 검색 조회
-        if (keyword == null || keyword.isBlank()) {
-            result = categoryRepository.findAll(pageable);
-        } else {
-            result = categoryRepository.findByNameContainingIgnoreCase(keyword, pageable);
-        }
-
-        // DTO 리스트로 변환
+        // 엔티티 → DTO 변환
         List<CategoryResponse> content = result.getContent()
                 .stream()
                 .map(this::toResponse)
                 .toList();
 
+        // 페이지 응답 DTO 생성
         return PageResponse.<CategoryResponse>builder()
                 .content(content)
                 .page(result.getNumber())
@@ -74,6 +73,7 @@ public class CategoryService {
     // 카테고리 상세 조회
     public CategoryResponse getCategory(UUID categoryId) {
 
+        // ID로 카테고리 조회 후 DTO 변환
         Category category = getCategoryEntity(categoryId);
         return toResponse(category);
     }
@@ -83,8 +83,15 @@ public class CategoryService {
     @Transactional
     public CategoryResponse updateCategory(UUID categoryId, CategoryUpdateRequest request) {
 
+        // 수정 대상 카테고리 조회
         Category category = getCategoryEntity(categoryId);
 
+        // 기존 이름과 다른 경우에만 중복 검증 수행
+        if (!category.getName().equals(request.getName())) {
+            validateDuplicateCategory(request.getName());
+        }
+
+        // 카테고리 이름 수정
         category.updateName(request.getName());
 
         return toResponse(category);
@@ -94,8 +101,10 @@ public class CategoryService {
     // 카테고리 삭제
     @Transactional
     public void deleteCategory(UUID categoryId) {
+
         Category category = getCategoryEntity(categoryId);
 
+        // 소프트 삭제 처리
         category.softDelete(null);
     }
 
@@ -112,7 +121,6 @@ public class CategoryService {
                 .build();
     }
 
-
     // 카테고리 이름 기준 중복 조회 (존재 여부 확인)
     private void validateDuplicateCategory(String name) {
         if (categoryRepository.existsByName(name)) {
@@ -120,10 +128,19 @@ public class CategoryService {
         }
     }
 
-
-    // 카테고리 조회
+    // 카테고리 엔티티 조회
     private Category getCategoryEntity(UUID categoryId) {
         return categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new BaseException(CategoryErrorCode.CATEGORY_NOT_FOUND));
+    }
+
+    // 카테고리 목록 조회 및 검색 처리
+    private Page<Category> findCategories(String keyword, Pageable pageable) {
+        // keyword가 없으면 전체 조회
+        if (keyword == null || keyword.isBlank()) {
+            return categoryRepository.findAll(pageable);
+        }
+
+        return categoryRepository.findByNameContainingIgnoreCase(keyword, pageable);
     }
 }
