@@ -2,10 +2,7 @@ package com.sparta.todayeats.order.application.service;
 
 import com.sparta.todayeats.address.domain.entity.AddressEntity;
 import com.sparta.todayeats.address.domain.repository.AddressRepository;
-import com.sparta.todayeats.global.exception.AddressErrorCode;
-import com.sparta.todayeats.global.exception.BaseException;
-import com.sparta.todayeats.global.exception.MenuErrorCode;
-import com.sparta.todayeats.global.exception.StoreErrorCode;
+import com.sparta.todayeats.global.exception.*;
 import com.sparta.todayeats.menu.domain.entity.MenuEntity;
 import com.sparta.todayeats.menu.domain.repository.MenuRepository;
 import com.sparta.todayeats.order.domain.entity.OrderEntity;
@@ -14,6 +11,7 @@ import com.sparta.todayeats.order.domain.entity.OrderType;
 import com.sparta.todayeats.order.domain.repository.OrderRepository;
 import com.sparta.todayeats.order.presentation.dto.request.CreateOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.response.CreateOrderResponse;
+import com.sparta.todayeats.order.presentation.dto.response.OrderDetailResponse;
 import com.sparta.todayeats.order.presentation.dto.response.OrderSummaryResponse;
 import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import com.sparta.todayeats.store.domain.repository.StoreRepository;
@@ -62,6 +60,7 @@ class OrderServiceV1Test {
     private final UUID storeId   = UUID.randomUUID();
     private final UUID addressId = UUID.randomUUID();
     private final UUID menuId    = UUID.randomUUID();
+    private final UUID orderId   = UUID.randomUUID();
 
     private CreateOrderRequest createOrderRequest() {
         return new CreateOrderRequest(
@@ -74,7 +73,7 @@ class OrderServiceV1Test {
     }
 
     // ========================================================
-    // createOrder() 테스트
+    // 🎥 test(#9): 주문 생성 단위 테스트
     // ========================================================
 
     @Nested
@@ -150,6 +149,10 @@ class OrderServiceV1Test {
                             .isEqualTo(MenuErrorCode.MENU_NOT_FOUND));
         }
     }
+
+    // ========================================================
+    // 🎥 test(#9): 주문 목록 조회 단위 테스트
+    // ========================================================
 
     @Nested
     @DisplayName("getOrders()")
@@ -234,6 +237,60 @@ class OrderServiceV1Test {
             assertThat(result.getContent()).isEmpty();
             // userId로 조회하면 otherUserId 주문은 나오지 않음
             verify(orderRepository, never()).findAllByCustomerId(eq(userId), any(Pageable.class));
+        }
+    }
+
+    // ========================================================
+    // 🎥 test(#9): 주문 단건 조회 단위 테스트
+    // ========================================================
+
+    @Nested
+    @DisplayName("getOrder()")
+    class GetOrder {
+
+        @Test
+        @DisplayName("성공 - 주문 단건 조회")
+        void success() {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when
+            OrderDetailResponse result = orderService.getOrder(orderId);
+
+            // then
+            assertThat(result.status()).isEqualTo(OrderStatus.PENDING);
+            assertThat(result.store().storeName()).isEqualTo("BBQ 광화문점");
+            assertThat(result.totalPrice()).isEqualTo(38000L);
+            assertThat(result.delivery().address()).isEqualTo("서울 광화문 100번지");
+        }
+
+        @Test
+        @DisplayName("실패 - 주문 없음 (존재하지 않거나 삭제된 주문)")
+        void fail_order_not_found() {
+            // given
+            // 존재하지 않는 주문 또는 soft delete된 주문 모두
+            // findActiveById에서 Optional.empty() 반환
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> orderService.getOrder(orderId))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
         }
     }
 }
