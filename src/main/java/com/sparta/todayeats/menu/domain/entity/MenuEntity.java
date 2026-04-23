@@ -19,4 +19,7 @@ public class MenuEntity extends BaseEntity {
 
     @Column(name = "price")
     private Integer price;
+
+    @Column(name = "is_hidden")
+    private Boolean isHidden;   // 숨김 여부
 }

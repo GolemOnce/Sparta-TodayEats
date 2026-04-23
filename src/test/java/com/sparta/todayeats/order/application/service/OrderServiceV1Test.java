@@ -148,6 +148,25 @@ class OrderServiceV1Test {
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(MenuErrorCode.MENU_NOT_FOUND));
         }
+
+        @Test
+        @DisplayName("실패 - 숨김 처리된 메뉴 주문 불가")
+        void fail_hidden_menu() {
+            // given
+            given(storeRepository.findActiveById(storeId))
+                    .willReturn(Optional.of(mock(StoreEntity.class)));
+            given(addressRepository.findActiveById(addressId))
+                    .willReturn(Optional.of(mock(AddressEntity.class)));
+            // is_hidden = true인 메뉴는 findActiveById에서 제외되어 empty 반환
+            given(menuRepository.findActiveById(menuId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> orderService.createOrder(createOrderRequest(), userId))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(MenuErrorCode.MENU_NOT_FOUND));
+        }
     }
 
     // ========================================================
