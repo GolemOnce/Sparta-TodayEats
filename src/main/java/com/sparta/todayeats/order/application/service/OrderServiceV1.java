@@ -8,6 +8,7 @@ import com.sparta.todayeats.menu.domain.repository.MenuRepository;
 import com.sparta.todayeats.order.domain.entity.OrderEntity;
 import com.sparta.todayeats.order.domain.entity.OrderItemEntity;
 import com.sparta.todayeats.order.domain.repository.OrderRepository;
+import com.sparta.todayeats.order.presentation.dto.request.CancelOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.request.CreateOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderStatusRequest;
@@ -247,7 +248,7 @@ public class OrderServiceV1 {
      * - CUSTOMER 본인 또는 MASTER만 가능
      */
     @Transactional
-    public CancelOrderResponse cancelOrder(UUID orderId
+    public CancelOrderResponse cancelOrder(UUID orderId, CancelOrderRequest request
                                            //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
     ) {
         OrderEntity order = findActiveOrder(orderId);
@@ -260,7 +261,7 @@ public class OrderServiceV1 {
         //     throw new BaseException(CommonErrorCode.FORBIDDEN);
         // }
 
-        order.cancelByCustomer();
+        order.cancelByCustomer(request != null ? request.cancelReason() : null);
 
         log.info("주문 취소: orderId={}", orderId);
         return CancelOrderResponse.from(order);

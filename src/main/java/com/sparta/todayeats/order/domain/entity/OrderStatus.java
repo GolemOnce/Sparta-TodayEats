@@ -14,7 +14,8 @@ public enum OrderStatus {
     DELIVERING, // 배송수령 (OWNER)
     DELIVERED,  // 배송완료 (OWNER)
     COMPLETED,  // 주문완료 (OWNER)
-    CANCELED;   // 취소
+    CANCELED,   // 취소 (CUSTOMER/MASTER)
+    REJECTED;   // 거절 (OWNER)
 
     /**
      * 허용된 상태 전이 규칙표
@@ -27,9 +28,10 @@ public enum OrderStatus {
      * DELIVERED  → COMPLETED 만 가능
      * COMPLETED  → 종료 상태 (이동 불가)
      * CANCELED   → 종료 상태 (이동 불가)
+     * REJECTED   → 종료 상태 (이동 불가)
      */
     private static final Map<OrderStatus, List<OrderStatus>> ALLOWED_TRANSITIONS = Map.of(
-            PENDING,    List.of(ACCEPTED, CANCELED),
+            PENDING,    List.of(ACCEPTED, CANCELED, REJECTED),
             ACCEPTED,   List.of(COOKING),
             COOKING,    List.of(DELIVERING),
             DELIVERING, List.of(DELIVERED),
@@ -42,6 +44,7 @@ public enum OrderStatus {
      * 허용되지 않은 전이면 BaseException(INVALID_ORDER_STATUS) 발생
      * 예시)
      * PENDING → ACCEPTED  ✅ 허용
+     * PENDING → REJECTED  ✅ 허용
      * PENDING → COMPLETED ❌ 차단
      * COMPLETED → PENDING ❌ 차단 (역방향 불가)
      */

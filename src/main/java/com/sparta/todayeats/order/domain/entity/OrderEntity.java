@@ -3,6 +3,7 @@ package com.sparta.todayeats.order.domain.entity;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.OrderErrorCode;
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
+import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -33,6 +34,10 @@ public class OrderEntity extends BaseEntity {
     @Column(name = "store_id", nullable = false)
     private UUID storeId;                       // FK → p_store.store_id
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id", insertable = false, updatable = false)
+    private StoreEntity store;                  // JPQL JOIN용 (컬럼 중복 방지를 위해 insertable/updatable = false)
+
     @Column(name = "address_id", nullable = false)
     private UUID addressId;                     // FK → p_address.address_id
 
@@ -57,6 +62,9 @@ public class OrderEntity extends BaseEntity {
 
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
+
+    @Column(name = "cancel_reason", length = 255)
+    private String cancelReason;    // 취소 사유 (선택)
 
     @Column(name = "total_price", nullable = false)
     private Long totalPrice;
@@ -136,7 +144,7 @@ public class OrderEntity extends BaseEntity {
      * TODO: JWT 완성 후 주석 해제
      * - CUSTOMER 본인 또는 MASTER만 가능
      */
-    public void cancelByCustomer() {
+    public void cancelByCustomer(String cancelReason) {
         if (this.status != OrderStatus.PENDING) {
             throw new BaseException(OrderErrorCode.ORDER_CANCEL_NOT_ALLOWED);
         }
@@ -145,6 +153,7 @@ public class OrderEntity extends BaseEntity {
             throw new BaseException(OrderErrorCode.CANCEL_TIME_EXCEEDED);
         }
         this.status = OrderStatus.CANCELED;
+        this.cancelReason = cancelReason;  // null이어도 됨 (선택사항)
 
         // TODO: JWT 완성 후 주석 해제
         // if (role != UserRole.CUSTOMER && role != UserRole.MASTER) {
