@@ -11,8 +11,3 @@ spring:
   data:
     redis:
       port: 6379
-
-jwt:
-  secret-key: test-secret-key
-  access-expiration: 1800000 # 30분 (30 * 60 * 1000)
-  refresh-expiration: 604800000 # 7일 (7 * 24 * 60 * 60 * 1000)
