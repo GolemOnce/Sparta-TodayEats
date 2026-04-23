@@ -83,6 +83,13 @@ public class AreaService {
                 .build();
     }
 
+   // 운영 지역 삭제
+    @Transactional
+    public void deleteArea(UUID areaId) {
+        Area area = getAreaEntity(areaId);
+        area.softDelete(null);
+    }
+
 
     // 운영 지역 상세 조회
     public AreaResponse getArea(UUID areaId) {
