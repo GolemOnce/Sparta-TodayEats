@@ -135,4 +135,21 @@ public class OrderControllerV1 {
         UpdateOrderStatusResponse data = orderService.updateOrderStatus(orderId, request);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
+
+    // ========================================================
+    // PATCH /api/v1/orders/{orderId}/cancel
+    // TODO: JWT 완성 후 주석 해제
+    // - CUSTOMER 본인 또는 MASTER만 가능
+    // ========================================================
+
+    @PatchMapping("/{orderId}/cancel")
+    public ResponseEntity<ApiResponse<CancelOrderResponse>> cancelOrder(
+            @PathVariable UUID orderId
+            //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
+    ) {
+        // TODO: JWT 완성 후 아래로 교체
+        // CancelOrderResponse data = orderService.cancelOrder(orderId, userDetails.getUserId(), userDetails.getRole());
+        CancelOrderResponse data = orderService.cancelOrder(orderId);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
 }
