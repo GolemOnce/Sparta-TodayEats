@@ -3,6 +3,7 @@ package com.sparta.todayeats.order.presentation.controller;
 import com.sparta.todayeats.order.application.service.OrderServiceV1;
 import com.sparta.todayeats.order.presentation.dto.request.CreateOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.response.CreateOrderResponse;
+import com.sparta.todayeats.order.presentation.dto.response.OrderDetailResponse;
 import com.sparta.todayeats.order.presentation.dto.response.OrderSummaryResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,14 +31,18 @@ public class OrderControllerV1 {
 
     // ========================================================
     // POST /api/v1/orders
-    // TODO: CUSTOMER 권한 체크 추가
+    // TODO: JWT 완성 후 주석 해제
+    // - CUSTOMER만 주문 생성 가능
     // ========================================================
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> createOrder(
             @Valid @RequestBody CreateOrderRequest request,
-            @AuthenticationPrincipal UUID userId) {
-
+            @AuthenticationPrincipal UUID userId
+            //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
+    ) {
+        // TODO: JWT 완성 후 아래로 교체
+        // CreateOrderResponse data = orderService.createOrder(request, userDetails.getUserId(), userDetails.getRole());
         CreateOrderResponse data = orderService.createOrder(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(success(HttpStatus.CREATED.value(), "CREATED", data));
@@ -45,17 +50,42 @@ public class OrderControllerV1 {
 
     // ========================================================
     // GET /api/v1/orders
-    // TODO: CUSTOMER 권한 체크 추가
+    // TODO: JWT 완성 후 주석 해제
+    // - CUSTOMER: 본인 주문만 조회
+    // - OWNER: 본인 가게 주문만 조회
+    // - MANAGER/MASTER: 전체 조회
     // ========================================================
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getOrders(
             @AuthenticationPrincipal UUID userId,
+            //@AuthenticationPrincipal UserDetailsImpl userDetails,  // TODO: JWT 완성 후 주석 해제
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable) {
 
+        // TODO: JWT 완성 후 아래로 교체
+        // Page<OrderSummaryResponse> page = orderService.getOrders(userDetails.getUserId(), pageable, userDetails.getRole());
         Page<OrderSummaryResponse> page = orderService.getOrders(userId, pageable);
         return ResponseEntity.ok(successPage(page, pageable));
+    }
+
+    // ========================================================
+    // GET /api/v1/orders/{orderId}
+    // TODO: JWT 완성 후 주석 해제
+    // - CUSTOMER: 본인 주문만 조회
+    // - OWNER: 본인 가게 주문만 조회
+    // - MANAGER/MASTER: 전체 조회
+    // ========================================================
+
+    @GetMapping("/{orderId}")
+    public ResponseEntity<Map<String, Object>> getOrder(
+            @PathVariable UUID orderId
+            //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
+    ) {
+        // TODO: JWT 완성 후 아래로 교체
+        // OrderDetailResponse data = orderService.getOrder(orderId, userDetails.getUserId(), userDetails.getRole());
+        OrderDetailResponse data = orderService.getOrder(orderId);
+        return ResponseEntity.ok(success(HttpStatus.OK.value(), "SUCCESS", data));
     }
 
     // ─── 공통 응답 빌더 ───────────────────────────────────────────────────
