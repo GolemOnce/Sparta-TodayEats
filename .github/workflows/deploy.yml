@@ -37,6 +37,10 @@ jobs:
           distribution: 'temurin'
 
       - name: Test
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/todayeats
+          SPRING_DATASOURCE_USERNAME: test
+          SPRING_DATASOURCE_PASSWORD: test
         run: ./gradlew test
 
   deploy:
