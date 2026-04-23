@@ -171,4 +171,21 @@ public class OrderControllerV1 {
         RejectOrderResponse data = orderService.rejectOrder(orderId, request);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
+
+    // ========================================================
+    // DELETE /api/v1/orders/{orderId}
+    // TODO: JWT 완성 후 주석 해제
+    // - MASTER만 삭제 가능
+    // ========================================================
+
+    @DeleteMapping("/{orderId}")
+    public ResponseEntity<Void> deleteOrder(
+            @PathVariable UUID orderId
+            //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
+    ) {
+        // TODO: JWT 완성 후 아래로 교체
+        // orderService.deleteOrder(orderId, userDetails.getUserId(), userDetails.getRole());
+        orderService.deleteOrder(orderId);
+        return ResponseEntity.noContent().build();
+    }
 }

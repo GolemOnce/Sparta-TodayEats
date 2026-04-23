@@ -264,7 +264,7 @@ public class OrderServiceV1 {
 
         order.cancelByCustomer(request != null ? request.cancelReason() : null);
 
-        // TODO: Payment 담당자 코드 완성 후 주석 해제
+        // TODO: Payment 코드 완성 후 주석 해제
         // 주문 취소 시 환불 처리 같이 처리 (트랜잭션 묶음)
         // paymentService.refund(orderId);
 
@@ -304,12 +304,43 @@ public class OrderServiceV1 {
 
         order.rejectByOwner(request != null ? request.rejectReason() : null);
 
-        // TODO: Payment 담당자 코드 완성 후 주석 해제
+        // TODO: Payment 코드 완성 후 주석 해제
         // 주문 거절 시 환불 처리 같이 처리 (트랜잭션 묶음)
         // paymentService.refund(orderId);
 
         log.info("주문 거절: orderId={}", orderId);
         return RejectOrderResponse.from(order);
+    }
+
+
+    // ========================================================
+    // feat: 주문 삭제 서비스 로직 추가
+    // ========================================================
+
+    /**
+     * 주문 삭제 (Soft delete)
+     * - MASTER만 가능
+     * TODO: JWT 완성 후 주석 해제
+     */
+    @Transactional
+    public void deleteOrder(UUID orderId
+                            //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
+    ) {
+        OrderEntity order = findActiveOrder(orderId);
+
+        // TODO: JWT 완성 후 주석 해제
+        // if (role != UserRole.MASTER) {
+        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
+        // }
+
+        // TODO: Payment 코드 완성 후 주석 해제
+        // 결제 완료 상태면 환불 처리
+        // paymentService.refundIfPaid(orderId);
+
+
+        order.delete(orderId);  // soft delete
+
+        log.info("주문 삭제: orderId={}", orderId);
     }
 
 
