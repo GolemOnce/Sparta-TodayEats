@@ -1,5 +1,7 @@
 package com.sparta.todayeats.global.infrastructure.config.security;
 
+import com.sparta.todayeats.global.exception.AuthErrorCode;
+import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtBuilder;
@@ -23,6 +25,11 @@ public class JwtTokenProvider {
     private final long accessTokenValidity;
     private final long refreshTokenValidity;
 
+    private static final String TOKEN_TYPE = "tokenType";
+    private static final String ROLE = "role";
+    private static final String ACCESS = "access";
+    private static final String REFRESH = "refresh";
+
     public JwtTokenProvider(
             @Value("${jwt.secret-key}") String secretKey,
             @Value("${jwt.access-expiration}") long accessTokenValidity,
@@ -36,16 +43,16 @@ public class JwtTokenProvider {
 
     // Access Token 생성
     public String createAccessToken(UUID userId, UserRoleEnum role) {
-        return createToken(userId, role, accessTokenValidity);
+        return createToken(userId, role, accessTokenValidity, ACCESS);
     }
 
     // Refresh Token 생성
     public String createRefreshToken(UUID userId) {
-        return createToken(userId, null, refreshTokenValidity);
+        return createToken(userId, null, refreshTokenValidity, REFRESH);
     }
 
     // Token 생성
-    private String createToken(UUID userId, UserRoleEnum role, long validity) {
+    private String createToken(UUID userId, UserRoleEnum role, long validity, String tokenType) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + validity);
 
@@ -53,10 +60,11 @@ public class JwtTokenProvider {
                 .subject(userId.toString())
                 .issuedAt(now)
                 .expiration(expiry)
+                .claim(TOKEN_TYPE, tokenType)
                 .signWith(key);
 
         if (role != null) {
-            builder.claim("role", role.getAuthority());
+            builder.claim(ROLE, role.getAuthority());
         }
 
         return builder.compact();
@@ -66,14 +74,22 @@ public class JwtTokenProvider {
     public Authentication getAuthentication(String token) {
         Claims claims = parseClaims(token);
 
-        String role = Optional.ofNullable(claims.get("role"))
+        if (!ACCESS.equals(claims.get(TOKEN_TYPE, String.class))) {
+            throw new BaseException(AuthErrorCode.INVALID_TOKEN);
+        }
+
+        String role = Optional.ofNullable(claims.get(ROLE))
                 .map(Object::toString)
                 .orElse(null);
 
         List<SimpleGrantedAuthority> authorities =
                 role != null ? List.of(new SimpleGrantedAuthority(role)) : List.of();
 
-        return new UsernamePasswordAuthenticationToken(getUserId(token), "", authorities);
+        return new UsernamePasswordAuthenticationToken(
+                UUID.fromString(claims.getSubject()),
+                null,
+                authorities
+        );
     }
 
     // Token 검증
