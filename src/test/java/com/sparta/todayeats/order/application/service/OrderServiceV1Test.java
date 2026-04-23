@@ -11,10 +11,8 @@ import com.sparta.todayeats.order.domain.entity.OrderType;
 import com.sparta.todayeats.order.domain.repository.OrderRepository;
 import com.sparta.todayeats.order.presentation.dto.request.CreateOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderRequest;
-import com.sparta.todayeats.order.presentation.dto.response.CreateOrderResponse;
-import com.sparta.todayeats.order.presentation.dto.response.OrderDetailResponse;
-import com.sparta.todayeats.order.presentation.dto.response.OrderSummaryResponse;
-import com.sparta.todayeats.order.presentation.dto.response.UpdateOrderResponse;
+import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderStatusRequest;
+import com.sparta.todayeats.order.presentation.dto.response.*;
 import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import com.sparta.todayeats.store.domain.repository.StoreRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -373,6 +371,140 @@ class OrderServiceV1Test {
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_UPDATE_NOT_ALLOWED));
+        }
+    }
+
+    // ========================================================
+    // 🎥 test(#9): 주문 상태 변경 단위 테스트
+    // ========================================================
+
+    @Nested
+    @DisplayName("updateOrderStatus()")
+    class UpdateOrderStatus {
+
+        @Test
+        @DisplayName("성공 - PENDING → ACCEPTED 상태 전이")
+        void success_pending_to_accepted() {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when
+            UpdateOrderStatusResponse result = orderService.updateOrderStatus(
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.ACCEPTED));
+
+            // then
+            assertThat(result.status()).isEqualTo(OrderStatus.ACCEPTED);
+        }
+
+        @Test
+        @DisplayName("성공 - ACCEPTED → COOKING 상태 전이")
+        void success_accepted_to_cooking() {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            order.changeStatus(OrderStatus.ACCEPTED);
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when
+            UpdateOrderStatusResponse result = orderService.updateOrderStatus(
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.COOKING));
+
+            // then
+            assertThat(result.status()).isEqualTo(OrderStatus.COOKING);
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 주문")
+        void fail_order_not_found() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> orderService.updateOrderStatus(
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.ACCEPTED)))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
+        }
+
+        @Test
+        @DisplayName("실패 - 허용되지 않는 상태 전이 (PENDING → COMPLETED)")
+        void fail_invalid_transition() {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.updateOrderStatus(
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.COMPLETED)))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.INVALID_ORDER_STATUS));
+        }
+
+        @Test
+        @DisplayName("실패 - 역방향 상태 전이 (ACCEPTED → PENDING)")
+        void fail_reverse_transition() {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            order.changeStatus(OrderStatus.ACCEPTED);
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.updateOrderStatus(
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.PENDING)))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.INVALID_ORDER_STATUS));
         }
     }
 }
