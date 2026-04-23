@@ -91,20 +91,50 @@ public class OrderEntity extends BaseEntity {
     }
 
     /**
+     * 요청사항 수정
+     * - PENDING 상태만 수정 가능
+     * TODO: JWT 완성 후 주석 해제
+     * - CUSTOMER 본인만 수정 가능
+     */
+    public void updateNote(String note) {
+        if (this.status != OrderStatus.PENDING) {
+            throw new BaseException(OrderErrorCode.ORDER_UPDATE_NOT_ALLOWED);
+        }
+        this.note = note;
+
+        // TODO: JWT 완성 후 주석 해제
+        // if (!this.customerId.equals(userId)) {
+        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
+        // }
+    }
+
+    /**
      * 주문 상태 전이 (OWNER/MANAGER/MASTER 액션)
-     * TODO: 권한 체크 추가 (OWNER 본인 가게, MANAGER, MASTER만 가능)
      * OrderStatus.validateTransition()으로 허용된 전이만 가능
+     * TODO: JWT 완성 후 주석 해제
+     * - OWNER: 본인 가게 주문만 변경 가능
+     * - MANAGER/MASTER: 전체 변경 가능
      */
     public void changeStatus(OrderStatus nextStatus) {
         this.status.validateTransition(nextStatus);
         this.status = nextStatus;
+
+        // TODO: JWT 완성 후 주석 해제
+        // if (role == UserRole.OWNER) {
+        //     StoreEntity store = storeRepository.findActiveById(this.storeId)
+        //             .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
+        //     if (!store.getOwnerId().equals(userId)) {
+        //         throw new BaseException(CommonErrorCode.FORBIDDEN);
+        //     }
+        // }
     }
 
     /**
      * 주문 취소 (CUSTOMER 본인 / MASTER만 가능)
-     * TODO: 권한 체크 추가 (CUSTOMER 본인 또는 MASTER만 가능)
      * 조건 1: PENDING 상태여야 함
      * 조건 2: 주문 생성 후 5분 이내여야 함
+     * TODO: JWT 완성 후 주석 해제
+     * - CUSTOMER 본인 또는 MASTER만 가능
      */
     public void cancelByCustomer() {
         if (this.status != OrderStatus.PENDING) {
@@ -115,13 +145,28 @@ public class OrderEntity extends BaseEntity {
             throw new BaseException(OrderErrorCode.CANCEL_TIME_EXCEEDED);
         }
         this.status = OrderStatus.CANCELED;
+
+        // TODO: JWT 완성 후 주석 해제
+        // if (role != UserRole.CUSTOMER && role != UserRole.MASTER) {
+        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
+        // }
+        // if (role == UserRole.CUSTOMER && !this.customerId.equals(userId)) {
+        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
+        // }
     }
 
     /**
-     * Soft delete
+     * Soft delete (MASTER만 가능)
      * BaseEntity.softDelete(UUID) 사용
+     * TODO: JWT 완성 후 주석 해제
+     * - MASTER만 삭제 가능
      */
     public void delete(UUID userId) {
         this.softDelete(userId);
+
+        // TODO: JWT 완성 후 주석 해제
+        // if (role != UserRole.MASTER) {
+        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
+        // }
     }
 }
