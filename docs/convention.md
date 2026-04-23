@@ -165,10 +165,9 @@ class UserServiceTest {
 
 ### 1. 브랜치 전략
 
-* `main` : 운영(배포) 브랜치
-* `develop` : 개발 통합 브랜치
+* `main` : 운영(배포) 브랜치 (CI/CD 트리거)
+* `develop` : 개발 통합 브랜치 (CI 트리거)
 * `feature/#이슈번호-*` : 기능 개발 브랜치
-
     * 예: `feature/#5-login`, `feature/6-payment-api`
 * `fix/#이슈번호-*` : 버그 수정 브랜치
 * `refactor/#이슈번호-*` : 리팩토링 브랜치
