@@ -2,6 +2,13 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.13'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
+}
+
+jacocoTestReport {
+    reports {
+        html.required = true
+    }
 }
 
 group = 'com.sparta'
@@ -40,4 +47,6 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy jacocoTestReport
+
 }
