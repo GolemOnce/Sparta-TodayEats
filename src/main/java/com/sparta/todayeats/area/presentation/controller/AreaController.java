@@ -1,7 +1,6 @@
 package com.sparta.todayeats.area.presentation.controller;
 
 import com.sparta.todayeats.area.application.service.AreaService;
-import com.sparta.todayeats.area.domain.entity.Area;
 import com.sparta.todayeats.area.presentation.dto.AreaCreateRequest;
 import com.sparta.todayeats.area.presentation.dto.AreaCreateResponse;
 import com.sparta.todayeats.area.presentation.dto.AreaResponse;
@@ -10,7 +9,6 @@ import com.sparta.todayeats.category.presentation.dto.PageResponse;
 import com.sparta.todayeats.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -69,6 +67,17 @@ public class AreaController {
         AreaResponse response = areaService.updateArea(areaId, request);
 
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // TODO: 권한 처리(MASTER), Auditing (+ softDelete)
+    // 운영 지역 삭제
+    @DeleteMapping("/{areaId}")
+    public ResponseEntity<ApiResponse<Void>> deleteArea(@PathVariable UUID areaId) {
+
+        areaService.deleteArea(areaId);
+
+        return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                .body(ApiResponse.deleted(null));
     }
 
 
