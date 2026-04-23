@@ -9,10 +9,7 @@ import com.sparta.todayeats.order.domain.entity.OrderEntity;
 import com.sparta.todayeats.order.domain.entity.OrderStatus;
 import com.sparta.todayeats.order.domain.entity.OrderType;
 import com.sparta.todayeats.order.domain.repository.OrderRepository;
-import com.sparta.todayeats.order.presentation.dto.request.CancelOrderRequest;
-import com.sparta.todayeats.order.presentation.dto.request.CreateOrderRequest;
-import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderRequest;
-import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderStatusRequest;
+import com.sparta.todayeats.order.presentation.dto.request.*;
 import com.sparta.todayeats.order.presentation.dto.response.*;
 import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import com.sparta.todayeats.store.domain.repository.StoreRepository;
@@ -703,6 +700,113 @@ class OrderServiceV1Test {
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
+        }
+    }
+
+    // ========================================================
+    // 🎥 test(#9): 주문 거절 단위 테스트
+    // ========================================================
+
+    @Nested
+    @DisplayName("rejectOrder()")
+    class RejectOrder {
+
+        @Test
+        @DisplayName("성공 - 주문 거절 (사유 있음)")
+        void success_reject_with_reason() {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when
+            RejectOrderResponse result = orderService.rejectOrder(
+                    orderId, new RejectOrderRequest("재료 소진"));
+
+            // then
+            assertThat(result.status()).isEqualTo(OrderStatus.REJECTED);
+            assertThat(result.rejectReason()).isEqualTo("재료 소진");
+        }
+
+        @Test
+        @DisplayName("성공 - 주문 거절 (사유 없음)")
+        void success_reject_without_reason() {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when
+            RejectOrderResponse result = orderService.rejectOrder(orderId, null);
+
+            // then
+            assertThat(result.status()).isEqualTo(OrderStatus.REJECTED);
+            assertThat(result.rejectReason()).isNull();
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 주문")
+        void fail_order_not_found() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> orderService.rejectOrder(
+                    orderId, new RejectOrderRequest("재료 소진")))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
+        }
+
+        @Test
+        @DisplayName("실패 - PENDING이 아닌 상태에서 거절 시도")
+        void fail_reject_non_pending_order() {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            order.changeStatus(OrderStatus.ACCEPTED);
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.rejectOrder(
+                    orderId, new RejectOrderRequest("재료 소진")))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.ORDER_REJECT_NOT_ALLOWED));
         }
     }
 }
