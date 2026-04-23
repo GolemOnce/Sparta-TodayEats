@@ -27,6 +27,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -524,6 +526,150 @@ class OrderServiceV1Test {
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.INVALID_ORDER_STATUS));
+        }
+    }
+
+    @Nested
+    @DisplayName("cancelOrder()")
+    class CancelOrder {
+
+        @Test
+        @DisplayName("성공 - 주문 후 5분 이내 취소")
+        void success_cancel_within_5_minutes() throws Exception {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            // 3분 전 생성된 주문 (5분 이내)
+            Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
+            field.setAccessible(true);
+            field.set(order, LocalDateTime.now().minusMinutes(3));
+
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when
+            CancelOrderResponse result = orderService.cancelOrder(orderId);
+
+            // then
+            assertThat(result.status()).isEqualTo(OrderStatus.CANCELED);
+        }
+
+        @Test
+        @DisplayName("실패 - 주문 후 5분 초과")
+        void fail_cancel_after_5_minutes() throws Exception {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            // 6분 전 생성된 주문 (5분 초과)
+            Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
+            field.setAccessible(true);
+            field.set(order, LocalDateTime.now().minusMinutes(6));
+
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.cancelOrder(orderId))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.CANCEL_TIME_EXCEEDED));
+        }
+
+        @Test
+        @DisplayName("실패 - PENDING이 아닌 상태에서 취소 시도")
+        void fail_cancel_non_pending_order() throws Exception {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
+            field.setAccessible(true);
+            field.set(order, LocalDateTime.now().minusMinutes(1));
+
+            order.changeStatus(OrderStatus.ACCEPTED); // ACCEPTED 상태로 변경
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.cancelOrder(orderId))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.ORDER_CANCEL_NOT_ALLOWED));
+        }
+
+        @Test
+        @DisplayName("실패 - 5분 이내지만 PENDING이 아닌 상태")
+        void fail_cancel_not_pending_within_5_minutes() throws Exception {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            // 3분 전 생성 (5분 이내)
+            Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
+            field.setAccessible(true);
+            field.set(order, LocalDateTime.now().minusMinutes(3));
+
+            order.changeStatus(OrderStatus.ACCEPTED);  // ACCEPTED 상태로 변경
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.cancelOrder(orderId))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.ORDER_CANCEL_NOT_ALLOWED));
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 주문")
+        void fail_order_not_found() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> orderService.cancelOrder(orderId))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
         }
     }
 }
