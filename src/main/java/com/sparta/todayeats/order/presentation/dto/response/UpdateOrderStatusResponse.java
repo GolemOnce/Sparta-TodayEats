@@ -6,20 +6,18 @@ import com.sparta.todayeats.order.domain.entity.OrderStatus;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public record UpdateOrderResponse(
+public record UpdateOrderStatusResponse(
         UUID orderId,               // 주문 고유 ID
-        OrderStatus status,         // 주문 상태
-        String note,                // 수정된 요청사항
+        OrderStatus status,         // 변경된 주문 상태
         LocalDateTime createdAt,    // 생성 일시 (JPA Auditing)
         UUID createdBy,             // 생성자 (JPA Auditing)
         LocalDateTime updatedAt,    // 수정 일시 (JPA Auditing)
         UUID updatedBy              // 수정자 (JPA Auditing)
 ) {
-    public static UpdateOrderResponse from(OrderEntity order) {
-        return new UpdateOrderResponse(
+    public static UpdateOrderStatusResponse from(OrderEntity order) {
+        return new UpdateOrderStatusResponse(
                 order.getOrderId(),
                 order.getStatus(),
-                order.getNote(),
                 order.getCreatedAt(),
                 order.getCreatedBy(),
                 order.getUpdatedAt(),
