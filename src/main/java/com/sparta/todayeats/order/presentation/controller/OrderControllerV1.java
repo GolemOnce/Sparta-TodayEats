@@ -5,10 +5,8 @@ import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.order.application.service.OrderServiceV1;
 import com.sparta.todayeats.order.presentation.dto.request.CreateOrderRequest;
 import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderRequest;
-import com.sparta.todayeats.order.presentation.dto.response.CreateOrderResponse;
-import com.sparta.todayeats.order.presentation.dto.response.OrderDetailResponse;
-import com.sparta.todayeats.order.presentation.dto.response.OrderSummaryResponse;
-import com.sparta.todayeats.order.presentation.dto.response.UpdateOrderResponse;
+import com.sparta.todayeats.order.presentation.dto.request.UpdateOrderStatusRequest;
+import com.sparta.todayeats.order.presentation.dto.response.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -115,6 +113,26 @@ public class OrderControllerV1 {
         // TODO: JWT 완성 후 아래로 교체
         // UpdateOrderResponse data = orderService.updateOrder(orderId, request, userDetails.getUserId(), userDetails.getRole());
         UpdateOrderResponse data = orderService.updateOrder(orderId, request);
+        return ResponseEntity.ok(ApiResponse.success(data));
+    }
+
+    // ========================================================
+    // PATCH /api/v1/orders/{orderId}/status
+    // TODO: JWT 완성 후 주석 해제
+    // - OWNER: 본인 가게 주문만 변경 가능
+    // - MANAGER/MASTER: 전체 변경 가능
+    // - CUSTOMER: 상태 변경 불가
+    // ========================================================
+
+    @PatchMapping("/{orderId}/status")
+    public ResponseEntity<ApiResponse<UpdateOrderStatusResponse>> updateOrderStatus(
+            @PathVariable UUID orderId,
+            @Valid @RequestBody UpdateOrderStatusRequest request
+            //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
+    ) {
+        // TODO: JWT 완성 후 아래로 교체
+        // UpdateOrderStatusResponse data = orderService.updateOrderStatus(orderId, request, userDetails.getUserId(), userDetails.getRole());
+        UpdateOrderStatusResponse data = orderService.updateOrderStatus(orderId, request);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 }
