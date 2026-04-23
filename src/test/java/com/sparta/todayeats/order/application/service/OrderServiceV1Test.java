@@ -809,4 +809,69 @@ class OrderServiceV1Test {
                             .isEqualTo(OrderErrorCode.ORDER_REJECT_NOT_ALLOWED));
         }
     }
+
+    // ========================================================
+    // 🎥 test(#9): 주문 삭제 단위 테스트
+    // ========================================================
+
+    @Nested
+    @DisplayName("deleteOrder()")
+    class DeleteOrder {
+
+        @Test
+        @DisplayName("성공 - 주문 soft delete")
+        void success() {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when
+            orderService.deleteOrder(orderId);
+
+            // then
+            assertThat(order.isDeleted()).isTrue();
+            assertThat(order.getDeletedAt()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("실패 - 존재하지 않는 주문")
+        void fail_order_not_found() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> orderService.deleteOrder(orderId))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
+        }
+
+        @Test
+        @DisplayName("실패 - 이미 삭제된 주문")
+        void fail_already_deleted() {
+            // given
+            // 이미 soft delete된 주문은 findActiveById에서 제외됨
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> orderService.deleteOrder(orderId))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
+        }
+    }
 }
