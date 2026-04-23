@@ -200,7 +200,7 @@ public class OrderServiceV1 {
     }
 
     // ========================================================
-    // ✨ feat: 주문 상태 변경 서비스 로직 추가
+    // feat: 주문 상태 변경 서비스 로직 추가
     // ========================================================
 
     /**
@@ -233,6 +233,37 @@ public class OrderServiceV1 {
 
         log.info("주문 상태 변경: orderId={}, status={}", orderId, request.status());
         return UpdateOrderStatusResponse.from(order);
+    }
+
+    // ========================================================
+    // feat: 주문 취소 서비스 로직 추가
+    // ========================================================
+
+    /**
+     * 주문 취소
+     * - PENDING 상태에서 5분 이내만 가능
+     * - status = CANCELED 로 변경 (soft delete 안 함 → 목록에 보임)
+     * TODO: JWT 완성 후 주석 해제
+     * - CUSTOMER 본인 또는 MASTER만 가능
+     */
+    @Transactional
+    public CancelOrderResponse cancelOrder(UUID orderId
+                                           //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
+    ) {
+        OrderEntity order = findActiveOrder(orderId);
+
+        // TODO: JWT 완성 후 주석 해제
+        // if (role != UserRole.CUSTOMER && role != UserRole.MASTER) {
+        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
+        // }
+        // if (role == UserRole.CUSTOMER && !order.getCustomerId().equals(userId)) {
+        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
+        // }
+
+        order.cancelByCustomer();
+
+        log.info("주문 취소: orderId={}", orderId);
+        return CancelOrderResponse.from(order);
     }
 
 
