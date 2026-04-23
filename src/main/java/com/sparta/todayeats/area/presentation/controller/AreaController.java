@@ -17,7 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/areas")
@@ -46,6 +46,16 @@ public class AreaController {
             Pageable pageable) {
 
         PageResponse<AreaResponse> response = areaService.getAreas(keyword, pageable);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // TODO: Auditing
+    // 운영 지역 상세 조회
+    @GetMapping("/{areaId}")
+    public ResponseEntity<ApiResponse<AreaResponse>> getArea(@PathVariable UUID areaId) {
+
+        AreaResponse response = areaService.getArea(areaId);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }

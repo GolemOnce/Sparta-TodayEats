@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 
 @Service
@@ -82,6 +83,15 @@ public class AreaService {
     }
 
 
+    // 운영 지역 상세 조회
+    public AreaResponse getArea(UUID areaId) {
+        Area area = getAreaEntity(areaId);
+        return toResponse(area);
+    }
+
+
+
+
     // 운영지역 목록 조회 및 검색 처리
     private Page<Area> findAreas(String keyword, Pageable pageable) {
         if (keyword == null || keyword.isBlank()) {
@@ -96,7 +106,6 @@ public class AreaService {
             throw new BaseException(AreaErrorCode.AREA_ALREADY_EXISTS);
         }
     }
-
 
     // Area 엔티티 → 목록 응답 DTO 변환
     private AreaResponse toResponse(Area area) {
@@ -122,6 +131,12 @@ public class AreaService {
         if (normalized.isBlank()) throw new BaseException(AreaErrorCode.INVALID_AREA_NAME);
 
         return normalized;
+    }
+
+    // 운영 지역 엔티티 조회
+    private Area getAreaEntity(UUID areaId) {
+        return areaRepository.findById(areaId)
+                .orElseThrow(() -> new BaseException(AreaErrorCode.AREA_NOT_FOUND));
     }
 
 }
