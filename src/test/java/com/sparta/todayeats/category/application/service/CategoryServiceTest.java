@@ -36,12 +36,11 @@ class CategoryServiceTest {
 
     // 카테고리 생성
     @Nested
-    @DisplayName("createCategory()")
+    @DisplayName("카테고리 생성")
     class CreateCategory {
 
         @Test
-        @DisplayName("성공 - 카테고리 생성")
-        void success() {
+        void 카테고리_생성_성공() {
             // given
             CategoryCreateRequest request = new CategoryCreateRequest("한식");
 
@@ -66,8 +65,7 @@ class CategoryServiceTest {
         }
 
         @Test
-        @DisplayName("실패 - 중복 카테고리")
-        void fail_duplicate() {
+        void 카테고리_이름이_중복이면_예외발생() {
             // given
             CategoryCreateRequest request = new CategoryCreateRequest("한식");
 
@@ -81,14 +79,13 @@ class CategoryServiceTest {
         }
     }
 
-    // 카테고리 조회
+    // 카테고리 목록 조회
     @Nested
-    @DisplayName("getCategories()")
+    @DisplayName("카테고리 목록 조회")
     class GetCategories {
 
         @Test
-        @DisplayName("성공 - 전체 조회")
-        void success_all() {
+        void 카테고리_전체조회_성공() {
             // given
             Pageable pageable = PageRequest.of(0, 10);
 
@@ -116,8 +113,7 @@ class CategoryServiceTest {
         }
 
         @Test
-        @DisplayName("성공 - 검색 조회")
-        void success_search() {
+        void 카테고리_이름으로_검색조회_성공() {
             // given
             Pageable pageable = PageRequest.of(0, 10);
 
@@ -145,14 +141,13 @@ class CategoryServiceTest {
         }
     }
 
-    // 카테고리 상세 조회
+    // 카테고리 단건 조회
     @Nested
-    @DisplayName("getCategory()")
+    @DisplayName("카테고리 단건 조회")
     class GetCategory {
 
         @Test
-        @DisplayName("성공 - 단건 조회")
-        void success() {
+        void 카테고리_단건조회_성공() {
             // given
             UUID id = UUID.randomUUID();
 
@@ -172,8 +167,7 @@ class CategoryServiceTest {
         }
 
         @Test
-        @DisplayName("실패 - 카테고리 없음")
-        void fail_not_found() {
+        void 카테고리가_존재하지_않으면_예외발생() {
             // given
             UUID id = UUID.randomUUID();
 
@@ -189,12 +183,11 @@ class CategoryServiceTest {
 
     // 카테고리 수정
     @Nested
-    @DisplayName("updateCategory()")
+    @DisplayName("카테고리 수정")
     class UpdateCategory {
 
         @Test
-        @DisplayName("성공 - 카테고리 수정")
-        void success() {
+        void 카테고리_수정_성공() {
             // given
             UUID id = UUID.randomUUID();
 
@@ -218,8 +211,7 @@ class CategoryServiceTest {
         }
 
         @Test
-        @DisplayName("실패 - 카테고리 없음")
-        void fail_not_found() {
+        void 카테고리_수정시_존재하지_않으면_예외발생() {
             // given
             UUID id = UUID.randomUUID();
 
@@ -238,12 +230,11 @@ class CategoryServiceTest {
 
     // 카테고리 삭제
     @Nested
-    @DisplayName("deleteCategory()")
+    @DisplayName("카테고리 삭제")
     class DeleteCategory {
 
         @Test
-        @DisplayName("성공 - 카테고리 삭제")
-        void success() {
+        void 카테고리_삭제_성공() {
             // given
             UUID id = UUID.randomUUID();
 
@@ -263,8 +254,7 @@ class CategoryServiceTest {
         }
 
         @Test
-        @DisplayName("실패 - 카테고리 없음")
-        void fail_not_found() {
+        void 카테고리_삭제시_존재하지_않으면_예외발생() {
             // given
             UUID id = UUID.randomUUID();
 
