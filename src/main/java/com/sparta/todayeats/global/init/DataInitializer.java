@@ -17,7 +17,7 @@ public class DataInitializer implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        if (areaRepository.existsByName("광화문")) return; // 이미 있으면 스킵
+        if (areaRepository.existsByNameIgnoreCase("광화문")) return; // 이미 있으면 스킵
 
         areaRepository.save(Area.builder()
                 .name("광화문")
