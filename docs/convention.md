@@ -214,11 +214,24 @@ class UserServiceTest {
 ### 4. Pull Request 규칙
 
 * 제목: `[타입] 작업 내용`
-
     * 예: `[feat] 로그인 API 구현`
+* 내용: 
 * 최소 1명 이상 리뷰 후 merge
 * `rebase merge` 사용
 * 가능하면 작은 단위로 PR 생성
+
+---
+
+### 5. Pull 규칙
+* pull시 rebase merge
+```bash
+// 기본 설정 변경
+git config --global pull.rebase true
+
+// 혹은 --rebase 옵션 추가
+git pull --rebase origin <브랜치명>
+```
+
 
 ---
 
