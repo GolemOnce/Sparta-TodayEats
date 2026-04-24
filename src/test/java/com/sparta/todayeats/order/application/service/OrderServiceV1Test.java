@@ -178,7 +178,7 @@ class OrderServiceV1Test {
     class GetOrders {
 
         @Test
-        @DisplayName("성공 - 본인 주문 목록 조회")
+        @DisplayName("성공 - 전체 주문 목록 조회 (검색 조건 없음)")
         void success() {
             // given
             OrderEntity order = OrderEntity.builder()
@@ -194,11 +194,12 @@ class OrderServiceV1Test {
                     .build();
 
             Page<OrderEntity> page = new PageImpl<>(List.of(order));
-            given(orderRepository.findAllByCustomerId(eq(userId), any(Pageable.class)))
+            given(orderRepository.searchOrders(eq(userId), isNull(), isNull(), any(Pageable.class)))
                     .willReturn(page);
 
             // when
-            Page<OrderSummaryResponse> result = orderService.getOrders(userId, PageRequest.of(0, 10));
+            Page<OrderSummaryResponse> result = orderService.getOrders(
+                    userId, null, null, PageRequest.of(0, 10));
 
             // then
             assertThat(result.getContent()).hasSize(1);
@@ -208,15 +209,104 @@ class OrderServiceV1Test {
         }
 
         @Test
+        @DisplayName("성공 - 상태 조건으로 검색")
+        void success_search_by_status() {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            Page<OrderEntity> page = new PageImpl<>(List.of(order));
+            given(orderRepository.searchOrders(eq(userId), eq(OrderStatus.PENDING), isNull(), any(Pageable.class)))
+                    .willReturn(page);
+
+            // when
+            Page<OrderSummaryResponse> result = orderService.getOrders(
+                    userId, OrderStatus.PENDING, null, PageRequest.of(0, 10));
+
+            // then
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).status()).isEqualTo(OrderStatus.PENDING);
+        }
+
+        @Test
+        @DisplayName("성공 - 가게명 조건으로 검색")
+        void success_search_by_store_name() {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            Page<OrderEntity> page = new PageImpl<>(List.of(order));
+            given(orderRepository.searchOrders(eq(userId), isNull(), eq("BBQ"), any(Pageable.class)))
+                    .willReturn(page);
+
+            // when
+            Page<OrderSummaryResponse> result = orderService.getOrders(
+                    userId, null, "BBQ", PageRequest.of(0, 10));
+
+            // then
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).storeName()).isEqualTo("BBQ 광화문점");
+        }
+
+        @Test
+        @DisplayName("성공 - 상태 + 가게명 동시 검색")
+        void success_search_by_status_and_store_name() {
+            // given
+            OrderEntity order = OrderEntity.builder()
+                    .customerId(userId)
+                    .storeId(storeId)
+                    .addressId(addressId)
+                    .storeName("BBQ 광화문점")
+                    .deliveryAddress("서울 광화문 100번지")
+                    .deliveryDetail("101호")
+                    .orderType(OrderType.ONLINE)
+                    .note("문 앞에 놔주세요")
+                    .totalPrice(38000L)
+                    .build();
+
+            Page<OrderEntity> page = new PageImpl<>(List.of(order));
+            given(orderRepository.searchOrders(eq(userId), eq(OrderStatus.PENDING), eq("BBQ"), any(Pageable.class)))
+                    .willReturn(page);
+
+            // when
+            Page<OrderSummaryResponse> result = orderService.getOrders(
+                    userId, OrderStatus.PENDING, "BBQ", PageRequest.of(0, 10));
+
+            // then
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).status()).isEqualTo(OrderStatus.PENDING);
+            assertThat(result.getContent().get(0).storeName()).isEqualTo("BBQ 광화문점");
+        }
+
+        @Test
         @DisplayName("성공 - 주문 없을 때 빈 목록 반환")
         void success_empty() {
             // given
             Page<OrderEntity> emptyPage = new PageImpl<>(List.of());
-            given(orderRepository.findAllByCustomerId(eq(userId), any(Pageable.class)))
+            given(orderRepository.searchOrders(eq(userId), isNull(), isNull(), any(Pageable.class)))
                     .willReturn(emptyPage);
 
             // when
-            Page<OrderSummaryResponse> result = orderService.getOrders(userId, PageRequest.of(0, 10));
+            Page<OrderSummaryResponse> result = orderService.getOrders(
+                    userId, null, null, PageRequest.of(0, 10));
 
             // then
             assertThat(result.getContent()).isEmpty();
@@ -226,18 +316,17 @@ class OrderServiceV1Test {
         @DisplayName("실패 - soft delete된 주문은 목록에 포함되지 않음")
         void fail_deleted_order_not_included() {
             // given
-            // soft delete된 주문은 Repository 쿼리에서 이미 제외됨
-            // deletedAt IS NULL 조건으로 필터링
             Page<OrderEntity> emptyPage = new PageImpl<>(List.of());
-            given(orderRepository.findAllByCustomerId(eq(userId), any(Pageable.class)))
+            given(orderRepository.searchOrders(eq(userId), isNull(), isNull(), any(Pageable.class)))
                     .willReturn(emptyPage);
 
             // when
-            Page<OrderSummaryResponse> result = orderService.getOrders(userId, PageRequest.of(0, 10));
+            Page<OrderSummaryResponse> result = orderService.getOrders(
+                    userId, null, null, PageRequest.of(0, 10));
 
             // then
             assertThat(result.getContent()).isEmpty();
-            verify(orderRepository).findAllByCustomerId(eq(userId), any(Pageable.class));
+            verify(orderRepository).searchOrders(eq(userId), isNull(), isNull(), any(Pageable.class));
         }
 
         @Test
@@ -246,16 +335,16 @@ class OrderServiceV1Test {
             // given
             UUID otherUserId = UUID.randomUUID();
             Page<OrderEntity> emptyPage = new PageImpl<>(List.of());
-            given(orderRepository.findAllByCustomerId(eq(otherUserId), any(Pageable.class)))
+            given(orderRepository.searchOrders(eq(otherUserId), isNull(), isNull(), any(Pageable.class)))
                     .willReturn(emptyPage);
 
             // when
-            Page<OrderSummaryResponse> result = orderService.getOrders(otherUserId, PageRequest.of(0, 10));
+            Page<OrderSummaryResponse> result = orderService.getOrders(
+                    otherUserId, null, null, PageRequest.of(0, 10));
 
             // then
             assertThat(result.getContent()).isEmpty();
-            // userId로 조회하면 otherUserId 주문은 나오지 않음
-            verify(orderRepository, never()).findAllByCustomerId(eq(userId), any(Pageable.class));
+            verify(orderRepository, never()).searchOrders(eq(userId), isNull(), isNull(), any(Pageable.class));
         }
     }
 
