@@ -6,6 +6,7 @@ import com.sparta.todayeats.auth.presentation.dto.response.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -37,5 +38,11 @@ public class AuthControllerV1 {
     @PostMapping("/reissue")
     public ResponseEntity<TokenResponse> reissue(@Valid @RequestBody RefreshTokenRequest request) {
         return ResponseEntity.ok(authServiceV1.reissue(request.getRefreshToken()));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(Authentication authentication) {
+        authServiceV1.logout(authentication);
+        return ResponseEntity.noContent().build();
     }
 }
