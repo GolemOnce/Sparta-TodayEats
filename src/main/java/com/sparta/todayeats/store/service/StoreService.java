@@ -4,7 +4,7 @@ import com.sparta.todayeats.area.domain.entity.Area;
 import com.sparta.todayeats.area.domain.repository.AreaRepository;
 import com.sparta.todayeats.category.domain.entity.Category;
 import com.sparta.todayeats.category.domain.repository.CategoryRepository;
-import com.sparta.todayeats.category.presentation.dto.PageResponse;
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.exception.*;
 import com.sparta.todayeats.store.dto.StoreCreateRequest;
 import com.sparta.todayeats.store.dto.StoreCreateResponse;

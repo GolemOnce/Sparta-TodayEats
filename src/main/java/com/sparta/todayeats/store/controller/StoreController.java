@@ -1,6 +1,6 @@
 package com.sparta.todayeats.store.controller;
 
-import com.sparta.todayeats.category.presentation.dto.PageResponse;
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.store.dto.StoreCreateResponse;
 import com.sparta.todayeats.store.dto.StoreResponse;

@@ -5,6 +5,7 @@ import com.sparta.todayeats.category.domain.repository.CategoryRepository;
 import com.sparta.todayeats.category.presentation.dto.*;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.CategoryErrorCode;
+import com.sparta.todayeats.global.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
