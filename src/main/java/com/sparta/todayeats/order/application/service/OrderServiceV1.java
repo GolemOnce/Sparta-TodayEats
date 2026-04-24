@@ -7,6 +7,7 @@ import com.sparta.todayeats.menu.domain.entity.MenuEntity;
 import com.sparta.todayeats.menu.domain.repository.MenuRepository;
 import com.sparta.todayeats.order.domain.entity.OrderEntity;
 import com.sparta.todayeats.order.domain.entity.OrderItemEntity;
+import com.sparta.todayeats.order.domain.entity.OrderStatus;
 import com.sparta.todayeats.order.domain.repository.OrderRepository;
 import com.sparta.todayeats.order.presentation.dto.request.*;
 import com.sparta.todayeats.order.presentation.dto.response.*;
@@ -118,23 +119,40 @@ public class OrderServiceV1 {
      * - OWNER: 본인 가게 주문만 조회
      * - MANAGER/MASTER: 전체 조회
      */
-    public Page<OrderSummaryResponse> getOrders(UUID userId, Pageable pageable
+    /**
+     * 주문 목록 조회
+     * - soft delete 제외
+     * - 페이지네이션 (기본 10개, createdAt DESC)
+     * - 검색 조건: status, storeName
+     * TODO: JWT 완성 후 주석 해제
+     * - CUSTOMER: 본인 주문만 조회
+     * - OWNER: 본인 가게 주문만 조회
+     * - MANAGER: 전체 조회 (soft delete 제외)
+     * - MASTER: 전체 조회 (삭제된 주문 포함)
+     */
+    public Page<OrderSummaryResponse> getOrders(UUID userId,
+                                                OrderStatus status,
+                                                String storeName,
+                                                Pageable pageable
                                                 //, UserRole role  // TODO: JWT 완성 후 주석 해제
     ) {
         // TODO: JWT 완성 후 주석 해제
         // if (role == UserRole.CUSTOMER) {
-        //     return orderRepository.findAllByCustomerId(userId, pageable)
+        //     return orderRepository.searchOrders(userId, status, storeName, pageable)
         //             .map(OrderSummaryResponse::from);
         // } else if (role == UserRole.OWNER) {
         //     return orderRepository.findAllByStoreOwnerId(userId, pageable)
         //             .map(OrderSummaryResponse::from);
+        // } else if (role == UserRole.MANAGER) {
+        //     return orderRepository.searchAllOrders(status, storeName, pageable)
+        //             .map(OrderSummaryResponse::from);
+        // } else if (role == UserRole.MASTER) {
+        //     return orderRepository.searchAllOrdersIncludeDeleted(status, storeName, pageable)
+        //             .map(OrderSummaryResponse::from);
         // }
-        // // MANAGER/MASTER 전체 조회
-        // return orderRepository.findAllActive(pageable)
-        //         .map(OrderSummaryResponse::from);
 
         // 임시: JWT 완성 전까지 customerId로 조회
-        return orderRepository.findAllByCustomerId(userId, pageable)
+        return orderRepository.searchOrders(userId, status, storeName, pageable)
                 .map(OrderSummaryResponse::from);
     }
 
@@ -342,7 +360,6 @@ public class OrderServiceV1 {
 
         log.info("주문 삭제: orderId={}", orderId);
     }
-
 
     /**
      * soft delete 제외 주문 단건 조회

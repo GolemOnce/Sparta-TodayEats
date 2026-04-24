@@ -1,8 +1,11 @@
 package com.sparta.todayeats.order.presentation.controller;
 
+import com.sparta.todayeats.global.exception.BaseException;
+import com.sparta.todayeats.global.exception.CommonErrorCode;
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.order.application.service.OrderServiceV1;
+import com.sparta.todayeats.order.domain.entity.OrderStatus;
 import com.sparta.todayeats.order.presentation.dto.request.*;
 import com.sparta.todayeats.order.presentation.dto.response.*;
 import jakarta.validation.Valid;
@@ -47,23 +50,30 @@ public class OrderControllerV1 {
     }
 
     // ========================================================
-    // GET /api/v1/orders
-    // TODO: JWT 완성 후 주석 해제
-    // - CUSTOMER: 본인 주문만 조회
-    // - OWNER: 본인 가게 주문만 조회
-    // - MANAGER/MASTER: 전체 조회
-    // ========================================================
+// GET /api/v1/orders
+// TODO: JWT 완성 후 주석 해제
+// - CUSTOMER: 본인 주문만 조회
+// - OWNER: 본인 가게 주문만 조회
+// - MANAGER: 전체 조회 (soft delete 제외)
+// - MASTER: 전체 조회 (삭제된 주문 포함)
+// ========================================================
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<OrderSummaryResponse>>> getOrders(
             @AuthenticationPrincipal UUID userId,
             //@AuthenticationPrincipal UserDetailsImpl userDetails,  // TODO: JWT 완성 후 주석 해제
+            @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) String storeName,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable) {
 
+        // 페이지 사이즈 10/30/50 제한
+        validatePageSize(pageable.getPageSize());
+
         // TODO: JWT 완성 후 아래로 교체
-        // Page<OrderSummaryResponse> page = orderService.getOrders(userDetails.getUserId(), pageable, userDetails.getRole());
-        Page<OrderSummaryResponse> page = orderService.getOrders(userId, pageable);
+        // Page<OrderSummaryResponse> page = orderService.getOrders(
+        //         userDetails.getUserId(), status, storeName, pageable, userDetails.getRole());
+        Page<OrderSummaryResponse> page = orderService.getOrders(userId, status, storeName, pageable);
         return ResponseEntity.ok(ApiResponse.success(
                 PageResponse.<OrderSummaryResponse>builder()
                         .content(page.getContent())
@@ -187,5 +197,11 @@ public class OrderControllerV1 {
         // orderService.deleteOrder(orderId, userDetails.getUserId(), userDetails.getRole());
         orderService.deleteOrder(orderId);
         return ResponseEntity.noContent().build();
+    }
+
+    private void validatePageSize(int pageSize) {
+        if (pageSize != 10 && pageSize != 30 && pageSize != 50) {
+            throw new BaseException(CommonErrorCode.INVALID_PAGE_SIZE);
+        }
     }
 }
