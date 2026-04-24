@@ -1,6 +1,7 @@
 package com.sparta.todayeats.order.domain.repository;
 
 import com.sparta.todayeats.order.domain.entity.OrderEntity;
+import com.sparta.todayeats.order.domain.entity.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -35,4 +36,37 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
     // 가게별 주문 목록 (soft delete 제외, 페이지네이션)
     @Query("SELECT o FROM OrderEntity o WHERE o.storeId = :storeId AND o.deletedAt IS NULL")
     Page<OrderEntity> findAllByStoreId(@Param("storeId") UUID storeId, Pageable pageable);
+
+    // CUSTOMER/OWNER: 검색 조건 + 페이지네이션 (soft delete 제외)
+    @Query("SELECT o FROM OrderEntity o " +
+            "WHERE o.customerId = :customerId " +
+            "AND (:status IS NULL OR o.status = :status) " +
+            "AND (:storeName IS NULL OR o.storeName LIKE %:storeName%) " +
+            "AND o.deletedAt IS NULL")
+    Page<OrderEntity> searchOrders(
+            @Param("customerId") UUID customerId,
+            @Param("status") OrderStatus status,
+            @Param("storeName") String storeName,
+            Pageable pageable);
+
+    // MANAGER/MASTER: 전체 검색 (soft delete 제외)
+    // TODO: JWT 완성 후 사용
+    @Query("SELECT o FROM OrderEntity o " +
+            "WHERE (:status IS NULL OR o.status = :status) " +
+            "AND (:storeName IS NULL OR o.storeName LIKE %:storeName%) " +
+            "AND o.deletedAt IS NULL")
+    Page<OrderEntity> searchAllOrders(
+            @Param("status") OrderStatus status,
+            @Param("storeName") String storeName,
+            Pageable pageable);
+
+    // MASTER 전용: 삭제된 주문 포함 전체 검색
+    // TODO: JWT 완성 후 사용
+    @Query("SELECT o FROM OrderEntity o " +
+            "WHERE (:status IS NULL OR o.status = :status) " +
+            "AND (:storeName IS NULL OR o.storeName LIKE %:storeName%)")
+    Page<OrderEntity> searchAllOrdersIncludeDeleted(
+            @Param("status") OrderStatus status,
+            @Param("storeName") String storeName,
+            Pageable pageable);
 }
