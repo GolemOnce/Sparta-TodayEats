@@ -1,0 +1,31 @@
+package com.sparta.todayeats.auth.presentation.controller;
+
+import com.sparta.todayeats.auth.application.service.AuthServiceV1;
+import com.sparta.todayeats.auth.presentation.dto.request.*;
+import com.sparta.todayeats.auth.presentation.dto.response.*;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/auth")
+@RequiredArgsConstructor
+public class AuthControllerV1 {
+    private final AuthServiceV1 authServiceV1;
+
+    @PostMapping("/signup")
+    public ResponseEntity<SignupResponse> signup(@Valid @RequestBody SignupRequest request) {
+        return ResponseEntity.ok(authServiceV1.signup(request));
+    }
+
+    @PostMapping("/verify-code/send")
+    public ResponseEntity<SendCodeResponse> sendSignupCode(@Valid @RequestBody SendCodeRequest request) {
+        return ResponseEntity.ok(authServiceV1.sendSignupCode(request.getEmail()));
+    }
+
+    @PostMapping("/verify-code/confirm")
+    public ResponseEntity<ConfirmCodeResponse> confirmSignupCode(@Valid @RequestBody ConfirmCodeRequest request) {
+        return ResponseEntity.ok(authServiceV1.confirmSignupCode(request.getEmail(), request.getCode()));
+    }
+}
