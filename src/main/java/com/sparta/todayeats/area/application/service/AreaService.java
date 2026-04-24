@@ -107,7 +107,7 @@ public class AreaService {
 
         String name = normalizeName(request.getName());
 
-        // 기존 이름과 다른 경우에만 중복 검증 수행
+        // 대소문자 무시, 중복 체크
         if (!area.getName().equalsIgnoreCase(name)) {
             validateDuplicateArea(name);
         }
