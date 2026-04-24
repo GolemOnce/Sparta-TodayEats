@@ -6,10 +6,7 @@ import com.sparta.todayeats.category.domain.entity.Category;
 import com.sparta.todayeats.category.domain.repository.CategoryRepository;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.exception.*;
-import com.sparta.todayeats.store.dto.StoreCreateRequest;
-import com.sparta.todayeats.store.dto.StoreCreateResponse;
-import com.sparta.todayeats.store.dto.StoreResponse;
-import com.sparta.todayeats.store.dto.StoreUpdateRequest;
+import com.sparta.todayeats.store.dto.*;
 import com.sparta.todayeats.store.entity.Store;
 import com.sparta.todayeats.store.repository.StoreRepository;
 import com.sparta.todayeats.user.domain.entity.User;
@@ -100,6 +97,7 @@ public class StoreService {
         return toResponse(store);
     }
 
+
     // 가게 수정
     @Transactional
     public StoreResponse updateStore(UUID storeId, StoreUpdateRequest request, UUID userId) {
@@ -116,6 +114,7 @@ public class StoreService {
         return toResponse(store);
     }
 
+
     // 가게 삭제
     @Transactional
     public void deleteStore(UUID storeId, UUID userId) {
@@ -129,6 +128,28 @@ public class StoreService {
 
         // 소프트 삭제
         store.softDelete(userId);
+    }
+
+
+    // 가게 숨김 처리
+    @Transactional
+    public StoreHiddenResponse updateHidden(UUID storeId, StoreHiddenRequest request, UUID userId) {
+
+        // 숨김 처리 대상 가게 조회
+        Store store = getStoreEntity(storeId);
+
+        // TODO: 인증 구현 후 MANAGER, MASTER는 본인 가게 아니어도 숨김 처리 가능하도록 분기
+        // 본인 가게인지 확인
+        validateStoreOwner(store, userId);
+
+        // 숨김 처리
+        if (request.getIsHidden()) {
+            store.hide();
+        } else {
+            store.show();
+        }
+
+        return toHiddenResponse(store);
     }
 
 
@@ -201,6 +222,18 @@ public class StoreService {
                 .categoryId(store.getCategory().getId())
                 .categoryName(store.getCategory().getName())
                 .averageRating(store.getAverageRating())
+                .isHidden(store.getIsHidden())
+                .createdAt(store.getCreatedAt())
+                .createdBy(store.getCreatedBy())
+                .updatedAt(store.getUpdatedAt())
+                .updatedBy(store.getUpdatedBy())
+                .build();
+    }
+
+    // Store 엔티티 → 숨김 응답 DTO 변환
+    private StoreHiddenResponse toHiddenResponse(Store store) {
+        return StoreHiddenResponse.builder()
+                .storeId(store.getId())
                 .isHidden(store.getIsHidden())
                 .createdAt(store.getCreatedAt())
                 .createdBy(store.getCreatedBy())
