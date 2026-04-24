@@ -38,6 +38,9 @@ public class Area extends BaseEntity {
         this.name = name;
         this.city = city;
         this.district = district;
-        this.isActive = isActive;
+
+        if (isActive != null) {
+            this.isActive = isActive;
+        }
     }
 }
