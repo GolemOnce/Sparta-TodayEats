@@ -6,6 +6,7 @@ import com.sparta.todayeats.category.presentation.dto.*;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.CategoryErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,8 +37,14 @@ public class CategoryService {
                 .name(name)
                 .build();
 
-        // DB 저장
-        Category saved = categoryRepository.save(category);
+        // DB 저장 (동시성 문제 해결)
+        Category saved;
+
+        try {
+            saved = categoryRepository.save(category);
+        } catch (DataIntegrityViolationException e) {
+            throw new BaseException(CategoryErrorCode.CATEGORY_ALREADY_EXISTS);
+        }
 
         // 응답 DTO로 변환
         return CategoryCreateResponse.builder()

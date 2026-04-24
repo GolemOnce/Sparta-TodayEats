@@ -10,6 +10,7 @@ import com.sparta.todayeats.category.presentation.dto.PageResponse;
 import com.sparta.todayeats.global.exception.AreaErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -44,8 +45,14 @@ public class AreaService {
                 .isActive(true)
                 .build();
 
-        // DB 저장
-        Area saved = areaRepository.save(area);
+        // DB 저장 (동시성 문제 해결)
+        Area saved;
+
+        try {
+            saved = areaRepository.save(area);
+        } catch (DataIntegrityViolationException e) {
+            throw new BaseException(AreaErrorCode.AREA_ALREADY_EXISTS);
+        }
 
         // 응답 DTO로 변환
         return AreaCreateResponse.builder()
