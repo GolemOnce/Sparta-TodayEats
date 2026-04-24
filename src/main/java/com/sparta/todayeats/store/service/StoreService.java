@@ -4,18 +4,23 @@ import com.sparta.todayeats.area.domain.entity.Area;
 import com.sparta.todayeats.area.domain.repository.AreaRepository;
 import com.sparta.todayeats.category.domain.entity.Category;
 import com.sparta.todayeats.category.domain.repository.CategoryRepository;
+import com.sparta.todayeats.category.presentation.dto.PageResponse;
 import com.sparta.todayeats.global.exception.*;
 import com.sparta.todayeats.store.dto.StoreCreateRequest;
 import com.sparta.todayeats.store.dto.StoreCreateResponse;
+import com.sparta.todayeats.store.dto.StoreResponse;
 import com.sparta.todayeats.store.entity.Store;
 import com.sparta.todayeats.store.repository.StoreRepository;
 import com.sparta.todayeats.user.domain.entity.User;
 import com.sparta.todayeats.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -62,6 +67,30 @@ public class StoreService {
     }
 
 
+    // 가게 목록 조회 && 검색 (카테고리 + 이름 복합 필터)
+    public PageResponse<StoreResponse> getStores(String categoryName, String keyword, Pageable pageable) {
+
+        // QueryDSL 동적 쿼리로 조회
+        Page<Store> result = storeRepository.searchStores(categoryName, keyword, pageable);
+
+        // 엔티티 → DTO 변환
+        List<StoreResponse> content = result.getContent()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+
+        // 페이지 응답 DTO 생성
+        return PageResponse.<StoreResponse>builder()
+                .content(content)
+                .page(result.getNumber())
+                .size(result.getSize())
+                .totalElements(result.getTotalElements())
+                .totalPages(result.getTotalPages())
+                .sort(pageable.getSort().toString())
+                .build();
+    }
+
+
     // 가게 이름 중복 검증
     private void validateDuplicateStore(String name) {
         if (storeRepository.existsByNameIgnoreCase(name)) {
@@ -102,6 +131,27 @@ public class StoreService {
                 .categoryName(store.getCategory().getName())
                 .createdAt(store.getCreatedAt())
                 .createdBy(store.getCreatedBy())
+                .build();
+    }
+
+    // Store 엔티티 → 응답 DTO 변환
+    private StoreResponse toResponse(Store store) {
+        return StoreResponse.builder()
+                .storeId(store.getId())
+                .ownerNickname(store.getOwner().getNickname())
+                .name(store.getName())
+                .address(store.getAddress())
+                .phone(store.getPhone())
+                .areaId(store.getArea().getId())
+                .areaName(store.getArea().getName())
+                .categoryId(store.getCategory().getId())
+                .categoryName(store.getCategory().getName())
+                .averageRating(store.getAverageRating())
+                .isHidden(store.getIsHidden())
+                .createdAt(store.getCreatedAt())
+                .createdBy(store.getCreatedBy())
+                .updatedAt(store.getUpdatedAt())
+                .updatedBy(store.getUpdatedBy())
                 .build();
     }
 }
