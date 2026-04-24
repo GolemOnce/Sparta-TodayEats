@@ -4,6 +4,7 @@ import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.store.dto.StoreCreateResponse;
 import com.sparta.todayeats.store.dto.StoreResponse;
+import com.sparta.todayeats.store.dto.StoreUpdateRequest;
 import com.sparta.todayeats.store.service.StoreService;
 import com.sparta.todayeats.store.dto.StoreCreateRequest;
 import jakarta.validation.Valid;
@@ -60,5 +61,19 @@ public class StoreController {
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
-    
+
+    // TODO: 권한 처리(OWNER, MANAGER, MASTER), Auditing
+    // TODO: 본인 가게인지 확인 (인증 구현 후 토큰에서 꺼내기)
+    // 가게 수정
+    @PatchMapping("/{storeId}")
+    public ResponseEntity<ApiResponse<StoreResponse>> updateStore(
+            @PathVariable UUID storeId,
+            @Valid @RequestBody StoreUpdateRequest request,
+            @RequestHeader("X-User-Id") UUID userId) {
+
+        StoreResponse response = storeService.updateStore(storeId, request,userId);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
 }

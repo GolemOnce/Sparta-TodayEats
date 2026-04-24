@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-// 가게 응답
+// 가게 응답 DTO
 @Getter
 @Builder
 public class StoreResponse {
