@@ -1,0 +1,107 @@
+package com.sparta.todayeats.store.service;
+
+import com.sparta.todayeats.area.domain.entity.Area;
+import com.sparta.todayeats.area.domain.repository.AreaRepository;
+import com.sparta.todayeats.category.domain.entity.Category;
+import com.sparta.todayeats.category.domain.repository.CategoryRepository;
+import com.sparta.todayeats.global.exception.*;
+import com.sparta.todayeats.store.dto.StoreCreateRequest;
+import com.sparta.todayeats.store.dto.StoreCreateResponse;
+import com.sparta.todayeats.store.entity.Store;
+import com.sparta.todayeats.store.repository.StoreRepository;
+import com.sparta.todayeats.user.domain.entity.User;
+import com.sparta.todayeats.user.domain.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class StoreService {
+
+    private final StoreRepository storeRepository;
+    private final AreaRepository areaRepository;
+    private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
+
+    // 가게 생성
+    @Transactional
+    public StoreCreateResponse createStore(StoreCreateRequest request, UUID userId) {
+
+        // 가게 이름 중복 검증
+        validateDuplicateStore(request.getName());
+
+        // 소유자 조회
+        User owner = getUserEntity(userId);
+
+        // 운영 지역 조회
+        Area area = getAreaEntity(request.getAreaId());
+
+        // 카테고리 조회
+        Category category = getCategoryEntity(request.getCategoryId());
+
+        // 가게 엔티티 생성
+        Store store = Store.builder()
+                .owner(owner)
+                .area(area)
+                .category(category)
+                .name(request.getName())
+                .address(request.getAddress())
+                .phone(request.getPhone())
+                .build();
+
+        // DB 저장
+        Store saved = storeRepository.save(store);
+
+        return toCreateResponse(saved);
+    }
+
+
+    // 가게 이름 중복 검증
+    private void validateDuplicateStore(String name) {
+        if (storeRepository.existsByNameIgnoreCase(name)) {
+            throw new BaseException(StoreErrorCode.STORE_ALREADY_EXISTS);
+        }
+    }
+
+    // 소유자 엔티티 조회
+    private User getUserEntity(UUID userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new BaseException(UserErrorCode.USER_NOT_FOUND));
+    }
+
+
+    // 운영 지역 엔티티 조회
+    private Area getAreaEntity(UUID areaId) {
+        return areaRepository.findById(areaId)
+                .orElseThrow(() -> new BaseException(AreaErrorCode.AREA_NOT_FOUND));
+    }
+
+    // 카테고리 엔티티 조회
+    private Category getCategoryEntity(UUID categoryId) {
+        return categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new BaseException(CategoryErrorCode.CATEGORY_NOT_FOUND));
+    }
+
+    // Store 엔티티 → 생성 응답 DTO 변환
+    private StoreCreateResponse toCreateResponse(Store store) {
+        return StoreCreateResponse.builder()
+                .storeId(store.getId())
+                .ownerNickname(store.getOwner().getNickname())
+                .name(store.getName())
+                .address(store.getAddress())
+                .phone(store.getPhone())
+                .areaId(store.getArea().getId())
+                .areaName(store.getArea().getName())
+                .categoryId(store.getCategory().getId())
+                .categoryName(store.getCategory().getName())
+                .createdAt(store.getCreatedAt())
+                .createdBy(store.getCreatedBy())
+                .build();
+    }
+}
