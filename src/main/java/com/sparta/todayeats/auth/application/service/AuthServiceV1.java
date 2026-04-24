@@ -5,7 +5,9 @@ import com.sparta.todayeats.auth.presentation.dto.response.*;
 import com.sparta.todayeats.global.exception.AuthErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.UserErrorCode;
+import com.sparta.todayeats.global.infrastructure.config.security.JwtTokenProvider;
 import com.sparta.todayeats.user.domain.entity.User;
+import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import com.sparta.todayeats.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Service
@@ -25,9 +28,11 @@ public class AuthServiceV1 {
     private final PasswordEncoder passwordEncoder;
     private final AuthMailService authMailService;
     private final StringRedisTemplate redisTemplate;
+    private final JwtTokenProvider jwtTokenProvider;
 
     private static final String SIGNUP_PREFIX = "AUTH_SIGNUP:";
     private static final String VERIFIED_PREFIX = "AUTH_VERIFIED:";
+    private static final String RT_PREFIX = "AUTH_RT:";
 
     private static final long CODE_VALID_MINUTES = 5;
     private static final long VERIFIED_VALID_MINUTES = 10;
@@ -102,5 +107,37 @@ public class AuthServiceV1 {
         );
 
         return new ConfirmCodeResponse(email);
+    }
+
+    public LoginResponse login(String email, String password) {
+        // 사용자 조회
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BaseException(UserErrorCode.USER_NOT_FOUND));
+
+        // 비밀번호 일치 확인
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new BaseException(UserErrorCode.PASSWORD_MISMATCH);
+        }
+
+        // Token 생성
+        UUID userId = user.getUserId();
+        UserRoleEnum role = user.getRole();
+        String accessToken = jwtTokenProvider.createAccessToken(userId, role);
+        String refreshToken = jwtTokenProvider.createRefreshToken(userId);
+
+        // Redis에 Refresh Token 저장
+        redisTemplate.opsForValue().set(
+                RT_PREFIX + userId,
+                refreshToken,
+                jwtTokenProvider.getRefreshTokenValidityDuration()
+        );
+
+        return LoginResponse.builder()
+                .userId(userId)
+                .nickname(user.getNickname())
+                .role(role.name())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .build();
     }
 }

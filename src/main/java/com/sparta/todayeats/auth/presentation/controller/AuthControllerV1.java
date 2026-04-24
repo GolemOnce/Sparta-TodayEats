@@ -28,4 +28,9 @@ public class AuthControllerV1 {
     public ResponseEntity<ConfirmCodeResponse> confirmSignupCode(@Valid @RequestBody ConfirmCodeRequest request) {
         return ResponseEntity.ok(authServiceV1.confirmSignupCode(request.getEmail(), request.getCode()));
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authServiceV1.login(request.getEmail(), request.getPassword()));
+    }
 }
