@@ -82,6 +82,11 @@ public class OrderServiceV1 {
             MenuEntity menu = menuRepository.findActiveById(itemReq.menuId())
                     .orElseThrow(() -> new BaseException(MenuErrorCode.MENU_NOT_FOUND));
 
+            // 메뉴가 해당 가게 소속인지 검증
+            if (!menu.getStoreId().equals(store.getStoreId())) {
+                throw new BaseException(MenuErrorCode.MENU_NOT_IN_STORE);
+            }
+
             OrderItemEntity orderItem = OrderItemEntity.builder()
                     .order(order)
                     .menuId(menu.getMenuId())
@@ -356,7 +361,7 @@ public class OrderServiceV1 {
         // paymentService.refundIfPaid(orderId);
 
 
-        order.delete(orderId);  // soft delete
+        order.delete(null);  // TODO: JWT 완성 후 userId로 교체
 
         log.info("주문 삭제: orderId={}", orderId);
     }

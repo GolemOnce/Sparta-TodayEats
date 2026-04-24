@@ -55,7 +55,7 @@ public record OrderDetailResponse(
             UUID menuId,        // 메뉴 고유 ID
             String menuName,    // 메뉴명 스냅샷
             Integer quantity,   // 주문 수량
-            Integer unitPrice   // 단가 스냅샷
+            Long unitPrice   // 단가 스냅샷
     ) {
         public static OrderItemInfo from(OrderItemEntity item) {
             return new OrderItemInfo(

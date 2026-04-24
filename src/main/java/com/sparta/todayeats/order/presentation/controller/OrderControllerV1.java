@@ -17,7 +17,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -38,12 +37,12 @@ public class OrderControllerV1 {
 
     @PostMapping
     public ResponseEntity<ApiResponse<CreateOrderResponse>> createOrder(
-            @Valid @RequestBody CreateOrderRequest request,
-            @AuthenticationPrincipal UUID userId
+            @Valid @RequestBody CreateOrderRequest request
             //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
     ) {
         // TODO: JWT 완성 후 아래로 교체
         // CreateOrderResponse data = orderService.createOrder(request, userDetails.getUserId(), userDetails.getRole());
+        UUID userId = null; // TODO: JWT 완성 후 제거
         CreateOrderResponse data = orderService.createOrder(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(data));
@@ -60,7 +59,6 @@ public class OrderControllerV1 {
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<OrderSummaryResponse>>> getOrders(
-            @AuthenticationPrincipal UUID userId,
             //@AuthenticationPrincipal UserDetailsImpl userDetails,  // TODO: JWT 완성 후 주석 해제
             @RequestParam(required = false) OrderStatus status,
             @RequestParam(required = false) String storeName,
@@ -73,6 +71,7 @@ public class OrderControllerV1 {
         // TODO: JWT 완성 후 아래로 교체
         // Page<OrderSummaryResponse> page = orderService.getOrders(
         //         userDetails.getUserId(), status, storeName, pageable, userDetails.getRole());
+        UUID userId = null;  // TODO: JWT 완성 후 제거
         Page<OrderSummaryResponse> page = orderService.getOrders(userId, status, storeName, pageable);
         return ResponseEntity.ok(ApiResponse.success(
                 PageResponse.<OrderSummaryResponse>builder()
