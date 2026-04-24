@@ -76,8 +76,7 @@ public class AreaController {
 
         areaService.deleteArea(areaId);
 
-        return ResponseEntity.status(HttpStatus.NO_CONTENT)
-                .body(ApiResponse.deleted(null));
+        return ResponseEntity.noContent().build();
     }
 
 
