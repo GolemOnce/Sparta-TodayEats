@@ -28,4 +28,9 @@ public class SignupRequest {
 
     @NotNull(message = "회원 유형 선택은 필수입니다.")
     private UserRoleEnum role;
+
+    @AssertTrue(message = "가입 가능한 회원 유형이 아닙니다.")
+    public boolean isValidRole() {
+        return role == UserRoleEnum.CUSTOMER || role == UserRoleEnum.OWNER;
+    }
 }
