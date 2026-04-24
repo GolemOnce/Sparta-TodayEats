@@ -165,21 +165,21 @@ class UserServiceTest {
 
 ### 1. 브랜치 전략
 
-* `main` : 운영(배포) 브랜치
-* `develop` : 개발 통합 브랜치
-* `feature/*` : 기능 개발 브랜치
-
-    * 예: `feature/login`, `feature/payment-api`
-* `fix/*` : 버그 수정 브랜치
-* `refactor/*` : 리팩토링 브랜치
+* `main` : 운영(배포) 브랜치 (CI/CD 트리거)
+* `develop` : 개발 통합 브랜치 (CI 트리거)
+* `feature/#이슈번호-*` : 기능 개발 브랜치
+    * 예: `feature/#5-login`, `feature/6-payment-api`
+* `fix/#이슈번호-*` : 버그 수정 브랜치
+* `refactor/#이슈번호-*` : 리팩토링 브랜치
 
 ---
 
 ### 2. 브랜치 흐름
 
-1. `develop`에서 `feature/*` 브랜치 생성
-2. 기능 개발 후 `develop`으로 PR
-3. 테스트 완료 후 `main`으로 배포
+1. `develop`에서 `feature/#이슈번호-*` 브랜치 생성
+2. 기능 개발 후 `develop`으로 PR (PR시 `Closes #이슈번호`)
+3. 코드 리뷰(CodeRabbit활용) 후 머지
+4. `develop` -> `main`으로 PR, 머지(CI/CD 자동 배포)
 
 ---
 
@@ -191,9 +191,7 @@ class UserServiceTest {
 (선택) 상세 설명
 ```
 
----
-
-### 4. 커밋 타입
+- 커밋 타입
 
 | 타입                 | 설명                   |
 | ------------------ | -------------------- |
@@ -213,14 +211,27 @@ class UserServiceTest {
 
 ---
 
-### 5. Pull Request 규칙
+### 4. Pull Request 규칙
 
 * 제목: `[타입] 작업 내용`
-
     * 예: `[feat] 로그인 API 구현`
+* 내용: 
 * 최소 1명 이상 리뷰 후 merge
 * `rebase merge` 사용
 * 가능하면 작은 단위로 PR 생성
+
+---
+
+### 5. Pull 규칙
+* pull시 rebase merge
+```bash
+// 기본 설정 변경
+git config --global pull.rebase true
+
+// 혹은 --rebase 옵션 추가
+git pull --rebase origin <브랜치명>
+```
+
 
 ---
 

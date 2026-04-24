@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/todayeats
+    username: palipali
+    password: haja
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  jwt:
+    secret-key: dGVzdC1zZWNyZXQta2V5LWZvci1jaS1tdXN0LWJlLWxvbmctZW5vdWdo
+    access-expiration: 1800000
+    refresh-expiration: 604800000

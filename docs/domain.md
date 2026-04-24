@@ -57,18 +57,18 @@
 
 ## 도메인 관계
 
-| 관계 | 카디널리티 | 설명 |
-|------|------|------|
-| User ↔ Store | 1:N | OWNER 한 명이 여러 가게 소유 |
-| User ↔ Order | 1:N | CUSTOMER 한 명이 여러 주문 생성 |
-| User ↔ Address | 1:N | 사용자별 여러 배송지 |
-| User ↔ AI Request Log | 1:N | 사용자별 AI 요청 기록 |
-| Area ↔ Store | 1:N | 지역별 여러 가게 |
-| Category ↔ Store | 1:N | 카테고리별 여러 가게 |
-| Store ↔ Menu | 1:N | 가게별 여러 메뉴 |
-| Store ↔ Order | 1:N | 가게별 여러 주문 |
-| Store ↔ Review | 1:N | 가게별 여러 리뷰 |
-| Order ↔ OrderItem | 1:N | 주문별 여러 주문 상품 |
-| Order ↔ Review | 1:1 | 주문당 리뷰 1개 (UNIQUE) |
-| Order ↔ Payment | 1:1 | 주문당 결제 1건 (UNIQUE) |
-| Menu ↔ OrderItem | 1:N | 메뉴별 여러 주문 상품 |
+| 관계 | 카디널리티 | 설명                     |
+|------|-------|------------------------|
+| User ↔ Store | 1:N   | OWNER 한 명이 여러 가게 소유    |
+| User ↔ Order | 1:N   | CUSTOMER 한 명이 여러 주문 생성 |
+| User ↔ Address | 1:N   | 사용자별 여러 배송지            |
+| User ↔ AI Request Log | 1:N   | 사용자별 AI 요청 기록          |
+| Area ↔ Store | 1:N   | 지역별 여러 가게              |
+| Category ↔ Store | 1:N   | 카테고리별 여러 가게            |
+| Store ↔ Menu | 1:N   | 가게별 여러 메뉴              |
+| Store ↔ Order | 1:N   | 가게별 여러 주문              |
+| Store ↔ Review | 1:N   | 가게별 여러 리뷰              |
+| Order ↔ OrderItem | 1:N   | 주문별 여러 주문 상품           |
+| Order ↔ Review | 1:1   | 주문당 리뷰 1개 (UNIQUE)     |
+| Order ↔ Payment | 1:N   | 주문당 결제 N건 (UNIQUE)     |
+| Menu ↔ OrderItem | 1:N   | 메뉴별 여러 주문 상품           |
