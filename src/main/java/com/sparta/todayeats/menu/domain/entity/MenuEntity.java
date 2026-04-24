@@ -17,8 +17,11 @@ public class MenuEntity extends BaseEntity {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "price")
-    private Integer price;
+    @Column(name = "store_id", nullable = false)
+    private UUID storeId;   // FK → p_store.store_id
+
+    @Column(name = "price", nullable = false)
+    private Long price;     // BIGINT
 
     @Column(name = "is_hidden")
     private Boolean isHidden;   // 숨김 여부
