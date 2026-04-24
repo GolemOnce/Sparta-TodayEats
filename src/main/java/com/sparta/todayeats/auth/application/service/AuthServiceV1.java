@@ -34,6 +34,7 @@ public class AuthServiceV1 {
     private static final String SIGNUP_PREFIX = "AUTH_SIGNUP:";
     private static final String VERIFIED_PREFIX = "AUTH_VERIFIED:";
     private static final String RT_PREFIX = "AUTH_RT:";
+    private static final String RESET_PASSWORD_PREFIX = "AUTH_RESET_PASSWORD:";
 
     private static final long CODE_VALID_MINUTES = 5;
     private static final long VERIFIED_VALID_MINUTES = 10;
@@ -177,5 +178,62 @@ public class AuthServiceV1 {
     public void logout(Authentication authentication) {
         // Redis에서 Refresh Token 삭제
         redisTemplate.delete(RT_PREFIX + authentication.getPrincipal());
+    }
+
+    public SendCodeResponse sendPasswordResetLink(String email) {
+        // 이메일 존재 여부 확인
+        if (!userRepository.existsByEmail(email)) {
+            throw new BaseException(UserErrorCode.USER_NOT_FOUND);
+        }
+
+        // 인증번호 생성
+        String code = UUID.randomUUID().toString();
+
+        // Redis에 인증번호 저장
+        redisTemplate.opsForValue().set(
+                RESET_PASSWORD_PREFIX + code,
+                email,
+                Duration.ofMinutes(CODE_VALID_MINUTES)
+        );
+
+        // 메일 전송
+        authMailService.sendResetPasswordLink(email, code);
+
+        return new SendCodeResponse(email, LocalDateTime.now().plusMinutes(CODE_VALID_MINUTES));
+    }
+
+    @Transactional(readOnly = true)
+    public ConfirmCodeResponse confirmPasswordResetLink(String code) {
+        // 인증번호 조회
+        return new ConfirmCodeResponse(getEmailByResetCode(code));
+    }
+
+    public PasswordResetResponse passwordReset(String code, String newPassword, String confirmPassword) {
+        // 인증번호 조회
+        String email = getEmailByResetCode(code);
+
+        // 비밀번호 일치 확인
+        if (!newPassword.equals(confirmPassword)) {
+            throw new BaseException(UserErrorCode.PASSWORD_MISMATCH);
+        }
+
+        // 사용자 조회 및 비밀번호 변경
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BaseException(UserErrorCode.USER_NOT_FOUND));
+        user.updatePassword(passwordEncoder.encode(newPassword));
+
+        // Redis에 인증번호 삭제
+        redisTemplate.delete(RESET_PASSWORD_PREFIX + code);
+
+        return new PasswordResetResponse(user.getEmail(), user.getUpdatedAt());
+    }
+
+    private String getEmailByResetCode(String code) {
+        String email = redisTemplate.opsForValue().get(RESET_PASSWORD_PREFIX + code);
+        if (email == null) {
+            throw new BaseException(AuthErrorCode.INVALID_VERIFICATION_CODE);
+        }
+
+        return email;
     }
 }
