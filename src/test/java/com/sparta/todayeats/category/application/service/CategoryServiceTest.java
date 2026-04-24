@@ -4,6 +4,7 @@ import com.sparta.todayeats.category.domain.entity.Category;
 import com.sparta.todayeats.category.domain.repository.CategoryRepository;
 import com.sparta.todayeats.category.presentation.dto.*;
 import com.sparta.todayeats.global.exception.BaseException;
+import com.sparta.todayeats.global.response.PageResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

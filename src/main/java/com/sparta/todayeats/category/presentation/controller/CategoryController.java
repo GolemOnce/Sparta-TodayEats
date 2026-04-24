@@ -3,6 +3,7 @@ package com.sparta.todayeats.category.presentation.controller;
 import com.sparta.todayeats.category.application.service.CategoryService;
 import com.sparta.todayeats.category.presentation.dto.*;
 import com.sparta.todayeats.global.response.ApiResponse;
+import com.sparta.todayeats.global.response.PageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
