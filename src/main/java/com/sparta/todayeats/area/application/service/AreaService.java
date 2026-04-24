@@ -6,7 +6,7 @@ import com.sparta.todayeats.area.presentation.dto.AreaCreateRequest;
 import com.sparta.todayeats.area.presentation.dto.AreaCreateResponse;
 import com.sparta.todayeats.area.presentation.dto.AreaResponse;
 import com.sparta.todayeats.area.presentation.dto.AreaUpdateRequest;
-import com.sparta.todayeats.category.presentation.dto.PageResponse;
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.exception.AreaErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
 import lombok.RequiredArgsConstructor;
