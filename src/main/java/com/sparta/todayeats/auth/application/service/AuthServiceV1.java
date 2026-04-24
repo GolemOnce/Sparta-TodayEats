@@ -181,23 +181,21 @@ public class AuthServiceV1 {
     }
 
     public SendCodeResponse sendPasswordResetLink(String email) {
-        // 이메일 존재 여부 확인
-        if (!userRepository.existsByEmail(email)) {
-            throw new BaseException(UserErrorCode.USER_NOT_FOUND);
+        // 이메일 존재 시에만 수행
+        if (userRepository.existsByEmail(email)) {
+            // 인증번호 생성
+            String code = UUID.randomUUID().toString();
+
+            // Redis에 인증번호 저장
+            redisTemplate.opsForValue().set(
+                    RESET_PASSWORD_PREFIX + code,
+                    email,
+                    Duration.ofMinutes(CODE_VALID_MINUTES)
+            );
+
+            // 메일 전송
+            authMailService.sendResetPasswordLink(email, code);
         }
-
-        // 인증번호 생성
-        String code = UUID.randomUUID().toString();
-
-        // Redis에 인증번호 저장
-        redisTemplate.opsForValue().set(
-                RESET_PASSWORD_PREFIX + code,
-                email,
-                Duration.ofMinutes(CODE_VALID_MINUTES)
-        );
-
-        // 메일 전송
-        authMailService.sendResetPasswordLink(email, code);
 
         return new SendCodeResponse(email, LocalDateTime.now().plusMinutes(CODE_VALID_MINUTES));
     }
