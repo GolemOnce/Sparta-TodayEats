@@ -63,7 +63,7 @@ public class StoreController {
     }
 
     // TODO: 권한 처리(OWNER, MANAGER, MASTER), Auditing
-    // TODO: 본인 가게인지 확인 (인증 구현 후 토큰에서 꺼내기)
+    // TODO: 인증 구현 후 토큰에서 꺼내기 -> userId
     // 가게 수정
     @PatchMapping("/{storeId}")
     public ResponseEntity<ApiResponse<StoreResponse>> updateStore(
@@ -74,6 +74,19 @@ public class StoreController {
         StoreResponse response = storeService.updateStore(storeId, request,userId);
 
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    // TODO: 권한 처리(OWNER, MASTER), Auditing
+    // TODO: 인증 구현 후 토큰에서 꺼내기 -> userId
+    // 가게 삭제
+    @DeleteMapping("/{storeId}")
+    public ResponseEntity<ApiResponse<Void>> deleteStore(
+            @PathVariable UUID storeId,
+            @RequestHeader("X-User-Id") UUID userId) {
+
+        storeService.deleteStore(storeId, userId);
+
+        return ResponseEntity.noContent().build();
     }
 
 }

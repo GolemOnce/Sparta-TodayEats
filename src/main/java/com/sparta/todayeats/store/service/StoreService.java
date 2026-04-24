@@ -24,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
-import static com.sparta.todayeats.store.entity.QStore.store;
 
 @Slf4j
 @Service
@@ -109,9 +108,7 @@ public class StoreService {
 
         // TODO: 인증 구현 후 MANAGER, MASTER는 본인 가게 아니어도 수정 가능하도록 분기
         // 본인 가게인지 확인
-        if (!store.getOwner().getUserId().equals(userId)) {
-            throw new BaseException(StoreErrorCode.STORE_FORBIDDEN);
-        }
+        validateStoreOwner(store, userId);
 
         // 전체 교체
         store.update(request.getName(), request.getAddress(), request.getPhone());
@@ -119,12 +116,22 @@ public class StoreService {
         return toResponse(store);
     }
 
-    // 가게 이름 중복 검증
-    private void validateDuplicateStore(String name) {
-        if (storeRepository.existsByNameIgnoreCase(name)) {
-            throw new BaseException(StoreErrorCode.STORE_ALREADY_EXISTS);
-        }
+    // 가게 삭제
+    @Transactional
+    public void deleteStore(UUID storeId, UUID userId) {
+
+        // 삭제 대상 가게 조회
+        Store store = getStoreEntity(storeId);
+
+        // TODO: 인증 구현 후 MASTER는 본인 가게 아니어도 삭제 가능하도록 분기
+        // 본인 가게인지 확인
+        validateStoreOwner(store, userId);
+
+        // 소프트 삭제
+        store.softDelete(userId);
     }
+
+
 
     // 소유자 엔티티 조회
     private User getUserEntity(UUID userId) {
@@ -148,6 +155,20 @@ public class StoreService {
     private Category getCategoryEntity(UUID categoryId) {
         return categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new BaseException(CategoryErrorCode.CATEGORY_NOT_FOUND));
+    }
+
+    // 가게 이름 중복 검증
+    private void validateDuplicateStore(String name) {
+        if (storeRepository.existsByNameIgnoreCase(name)) {
+            throw new BaseException(StoreErrorCode.STORE_ALREADY_EXISTS);
+        }
+    }
+
+    // 본인 가게인지 검증
+    private void validateStoreOwner(Store store, UUID userId) {
+        if (!store.getOwner().getUserId().equals(userId)) {
+            throw new BaseException(StoreErrorCode.STORE_FORBIDDEN);
+        }
     }
 
     // Store 엔티티 → 생성 응답 DTO 변환
