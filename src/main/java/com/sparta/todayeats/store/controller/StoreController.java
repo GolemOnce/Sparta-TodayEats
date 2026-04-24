@@ -2,11 +2,8 @@ package com.sparta.todayeats.store.controller;
 
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.response.ApiResponse;
-import com.sparta.todayeats.store.dto.StoreCreateResponse;
-import com.sparta.todayeats.store.dto.StoreResponse;
-import com.sparta.todayeats.store.dto.StoreUpdateRequest;
+import com.sparta.todayeats.store.dto.*;
 import com.sparta.todayeats.store.service.StoreService;
-import com.sparta.todayeats.store.dto.StoreCreateRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -87,6 +84,21 @@ public class StoreController {
         storeService.deleteStore(storeId, userId);
 
         return ResponseEntity.noContent().build();
+    }
+
+
+    // TODO: 권한 처리(OWNER, MANAGER, MASTER), Auditing
+    // TODO: 인증 구현 후 토큰에서 꺼내기 -> userId
+    // 가게 숨김 처리
+    @PatchMapping("/{storeId}/hide")
+    public ResponseEntity<ApiResponse<StoreHiddenResponse>> updateHidden(
+            @PathVariable UUID storeId,
+            @Valid @RequestBody StoreHiddenRequest request,
+            @RequestHeader("X-User-Id") UUID userId) {
+
+        StoreHiddenResponse response = storeService.updateHidden(storeId, request, userId);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
 }

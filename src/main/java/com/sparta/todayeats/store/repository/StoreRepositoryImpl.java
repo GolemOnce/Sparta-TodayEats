@@ -41,6 +41,8 @@ public class StoreRepositoryImpl implements StoreRepositoryCustom {
         }
 
         // 숨김 처리된 가게 제외
+        // TODO: 권한 구현 후 OWNER, MASTER, MANAGER는 isHidden 조건 제거
+        // 숨김 처리된 가게 제외 (CUSTOMER만 적용)
         builder.and(store.isHidden.isFalse());
 
         // 실제 데이터 조회 (페이징 적용)
