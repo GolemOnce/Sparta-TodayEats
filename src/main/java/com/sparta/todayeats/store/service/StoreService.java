@@ -91,6 +91,15 @@ public class StoreService {
     }
 
 
+    // 가게 단건 조회
+    public StoreResponse getStore(UUID storeId) {
+        // 가게 엔티티 조회
+        Store store = getStoreEntity(storeId);
+        return toResponse(store);
+    }
+
+
+
     // 가게 이름 중복 검증
     private void validateDuplicateStore(String name) {
         if (storeRepository.existsByNameIgnoreCase(name)) {
@@ -104,6 +113,11 @@ public class StoreService {
                 .orElseThrow(() -> new BaseException(UserErrorCode.USER_NOT_FOUND));
     }
 
+    // 가게 엔티티 조회
+    private Store getStoreEntity(UUID storeId) {
+        return storeRepository.findById(storeId)
+                .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
+    }
 
     // 운영 지역 엔티티 조회
     private Area getAreaEntity(UUID areaId) {
