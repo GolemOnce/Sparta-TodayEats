@@ -83,19 +83,13 @@ public class AreaService {
                 .build();
     }
 
-   // 운영 지역 삭제
-    @Transactional
-    public void deleteArea(UUID areaId) {
-        Area area = getAreaEntity(areaId);
-        area.softDelete(null);
-    }
-
 
     // 운영 지역 상세 조회
     public AreaResponse getArea(UUID areaId) {
         Area area = getAreaEntity(areaId);
         return toResponse(area);
     }
+
 
     // 운영 지역 수정
     @Transactional
@@ -104,25 +98,26 @@ public class AreaService {
         // 수정 대상 운영 지역 조회
         Area area = getAreaEntity(areaId);
 
-        // null이면 기존 값 유지
-        String name = request.getName() != null ? normalizeName(request.getName()) : area.getName();
-        String city = request.getCity() != null ? request.getCity() : area.getCity();
-        String district = request.getDistrict() != null ? request.getDistrict() : area.getDistrict();
-        Boolean isActive = request.getIsActive() != null ? request.getIsActive() : area.getIsActive();
+        String name = normalizeName(request.getName());
 
         // 기존 이름과 다른 경우에만 중복 검증 수행
         if (!area.getName().equals(name)) {
             validateDuplicateArea(name);
         }
 
-        // 운영 지역 이름 수정
-        area.update(name, city, district, isActive);
+        // 전체 교체
+        area.update(name, request.getCity(), request.getDistrict(), request.getIsActive());
 
         return toResponse(area);
     }
 
 
-
+    // 운영 지역 삭제
+    @Transactional
+    public void deleteArea(UUID areaId) {
+        Area area = getAreaEntity(areaId);
+        area.softDelete(null);
+    }
 
 
     // 운영지역 목록 조회 및 검색 처리
