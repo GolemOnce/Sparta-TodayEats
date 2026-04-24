@@ -44,7 +44,7 @@ class CategoryServiceTest {
             // given
             CategoryCreateRequest request = new CategoryCreateRequest("한식");
 
-            given(categoryRepository.existsByName("한식"))
+            given(categoryRepository.existsByNameIgnoreCase("한식"))
                     .willReturn(false);
 
             given(categoryRepository.save(any(Category.class)))
@@ -69,7 +69,7 @@ class CategoryServiceTest {
             // given
             CategoryCreateRequest request = new CategoryCreateRequest("한식");
 
-            given(categoryRepository.existsByName("한식"))
+            given(categoryRepository.existsByNameIgnoreCase("한식"))
                     .willReturn(true);
 
             // when & then
