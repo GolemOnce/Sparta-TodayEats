@@ -33,6 +33,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.*;
 
 @DisplayName("OrderServiceV1 테스트")
@@ -72,6 +73,26 @@ class OrderServiceV1Test {
         );
     }
 
+    private OrderEntity pendingOrder() {
+        return OrderEntity.builder()
+                .customerId(userId)
+                .storeId(storeId)
+                .addressId(addressId)
+                .storeName("BBQ 광화문점")
+                .deliveryAddress("서울 광화문 100번지")
+                .deliveryDetail("101호")
+                .orderType(OrderType.ONLINE)
+                .note("문 앞에 놔주세요")
+                .totalPrice(38000L)
+                .build();
+    }
+
+    private void setCreatedAt(OrderEntity order, LocalDateTime time) throws Exception {
+        Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
+        field.setAccessible(true);
+        field.set(order, time);
+    }
+
     // ========================================================
     // 🎥 test(#9): 주문 생성 단위 테스트
     // ========================================================
@@ -82,14 +103,22 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - 주문 생성 및 totalPrice 서버 계산")
-        void success() {
+        void 주문_생성_성공() {
             // given
+            MenuEntity mockMenu = mock(MenuEntity.class);
+            given(mockMenu.getPrice()).willReturn(18000L);
+            given(mockMenu.getName()).willReturn("황금올리브 치킨");
+            given(mockMenu.getStoreId()).willReturn(storeId);
+
+            StoreEntity mockStore = mock(StoreEntity.class);
+            given(mockStore.getStoreId()).willReturn(storeId);
+
             given(storeRepository.findActiveById(storeId))
-                    .willReturn(Optional.of(mock(StoreEntity.class)));
+                    .willReturn(Optional.of(mockStore));
             given(addressRepository.findActiveById(addressId))
                     .willReturn(Optional.of(mock(AddressEntity.class)));
             given(menuRepository.findActiveById(menuId))
-                    .willReturn(Optional.of(mock(MenuEntity.class)));
+                    .willReturn(Optional.of(mockMenu));
             given(orderRepository.save(any(OrderEntity.class)))
                     .willAnswer(inv -> inv.getArgument(0));
 
@@ -99,11 +128,12 @@ class OrderServiceV1Test {
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.PENDING);
             assertThat(result.items()).hasSize(1);
+            assertThat(result.totalPrice()).isEqualTo(36000L);  // 18000 * 2
         }
 
         @Test
         @DisplayName("실패 - 존재하지 않는 가게")
-        void fail_store_not_found() {
+        void 존재하지_않는_가게_예외발생() {
             // given
             given(storeRepository.findActiveById(storeId))
                     .willReturn(Optional.empty());
@@ -117,7 +147,7 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - 존재하지 않는 배송지")
-        void fail_address_not_found() {
+        void 존재하지_않는_배송지_예외발생() {
             // given
             given(storeRepository.findActiveById(storeId))
                     .willReturn(Optional.of(mock(StoreEntity.class)));
@@ -132,8 +162,8 @@ class OrderServiceV1Test {
         }
 
         @Test
-        @DisplayName("실패 - 존재하지 않는 메뉴")
-        void fail_menu_not_found() {
+        @DisplayName("실패 - 존재하지 않는 메뉴 (삭제 또는 숨김 처리된 메뉴 포함)")
+        void 존재하지_않는_메뉴_예외발생() {
             // given
             given(storeRepository.findActiveById(storeId))
                     .willReturn(Optional.of(mock(StoreEntity.class)));
@@ -150,22 +180,27 @@ class OrderServiceV1Test {
         }
 
         @Test
-        @DisplayName("실패 - 숨김 처리된 메뉴 주문 불가")
-        void fail_hidden_menu() {
+        @DisplayName("실패 - 해당 가게 소속이 아닌 메뉴 주문 불가")
+        void 다른_가게_메뉴_주문_예외발생() {
             // given
+            MenuEntity mockMenu = mock(MenuEntity.class);
+            given(mockMenu.getStoreId()).willReturn(UUID.randomUUID()); // 다른 가게 ID
+
+            StoreEntity mockStore = mock(StoreEntity.class);
+            given(mockStore.getStoreId()).willReturn(storeId);
+
             given(storeRepository.findActiveById(storeId))
-                    .willReturn(Optional.of(mock(StoreEntity.class)));
+                    .willReturn(Optional.of(mockStore));
             given(addressRepository.findActiveById(addressId))
                     .willReturn(Optional.of(mock(AddressEntity.class)));
-            // is_hidden = true인 메뉴는 findActiveById에서 제외되어 empty 반환
             given(menuRepository.findActiveById(menuId))
-                    .willReturn(Optional.empty());
+                    .willReturn(Optional.of(mockMenu));
 
             // when & then
             assertThatThrownBy(() -> orderService.createOrder(createOrderRequest(), userId))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
-                            .isEqualTo(MenuErrorCode.MENU_NOT_FOUND));
+                            .isEqualTo(MenuErrorCode.MENU_NOT_IN_STORE));
         }
     }
 
@@ -179,21 +214,9 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - 전체 주문 목록 조회 (검색 조건 없음)")
-        void success() {
+        void 전체_주문_목록_조회_성공() {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
-            Page<OrderEntity> page = new PageImpl<>(List.of(order));
+            Page<OrderEntity> page = new PageImpl<>(List.of(pendingOrder()));
             given(orderRepository.searchOrders(eq(userId), isNull(), isNull(), any(Pageable.class)))
                     .willReturn(page);
 
@@ -210,21 +233,9 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - 상태 조건으로 검색")
-        void success_search_by_status() {
+        void 상태_조건으로_검색_성공() {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
-            Page<OrderEntity> page = new PageImpl<>(List.of(order));
+            Page<OrderEntity> page = new PageImpl<>(List.of(pendingOrder()));
             given(orderRepository.searchOrders(eq(userId), eq(OrderStatus.PENDING), isNull(), any(Pageable.class)))
                     .willReturn(page);
 
@@ -239,21 +250,9 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - 가게명 조건으로 검색")
-        void success_search_by_store_name() {
+        void 가게명_조건으로_검색_성공() {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
-            Page<OrderEntity> page = new PageImpl<>(List.of(order));
+            Page<OrderEntity> page = new PageImpl<>(List.of(pendingOrder()));
             given(orderRepository.searchOrders(eq(userId), isNull(), eq("BBQ"), any(Pageable.class)))
                     .willReturn(page);
 
@@ -268,21 +267,9 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - 상태 + 가게명 동시 검색")
-        void success_search_by_status_and_store_name() {
+        void 상태_가게명_동시_검색_성공() {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
-            Page<OrderEntity> page = new PageImpl<>(List.of(order));
+            Page<OrderEntity> page = new PageImpl<>(List.of(pendingOrder()));
             given(orderRepository.searchOrders(eq(userId), eq(OrderStatus.PENDING), eq("BBQ"), any(Pageable.class)))
                     .willReturn(page);
 
@@ -298,7 +285,7 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - 주문 없을 때 빈 목록 반환")
-        void success_empty() {
+        void 주문_없을때_빈_목록_반환() {
             // given
             Page<OrderEntity> emptyPage = new PageImpl<>(List.of());
             given(orderRepository.searchOrders(eq(userId), isNull(), isNull(), any(Pageable.class)))
@@ -314,8 +301,9 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - soft delete된 주문은 목록에 포함되지 않음")
-        void fail_deleted_order_not_included() {
+        void soft_delete된_주문_목록_미포함() {
             // given
+            // soft delete된 주문은 Repository 쿼리에서 deletedAt IS NULL 조건으로 제외됨
             Page<OrderEntity> emptyPage = new PageImpl<>(List.of());
             given(orderRepository.searchOrders(eq(userId), isNull(), isNull(), any(Pageable.class)))
                     .willReturn(emptyPage);
@@ -331,7 +319,7 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - 다른 사용자의 주문은 조회되지 않음")
-        void fail_other_user_order_not_included() {
+        void 다른_사용자_주문_조회_불가() {
             // given
             UUID otherUserId = UUID.randomUUID();
             Page<OrderEntity> emptyPage = new PageImpl<>(List.of());
@@ -358,22 +346,10 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - 주문 단건 조회")
-        void success() {
+        void 주문_단건_조회_성공() {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
             given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(order));
+                    .willReturn(Optional.of(pendingOrder()));
 
             // when
             OrderDetailResponse result = orderService.getOrder(orderId);
@@ -387,7 +363,7 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - 주문 없음 (존재하지 않거나 삭제된 주문)")
-        void fail_order_not_found() {
+        void 주문_없음_예외발생() {
             // given
             // 존재하지 않는 주문 또는 soft delete된 주문 모두
             // findActiveById에서 Optional.empty() 반환
@@ -412,22 +388,10 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - PENDING 상태에서 요청사항 수정")
-        void success() {
+        void 요청사항_수정_성공() {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
             given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(order));
+                    .willReturn(Optional.of(pendingOrder()));
 
             // when
             UpdateOrderResponse result = orderService.updateOrder(
@@ -440,7 +404,7 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - 존재하지 않는 주문")
-        void fail_order_not_found() {
+        void 존재하지_않는_주문_예외발생() {
             // given
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.empty());
@@ -455,21 +419,10 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - PENDING이 아닌 상태에서 수정 시도")
-        void fail_not_pending_status() throws Exception {
+        void PENDING_아닌_상태에서_수정_예외발생() throws Exception {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
-            order.changeStatus(OrderStatus.ACCEPTED); // ACCEPTED 상태로 변경
+            OrderEntity order = pendingOrder();
+            order.changeStatus(OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
 
@@ -492,22 +445,10 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - PENDING → ACCEPTED 상태 전이")
-        void success_pending_to_accepted() {
+        void PENDING에서_ACCEPTED_상태전이_성공() {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
             given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(order));
+                    .willReturn(Optional.of(pendingOrder()));
 
             // when
             UpdateOrderStatusResponse result = orderService.updateOrderStatus(
@@ -519,20 +460,9 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - ACCEPTED → COOKING 상태 전이")
-        void success_accepted_to_cooking() {
+        void ACCEPTED에서_COOKING_상태전이_성공() {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
+            OrderEntity order = pendingOrder();
             order.changeStatus(OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
@@ -547,7 +477,7 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - 존재하지 않는 주문")
-        void fail_order_not_found() {
+        void 존재하지_않는_주문_예외발생() {
             // given
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.empty());
@@ -562,22 +492,10 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - 허용되지 않는 상태 전이 (PENDING → COMPLETED)")
-        void fail_invalid_transition() {
+        void 허용되지_않는_상태전이_예외발생() {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
             given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(order));
+                    .willReturn(Optional.of(pendingOrder()));
 
             // when & then
             assertThatThrownBy(() -> orderService.updateOrderStatus(
@@ -589,20 +507,9 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - 역방향 상태 전이 (ACCEPTED → PENDING)")
-        void fail_reverse_transition() {
+        void 역방향_상태전이_예외발생() {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
+            OrderEntity order = pendingOrder();
             order.changeStatus(OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
@@ -616,30 +523,20 @@ class OrderServiceV1Test {
         }
     }
 
+    // ========================================================
+    // 🎥 test(#9): 주문 취소 단위 테스트
+    // ========================================================
+
     @Nested
     @DisplayName("cancelOrder()")
     class CancelOrder {
 
         @Test
-        @DisplayName("성공 - 주문 후 5분 이내 취소 (사유 있음)")
-        void success_cancel_within_5_minutes_with_reason() throws Exception {
+        @DisplayName("성공 - 5분 이내 취소 (사유 있음)")
+        void 주문후_5분_이내_취소_사유있음_성공() throws Exception {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
-            Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
-            field.setAccessible(true);
-            field.set(order, LocalDateTime.now().minusMinutes(3));
-
+            OrderEntity order = pendingOrder();
+            setCreatedAt(order, LocalDateTime.now().minusMinutes(3));
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
 
@@ -652,25 +549,11 @@ class OrderServiceV1Test {
         }
 
         @Test
-        @DisplayName("성공 - 주문 후 5분 이내 취소 (사유 없음)")
-        void success_cancel_within_5_minutes_without_reason() throws Exception {
+        @DisplayName("성공 - 5분 이내 취소 (사유 없음)")
+        void 주문후_5분_이내_취소_사유없음_성공() throws Exception {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
-            Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
-            field.setAccessible(true);
-            field.set(order, LocalDateTime.now().minusMinutes(3));
-
+            OrderEntity order = pendingOrder();
+            setCreatedAt(order, LocalDateTime.now().minusMinutes(3));
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
 
@@ -682,25 +565,11 @@ class OrderServiceV1Test {
         }
 
         @Test
-        @DisplayName("실패 - 주문 후 5분 초과")
-        void fail_cancel_after_5_minutes() throws Exception {
+        @DisplayName("실패 - 5분 초과 취소")
+        void 주문후_5분_초과_취소_예외발생() throws Exception {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
-            Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
-            field.setAccessible(true);
-            field.set(order, LocalDateTime.now().minusMinutes(6));
-
+            OrderEntity order = pendingOrder();
+            setCreatedAt(order, LocalDateTime.now().minusMinutes(6));
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
 
@@ -714,24 +583,10 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - PENDING이 아닌 상태에서 취소 시도")
-        void fail_cancel_non_pending_order() throws Exception {
+        void PENDING_아닌_상태에서_취소_예외발생() throws Exception {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
-            Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
-            field.setAccessible(true);
-            field.set(order, LocalDateTime.now().minusMinutes(1));
-
+            OrderEntity order = pendingOrder();
+            setCreatedAt(order, LocalDateTime.now().minusMinutes(1));
             order.changeStatus(OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
@@ -746,24 +601,10 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - 5분 이내지만 PENDING이 아닌 상태")
-        void fail_cancel_not_pending_within_5_minutes() throws Exception {
+        void 주문후_5분_이내지만_PENDING_아닌_상태_예외발생() throws Exception {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
-            Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
-            field.setAccessible(true);
-            field.set(order, LocalDateTime.now().minusMinutes(3));
-
+            OrderEntity order = pendingOrder();
+            setCreatedAt(order, LocalDateTime.now().minusMinutes(3));
             order.changeStatus(OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
@@ -778,7 +619,7 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - 존재하지 않는 주문")
-        void fail_order_not_found() {
+        void 존재하지_않는_주문_예외발생() {
             // given
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.empty());
@@ -802,22 +643,10 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - 주문 거절 (사유 있음)")
-        void success_reject_with_reason() {
+        void 주문_거절_사유있음_성공() {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
             given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(order));
+                    .willReturn(Optional.of(pendingOrder()));
 
             // when
             RejectOrderResponse result = orderService.rejectOrder(
@@ -830,22 +659,10 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - 주문 거절 (사유 없음)")
-        void success_reject_without_reason() {
+        void 주문_거절_사유없음_성공() {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
             given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(order));
+                    .willReturn(Optional.of(pendingOrder()));
 
             // when
             RejectOrderResponse result = orderService.rejectOrder(orderId, null);
@@ -857,7 +674,7 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - 존재하지 않는 주문")
-        void fail_order_not_found() {
+        void 존재하지_않는_주문_예외발생() {
             // given
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.empty());
@@ -872,20 +689,9 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - PENDING이 아닌 상태에서 거절 시도")
-        void fail_reject_non_pending_order() {
+        void PENDING_아닌_상태에서_거절_예외발생() {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
+            OrderEntity order = pendingOrder();
             order.changeStatus(OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
@@ -909,20 +715,9 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - 주문 soft delete")
-        void success() {
+        void 주문_soft_delete_성공() {
             // given
-            OrderEntity order = OrderEntity.builder()
-                    .customerId(userId)
-                    .storeId(storeId)
-                    .addressId(addressId)
-                    .storeName("BBQ 광화문점")
-                    .deliveryAddress("서울 광화문 100번지")
-                    .deliveryDetail("101호")
-                    .orderType(OrderType.ONLINE)
-                    .note("문 앞에 놔주세요")
-                    .totalPrice(38000L)
-                    .build();
-
+            OrderEntity order = pendingOrder();
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
 
@@ -935,24 +730,11 @@ class OrderServiceV1Test {
         }
 
         @Test
-        @DisplayName("실패 - 존재하지 않는 주문")
-        void fail_order_not_found() {
+        @DisplayName("실패 - 존재하지 않는 주문 (이미 삭제된 주문 포함)")
+        void 존재하지_않는_주문_예외발생() {
             // given
-            given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.empty());
-
-            // when & then
-            assertThatThrownBy(() -> orderService.deleteOrder(orderId))
-                    .isInstanceOf(BaseException.class)
-                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
-                            .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
-        }
-
-        @Test
-        @DisplayName("실패 - 이미 삭제된 주문")
-        void fail_already_deleted() {
-            // given
-            // 이미 soft delete된 주문은 findActiveById에서 제외됨
+            // 존재하지 않는 주문 또는 이미 soft delete된 주문 모두
+            // findActiveById에서 Optional.empty() 반환
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.empty());
 
