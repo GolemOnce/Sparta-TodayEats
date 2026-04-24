@@ -140,4 +140,36 @@ public class AuthServiceV1 {
                 .refreshToken(refreshToken)
                 .build();
     }
+
+    public TokenResponse reissue(String refreshToken) {
+        // 토큰 유효성 검사
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new BaseException(AuthErrorCode.INVALID_TOKEN);
+        }
+
+        // userId 추출
+        UUID userId = jwtTokenProvider.getUserId(refreshToken);
+
+        // Refresh Token 조회
+        String rtKey = RT_PREFIX + userId;
+        String savedRefreshToken = redisTemplate.opsForValue().get(rtKey);
+        if (savedRefreshToken == null || !savedRefreshToken.equals(refreshToken)) {
+            throw new BaseException(AuthErrorCode.INVALID_TOKEN);
+        }
+
+        // Access Token & Refresh Token 재발급
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new BaseException(UserErrorCode.USER_NOT_FOUND));
+        String newAccessToken = jwtTokenProvider.createAccessToken(userId, user.getRole());
+        String newRefreshToken = jwtTokenProvider.createRefreshToken(userId);
+
+        // Redis에 Refresh Token 저장
+        redisTemplate.opsForValue().set(
+                rtKey,
+                newRefreshToken,
+                jwtTokenProvider.getRefreshTokenValidityDuration()
+        );
+
+        return new TokenResponse(newAccessToken, newRefreshToken);
+    }
 }

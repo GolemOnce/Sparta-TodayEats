@@ -33,4 +33,9 @@ public class AuthControllerV1 {
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authServiceV1.login(request.getEmail(), request.getPassword()));
     }
+
+    @PostMapping("/reissue")
+    public ResponseEntity<TokenResponse> reissue(@Valid @RequestBody RefreshTokenRequest request) {
+        return ResponseEntity.ok(authServiceV1.reissue(request.getRefreshToken()));
+    }
 }
