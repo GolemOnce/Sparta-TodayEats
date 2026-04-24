@@ -57,12 +57,12 @@ public class Store extends BaseEntity {
     @Builder.Default
     private Boolean isHidden = false;
 
-    public void update(String name, String address, String phone, String description, Area area, Category category) {
+    public void update(String name, String address, String phone) {
         this.name = name;
         this.address = address;
-        this.phone = phone;
-        this.area = area;
-        this.category = category;
+        if (phone != null) {
+            this.phone = phone.isBlank() ? null : phone;
+        }
     }
 
     public void updateAverageRating(BigDecimal averageRating) {
