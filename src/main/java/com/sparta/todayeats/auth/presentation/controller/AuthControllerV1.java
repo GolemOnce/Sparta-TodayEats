@@ -45,4 +45,21 @@ public class AuthControllerV1 {
         authServiceV1.logout(authentication);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/password-reset/send")
+    public ResponseEntity<SendCodeResponse> sendPasswordResetLink(@Valid @RequestBody SendCodeRequest request) {
+        return ResponseEntity.ok(authServiceV1.sendPasswordResetLink(request.getEmail()));
+    }
+
+    @GetMapping("/password-reset")
+    public ResponseEntity<ConfirmCodeResponse> confirmPasswordResetLink(@RequestParam String code) {
+        return ResponseEntity.ok(authServiceV1.confirmPasswordResetLink(code));
+    }
+
+    @PatchMapping("/password-reset")
+    public ResponseEntity<PasswordResetResponse> passwordReset(
+            @RequestParam String code, @Valid @RequestBody PasswordResetRequest request
+    ) {
+        return ResponseEntity.ok(authServiceV1.passwordReset(code, request.getNewPassword(), request.getConfirmPassword()));
+    }
 }
