@@ -32,7 +32,7 @@ public class OrderItemEntity extends BaseEntity {
     private String menuName;               // 메뉴명 스냅샷
 
     @Column(name = "unit_price", nullable = false)
-    private Integer unitPrice;             // 단가 스냅샷
+    private Long unitPrice;             // 단가 스냅샷
     // ─────────────────────────────────────────────────────────────────────
 
     @Column(name = "quantity", nullable = false)
@@ -40,7 +40,7 @@ public class OrderItemEntity extends BaseEntity {
 
     @Builder
     public OrderItemEntity(OrderEntity order, UUID menuId, String menuName,
-                           Integer unitPrice, Integer quantity) {
+                           Long unitPrice, Integer quantity) {
         this.order = order;
         this.menuId = menuId;
         this.menuName = menuName;
