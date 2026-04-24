@@ -72,7 +72,6 @@ public class CategoryController {
 
         categoryService.deleteCategory(categoryId);
 
-        return ResponseEntity.status(HttpStatus.NO_CONTENT)
-                .body(ApiResponse.deleted(null));
+        return ResponseEntity.noContent().build();
     }
 }
