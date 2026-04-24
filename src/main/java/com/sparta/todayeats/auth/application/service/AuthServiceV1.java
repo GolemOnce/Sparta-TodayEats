@@ -11,6 +11,7 @@ import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import com.sparta.todayeats.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -171,5 +172,10 @@ public class AuthServiceV1 {
         );
 
         return new TokenResponse(newAccessToken, newRefreshToken);
+    }
+
+    public void logout(Authentication authentication) {
+        // Redis에서 Refresh Token 삭제
+        redisTemplate.delete(RT_PREFIX + authentication.getPrincipal());
     }
 }
