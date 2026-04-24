@@ -6,7 +6,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-// 가게 생성 응답
+// 가게 생성 응답 DTO
 @Getter
 @Builder
 public class StoreCreateResponse {

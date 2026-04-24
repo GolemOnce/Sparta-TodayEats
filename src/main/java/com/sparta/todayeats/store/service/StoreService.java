@@ -9,6 +9,7 @@ import com.sparta.todayeats.global.exception.*;
 import com.sparta.todayeats.store.dto.StoreCreateRequest;
 import com.sparta.todayeats.store.dto.StoreCreateResponse;
 import com.sparta.todayeats.store.dto.StoreResponse;
+import com.sparta.todayeats.store.dto.StoreUpdateRequest;
 import com.sparta.todayeats.store.entity.Store;
 import com.sparta.todayeats.store.repository.StoreRepository;
 import com.sparta.todayeats.user.domain.entity.User;
@@ -22,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
+
+import static com.sparta.todayeats.store.entity.QStore.store;
 
 @Slf4j
 @Service
@@ -98,7 +101,23 @@ public class StoreService {
         return toResponse(store);
     }
 
+    // 가게 수정
+    @Transactional
+    public StoreResponse updateStore(UUID storeId, StoreUpdateRequest request, UUID userId) {
+        // 수정 대상 가게 조회
+        Store store = getStoreEntity(storeId);
 
+        // TODO: 인증 구현 후 MANAGER, MASTER는 본인 가게 아니어도 수정 가능하도록 분기
+        // 본인 가게인지 확인
+        if (!store.getOwner().getUserId().equals(userId)) {
+            throw new BaseException(StoreErrorCode.STORE_FORBIDDEN);
+        }
+
+        // 전체 교체
+        store.update(request.getName(), request.getAddress(), request.getPhone());
+
+        return toResponse(store);
+    }
 
     // 가게 이름 중복 검증
     private void validateDuplicateStore(String name) {
@@ -115,7 +134,7 @@ public class StoreService {
 
     // 가게 엔티티 조회
     private Store getStoreEntity(UUID storeId) {
-        return storeRepository.findById(storeId)
+        return storeRepository.findByIdWithOwner(storeId)
                 .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
     }
 
