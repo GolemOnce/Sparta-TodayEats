@@ -37,6 +37,8 @@ public class StoreController {
     }
 
     // TODO: Auditing
+    // TODO: CUSTOMER → isHidden = false 인 것만 노출
+    // TODO: OWNER/MANAGER/MASTER → 숨김 포함 전체 노출
     // 가게 목록 조회 + 복합 검색 (카테고리, 이름)
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<StoreResponse>>> getStores(
@@ -47,4 +49,16 @@ public class StoreController {
         PageResponse<StoreResponse> response = storeService.getStores(categoryName, keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
+    // TODO: Auditing
+    // 가게 단건 조회
+    @GetMapping("/{storeId}")
+    public ResponseEntity<ApiResponse<StoreResponse>> getStore(
+            @PathVariable UUID storeId) {
+
+        StoreResponse response = storeService.getStore(storeId);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+    
 }
