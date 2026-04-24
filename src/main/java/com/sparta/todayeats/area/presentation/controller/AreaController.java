@@ -61,8 +61,8 @@ public class AreaController {
 
     // TODO: 권한 처리(MANAGER, MASTER), Auditing
     // 운영 지역 수정
-    @PatchMapping("/{areaId}")
-    public ResponseEntity<ApiResponse<AreaResponse>> updateArea(@PathVariable UUID areaId, @RequestBody AreaUpdateRequest request) {
+    @PutMapping("/{areaId}")
+    public ResponseEntity<ApiResponse<AreaResponse>> updateArea(@PathVariable UUID areaId, @Valid @RequestBody AreaUpdateRequest request) {
 
         AreaResponse response = areaService.updateArea(areaId, request);
 
