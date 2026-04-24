@@ -1,4 +1,4 @@
-package com.sparta.todayeats.store.domain.entity;
+package com.sparta.todayeats.store.entity;
 
 import com.sparta.todayeats.area.domain.entity.Area;
 import com.sparta.todayeats.category.domain.entity.Category;
@@ -27,7 +27,7 @@ public class Store extends BaseEntity {
 
     // username FK (VARCHAR(10))
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", referencedColumnName = "username", nullable = false)
+    @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
     @ManyToOne(fetch = FetchType.LAZY)
