@@ -33,10 +33,6 @@ public class OrderServiceV1 {
     private final StoreRepository storeRepository;
     private final AddressRepository addressRepository;
 
-    // ========================================================
-    // feat: 주문 생성 서비스 로직 구현
-    // ========================================================
-
     /**
      * 주문 생성
      * - 가게/배송지/메뉴 존재 검증
@@ -111,10 +107,6 @@ public class OrderServiceV1 {
         return CreateOrderResponse.from(saved);
     }
 
-    // ========================================================
-    // feat: 주문 목록 조회 서비스 로직 추가
-    // ========================================================
-
     /**
      * 주문 목록 조회
      * - soft delete 제외
@@ -150,10 +142,6 @@ public class OrderServiceV1 {
                 .map(OrderSummaryResponse::from);
     }
 
-    // ========================================================
-    // feat: 주문 단건 조회 서비스 로직 추가
-    // ========================================================
-
     /**
      * 주문 단건 조회
      * - soft delete 제외
@@ -183,10 +171,6 @@ public class OrderServiceV1 {
         return OrderDetailResponse.from(order);
     }
 
-    // ========================================================
-    // feat: 주문 수정 서비스 로직 추가
-    // ========================================================
-
     /**
      * 주문 요청사항 수정
      * - PENDING 상태만 수정 가능
@@ -212,10 +196,6 @@ public class OrderServiceV1 {
         log.info("주문 요청사항 수정: orderId={}", orderId);
         return UpdateOrderResponse.from(order);
     }
-
-    // ========================================================
-    // feat: 주문 상태 변경 서비스 로직 추가
-    // ========================================================
 
     /**
      * 주문 상태 변경
@@ -255,10 +235,6 @@ public class OrderServiceV1 {
         return UpdateOrderStatusResponse.from(updated);
     }
 
-    // ========================================================
-    // feat: 주문 취소 서비스 로직 추가
-    // ========================================================
-
     /**
      * 주문 취소
      * - PENDING 상태에서 5분 이내만 가능
@@ -295,10 +271,6 @@ public class OrderServiceV1 {
         log.info("주문 취소: orderId={}", orderId);
         return CancelOrderResponse.from(updated);
     }
-
-    // ========================================================
-    // feat: 주문 거절 서비스 로직 추가
-    // ========================================================
 
     /**
      * 주문 거절
@@ -341,11 +313,6 @@ public class OrderServiceV1 {
         log.info("주문 거절: orderId={}", orderId);
         return RejectOrderResponse.from(updated);
     }
-
-
-    // ========================================================
-    // feat: 주문 삭제 서비스 로직 추가
-    // ========================================================
 
     /**
      * 주문 삭제 (Soft delete)
