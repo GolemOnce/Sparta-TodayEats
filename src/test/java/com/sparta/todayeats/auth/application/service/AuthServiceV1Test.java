@@ -108,7 +108,7 @@ class AuthServiceV1Test {
         @Test
         void 회원가입_실패_비밀번호_불일치() {
             // given
-            SignupRequest request = signupRequest("12345");
+            SignupRequest request = signupRequest("WRONG");
 
             given(redisTemplate.hasKey(VERIFIED_PREFIX + EMAIL)).willReturn(true);
 
@@ -133,9 +133,9 @@ class AuthServiceV1Test {
     @DisplayName("sendSignupCode()")
     class SendSignupCode {
         @Test
-        void 인증번호_전송_성공() {
+        void 인증번호_전송_성공_신규() {
             // given
-            given(userRepository.existsByEmail(EMAIL)).willReturn(false);
+            given(userRepository.findByEmail(EMAIL)).willReturn(Optional.empty());
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
             // when
@@ -143,18 +143,37 @@ class AuthServiceV1Test {
 
             // then
             assertThat(response.getEmail()).isEqualTo(EMAIL);
-            verify(redisTemplate.opsForValue()).set(
-                    startsWith(SIGNUP_PREFIX),
+            verify(valueOperations).set(
+                    eq(SIGNUP_PREFIX + EMAIL),
                     anyString(),
-                    any()
+                    any(Duration.class)
             );
+            verify(authMailService).sendSignupCode(eq(EMAIL), anyString());
+        }
+
+        @Test
+        void 인증번호_전송_성공_기존() {
+            // given
+            User user = User.builder().email(EMAIL).build();
+            user.softDelete(USER_ID);
+
+            given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(user));
+            given(redisTemplate.opsForValue()).willReturn(valueOperations);
+
+            // when
+            SendCodeResponse response = authServiceV1.sendSignupCode(EMAIL);
+
+            // then
+            assertThat(response.getEmail()).isEqualTo(EMAIL);
             verify(authMailService).sendSignupCode(eq(EMAIL), anyString());
         }
 
         @Test
         void 인증번호_전송_실패() {
             // given
-            given(userRepository.existsByEmail(EMAIL)).willReturn(true);
+            User activeUser = User.builder().email(EMAIL).build();
+
+            given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(activeUser));
 
             // when & then
             assertThatThrownBy(() -> authServiceV1.sendSignupCode(EMAIL))
@@ -191,23 +210,25 @@ class AuthServiceV1Test {
         @Test
         void 인증번호_검증_실패_인증번호_없음() {
             // given
-            given(userRepository.existsByEmail(EMAIL)).willReturn(true);
+            given(redisTemplate.opsForValue()).willReturn(valueOperations);
+            given(valueOperations.get(SIGNUP_PREFIX + EMAIL)).willReturn(null);
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.sendSignupCode(EMAIL))
+            assertThatThrownBy(() -> authServiceV1.confirmSignupCode(EMAIL, CODE))
                     .isInstanceOf(BaseException.class)
-                    .hasMessage(UserErrorCode.DUPLICATE_EMAIL.getMessage());
+                    .hasMessage(AuthErrorCode.INVALID_VERIFICATION_CODE.getMessage());
         }
 
         @Test
         void 인증번호_검증_실패_인증번호_불일치() {
             // given
-            given(userRepository.existsByEmail(EMAIL)).willReturn(true);
+            given(redisTemplate.opsForValue()).willReturn(valueOperations);
+            given(valueOperations.get(SIGNUP_PREFIX + EMAIL)).willReturn("WRONG");
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.sendSignupCode(EMAIL))
+            assertThatThrownBy(() -> authServiceV1.confirmSignupCode(EMAIL, CODE))
                     .isInstanceOf(BaseException.class)
-                    .hasMessage(UserErrorCode.DUPLICATE_EMAIL.getMessage());
+                    .hasMessage(AuthErrorCode.INVALID_VERIFICATION_CODE.getMessage());
         }
     }
 

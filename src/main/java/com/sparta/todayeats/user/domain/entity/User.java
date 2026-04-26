@@ -1,5 +1,6 @@
 package com.sparta.todayeats.user.domain.entity;
 
+import com.sparta.todayeats.auth.presentation.dto.request.SignupRequest;
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -43,5 +44,12 @@ public class User extends BaseEntity {
 
     public void updatePassword(String password) {
         this.password = password;
+    }
+
+    public void restore(SignupRequest request) {
+        this.password = request.getPassword();
+        this.nickname = request.getNickname();
+        this.role = request.getRole();
+        this.restore();
     }
 }
