@@ -11,6 +11,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "p_payment")
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment extends BaseEntity {
     @Id
@@ -24,20 +26,19 @@ public class Payment extends BaseEntity {
     private Order order;
 
     @NotNull
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     private PaymentMethod paymentMethod = PaymentMethod.CARD;
 
     @NotNull
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     private PaymentStatus status = PaymentStatus.PENDING;
 
     @NotNull
     private Long amount;
 
-    public static Payment create(Order order, Long amount) {
-        Payment payment = new Payment();
-        payment.order = order;
-        payment.amount = amount;
-        return  payment;
+    public void updatePaymentStatus(PaymentStatus status) {
+        this.status = status;
     }
 }
