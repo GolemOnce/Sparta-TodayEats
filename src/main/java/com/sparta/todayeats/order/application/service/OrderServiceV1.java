@@ -282,7 +282,7 @@ public class OrderServiceV1 {
 
         order.cancelByCustomer();  // 검증만
 
-        int rows = orderRepository.cancelConditionally(orderId, request != null ? request.cancelReason() : null);
+        int rows = orderRepository.cancelConditionally(orderId, request != null ? request.cancelReason() : null, OrderStatus.PENDING, OrderStatus.CANCELED);
         if (rows == 0) {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
@@ -328,7 +328,7 @@ public class OrderServiceV1 {
 
         order.rejectByOwner();  // 검증만
 
-        int rows = orderRepository.rejectConditionally(orderId, request != null ? request.rejectReason() : null);
+        int rows = orderRepository.rejectConditionally(orderId, request != null ? request.rejectReason() : null, OrderStatus.PENDING, OrderStatus.REJECTED);
         if (rows == 0) {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
