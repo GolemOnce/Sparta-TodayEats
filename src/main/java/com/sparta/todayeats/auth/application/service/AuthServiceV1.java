@@ -188,7 +188,7 @@ public class AuthServiceV1 {
         redisTemplate.delete(RT_PREFIX + userId);
     }
 
-    public SendCodeResponse sendResetPasswordLink(String email) {
+    public SendCodeResponse sendPasswordResetLink(String email) {
         // 삭제되지 않은 사용자만
         User user = userRepository.findByEmail(email).orElse(null);
         if (user != null && !user.isDeleted()) {
@@ -203,14 +203,14 @@ public class AuthServiceV1 {
             );
 
             // 메일 전송
-            authMailService.sendResetPasswordLink(email, code);
+            authMailService.sendPasswordResetLink(email, code);
         }
 
         return new SendCodeResponse(email, LocalDateTime.now().plusMinutes(CODE_VALID_MINUTES));
     }
 
     @Transactional(readOnly = true)
-    public ConfirmCodeResponse confirmResetPasswordLink(String code) {
+    public ConfirmCodeResponse confirmPasswordResetLink(String code) {
         // 인증번호 조회
         return new ConfirmCodeResponse(getEmailByResetCode(code));
     }
