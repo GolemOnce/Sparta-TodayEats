@@ -47,13 +47,13 @@ public class AuthControllerV1 {
     }
 
     @PostMapping("/reset-password/send")
-    public ResponseEntity<SendCodeResponse> sendResetPasswordLink(@Valid @RequestBody SendCodeRequest request) {
-        return ResponseEntity.ok(authServiceV1.sendResetPasswordLink(request.getEmail()));
+    public ResponseEntity<SendCodeResponse> sendPasswordResetLink(@Valid @RequestBody SendCodeRequest request) {
+        return ResponseEntity.ok(authServiceV1.sendPasswordResetLink(request.getEmail()));
     }
 
     @GetMapping("/reset-password")
-    public ResponseEntity<ConfirmCodeResponse> confirmResetPasswordLink(@RequestParam String code) {
-        return ResponseEntity.ok(authServiceV1.confirmResetPasswordLink(code));
+    public ResponseEntity<ConfirmCodeResponse> confirmPasswordResetLink(@RequestParam String code) {
+        return ResponseEntity.ok(authServiceV1.confirmPasswordResetLink(code));
     }
 
     @PatchMapping("/reset-password")

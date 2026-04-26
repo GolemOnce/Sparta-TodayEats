@@ -385,12 +385,12 @@ class AuthServiceV1Test {
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
         // when
-        SendCodeResponse response = authServiceV1.sendResetPasswordLink(EMAIL);
+        SendCodeResponse response = authServiceV1.sendPasswordResetLink(EMAIL);
 
         // then
         assertThat(response.getEmail()).isEqualTo(EMAIL);
         verify(valueOperations).set(startsWith(RESET_PASSWORD_PREFIX), eq(EMAIL), any());
-        verify(authMailService).sendResetPasswordLink(eq(EMAIL), anyString());
+        verify(authMailService).sendPasswordResetLink(eq(EMAIL), anyString());
     }
 
     @Nested

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -78,15 +78,15 @@
 
     <div class="logo">오늘한끼</div>
 
-    <h2>${title}</h2>
+    <h2 th:text="${title}">메일 제목</h2>
 
-    <p>${description}</p>
+    <p th:text="${description}">메일 상세 설명</p>
 
-    <!-- 인증 코드 -->
-    <div class="code-box">${code}</div>
+    <!-- 인증번호 -->
+    <div th:if="${code != null}" class="code-box" th:text="${code}">인증번호</div>
 
     <!-- 비밀번호 재설정 링크 -->
-    <a href="${resetLink}" class="button">비밀번호 재설정하기</a>
+    <a th:if="${resetLink != null}" th:href="${resetLink}" class="button">비밀번호 재설정</a>
 
     <p class="footer">
         이 인증 정보는 <strong>5분</strong> 동안 유효합니다.<br/>
