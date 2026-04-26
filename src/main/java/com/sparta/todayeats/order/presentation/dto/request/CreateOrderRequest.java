@@ -24,8 +24,7 @@ public record CreateOrderRequest(
 
         @NotEmpty(message = "주문 항목은 최소 1개 이상이어야 합니다.")
         @Valid
-        @NotNull
-        List<OrderItemRequest> items
+        List< @NotNull OrderItemRequest> items
 ) {
     public record OrderItemRequest(
 
