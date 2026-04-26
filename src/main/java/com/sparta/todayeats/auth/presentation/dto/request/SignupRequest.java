@@ -2,11 +2,12 @@ package com.sparta.todayeats.auth.presentation.dto.request;
 
 import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import jakarta.validation.constraints.*;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 @Getter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SignupRequest {
     @NotBlank(message = "이메일은 필수입니다.")
     @Email(message = "이메일 형식이 올바르지 않습니다.")
