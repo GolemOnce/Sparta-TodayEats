@@ -27,11 +27,11 @@ public class LoginUserArgumentResolver implements HandlerMethodArgumentResolver 
                                   NativeWebRequest webRequest, WebDataBinderFactory binderFactory) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication == null || authentication.getPrincipal().equals("anonymousUser")) {
+        Object principal = authentication.getPrincipal();
+        if (principal == null || "anonymousUser".equals(principal)) {
             return null;
         }
 
-        Object principal = authentication.getPrincipal();
         if (principal instanceof UUID) {
             return principal;
         }
