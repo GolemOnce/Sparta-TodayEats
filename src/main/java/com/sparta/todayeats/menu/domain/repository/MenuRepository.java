@@ -11,6 +11,6 @@ import java.util.UUID;
 public interface MenuRepository extends JpaRepository<MenuEntity, UUID> {
 
     // is_hidden = false 조건 추가
-    @Query("SELECT m FROM MenuEntity m WHERE m.menuId = :menuId AND m.deletedAt IS NULL AND m.isHidden = false")
+    @Query("SELECT m FROM MenuEntity m WHERE m.menuId = :menuId AND m.deletedAt IS NULL AND (m.isHidden = false OR m.isHidden IS NULL)")
     Optional<MenuEntity> findActiveById(@Param("menuId") UUID menuId);
 }
