@@ -2,11 +2,12 @@ package com.sparta.todayeats.auth.presentation.dto.request;
 
 import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import jakarta.validation.constraints.*;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 
 @Getter
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SignupRequest {
     @NotBlank(message = "이메일은 필수입니다.")
     @Email(message = "이메일 형식이 올바르지 않습니다.")
@@ -32,5 +33,9 @@ public class SignupRequest {
     @AssertTrue(message = "가입 가능한 회원 유형이 아닙니다.")
     public boolean isValidRole() {
         return role == UserRoleEnum.CUSTOMER || role == UserRoleEnum.OWNER;
+    }
+
+    public void encodePassword(String encodedPassword) {
+        this.password = encodedPassword;
     }
 }

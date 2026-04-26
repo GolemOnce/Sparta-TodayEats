@@ -25,6 +25,8 @@ public class JwtTokenProvider {
     private final long accessTokenValidity;
     private final long refreshTokenValidity;
 
+    private static final String BEARER_PREFIX = "Bearer ";
+
     private static final String TOKEN_TYPE = "tokenType";
     private static final String ROLE = "role";
     private static final String ACCESS = "access";
@@ -39,6 +41,14 @@ public class JwtTokenProvider {
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.accessTokenValidity = accessTokenValidity;
         this.refreshTokenValidity = refreshTokenValidity;
+    }
+
+    // Token 분리
+    public String substringToken(String token) {
+        if (token != null && token.startsWith(BEARER_PREFIX)) {
+            return token.substring(BEARER_PREFIX.length());
+        }
+        return null;
     }
 
     // Access Token 생성
@@ -67,7 +77,7 @@ public class JwtTokenProvider {
             builder.claim(ROLE, role.getAuthority());
         }
 
-        return builder.compact();
+        return BEARER_PREFIX + builder.compact();
     }
 
     // Authentication 생성

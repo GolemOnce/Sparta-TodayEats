@@ -108,7 +108,7 @@ class AuthServiceV1Test {
         @Test
         void 회원가입_실패_비밀번호_불일치() {
             // given
-            SignupRequest request = signupRequest("12345");
+            SignupRequest request = signupRequest("wrong");
 
             given(redisTemplate.hasKey(VERIFIED_PREFIX + EMAIL)).willReturn(true);
 
@@ -133,9 +133,9 @@ class AuthServiceV1Test {
     @DisplayName("sendSignupCode()")
     class SendSignupCode {
         @Test
-        void 인증번호_전송_성공() {
+        void 인증번호_전송_성공_신규() {
             // given
-            given(userRepository.existsByEmail(EMAIL)).willReturn(false);
+            given(userRepository.findByEmail(EMAIL)).willReturn(Optional.empty());
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
             // when
@@ -143,18 +143,33 @@ class AuthServiceV1Test {
 
             // then
             assertThat(response.getEmail()).isEqualTo(EMAIL);
-            verify(redisTemplate.opsForValue()).set(
-                    startsWith(SIGNUP_PREFIX),
-                    anyString(),
-                    any()
-            );
+            verify(valueOperations).set(eq(SIGNUP_PREFIX + EMAIL), anyString(), any(Duration.class));
+            verify(authMailService).sendSignupCode(eq(EMAIL), anyString());
+        }
+
+        @Test
+        void 인증번호_전송_성공_기존() {
+            // given
+            User user = User.builder().email(EMAIL).build();
+            user.softDelete(USER_ID);
+
+            given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(user));
+            given(redisTemplate.opsForValue()).willReturn(valueOperations);
+
+            // when
+            SendCodeResponse response = authServiceV1.sendSignupCode(EMAIL);
+
+            // then
+            assertThat(response.getEmail()).isEqualTo(EMAIL);
             verify(authMailService).sendSignupCode(eq(EMAIL), anyString());
         }
 
         @Test
         void 인증번호_전송_실패() {
             // given
-            given(userRepository.existsByEmail(EMAIL)).willReturn(true);
+            User activeUser = User.builder().email(EMAIL).build();
+
+            given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(activeUser));
 
             // when & then
             assertThatThrownBy(() -> authServiceV1.sendSignupCode(EMAIL))
@@ -181,33 +196,31 @@ class AuthServiceV1Test {
             // then
             assertThat(response.getEmail()).isEqualTo(EMAIL);
             verify(redisTemplate).delete(signupKey);
-            verify(valueOperations).set(
-                    eq(verifiedKey),
-                    eq("true"),
-                    any()
-            );
+            verify(valueOperations).set(eq(verifiedKey), eq("true"), any());
         }
 
         @Test
         void 인증번호_검증_실패_인증번호_없음() {
             // given
-            given(userRepository.existsByEmail(EMAIL)).willReturn(true);
+            given(redisTemplate.opsForValue()).willReturn(valueOperations);
+            given(valueOperations.get(SIGNUP_PREFIX + EMAIL)).willReturn(null);
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.sendSignupCode(EMAIL))
+            assertThatThrownBy(() -> authServiceV1.confirmSignupCode(EMAIL, CODE))
                     .isInstanceOf(BaseException.class)
-                    .hasMessage(UserErrorCode.DUPLICATE_EMAIL.getMessage());
+                    .hasMessage(AuthErrorCode.INVALID_VERIFICATION_CODE.getMessage());
         }
 
         @Test
         void 인증번호_검증_실패_인증번호_불일치() {
             // given
-            given(userRepository.existsByEmail(EMAIL)).willReturn(true);
+            given(redisTemplate.opsForValue()).willReturn(valueOperations);
+            given(valueOperations.get(SIGNUP_PREFIX + EMAIL)).willReturn("wrong");
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.sendSignupCode(EMAIL))
+            assertThatThrownBy(() -> authServiceV1.confirmSignupCode(EMAIL, CODE))
                     .isInstanceOf(BaseException.class)
-                    .hasMessage(UserErrorCode.DUPLICATE_EMAIL.getMessage());
+                    .hasMessage(AuthErrorCode.INVALID_VERIFICATION_CODE.getMessage());
         }
     }
 
@@ -228,6 +241,7 @@ class AuthServiceV1Test {
             given(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD)).willReturn(true);
             given(jwtTokenProvider.createAccessToken(any(), any())).willReturn(ACCESS_TOKEN);
             given(jwtTokenProvider.createRefreshToken(any())).willReturn(REFRESH_TOKEN);
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(jwtTokenProvider.getRefreshTokenValidityDuration()).willReturn(Duration.ofDays(7));
 
@@ -237,11 +251,7 @@ class AuthServiceV1Test {
             // then
             assertThat(response).isNotNull();
             assertThat(response.getAccessToken()).isEqualTo(ACCESS_TOKEN);
-            verify(redisTemplate.opsForValue()).set(
-                    startsWith(RT_PREFIX),
-                    eq(REFRESH_TOKEN),
-                    any()
-            );
+            verify(redisTemplate.opsForValue()).set(startsWith(RT_PREFIX), eq(REFRESH_TOKEN), any());
         }
 
         @Test
@@ -256,12 +266,23 @@ class AuthServiceV1Test {
         }
 
         @Test
+        void 로그인_실패_삭제된_사용자() {
+            // given
+            User user = User.builder().email(EMAIL).build();
+            user.softDelete(USER_ID);
+
+            given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(user));
+
+            // when & then
+            assertThatThrownBy(() -> authServiceV1.login(EMAIL, PASSWORD))
+                    .isInstanceOf(BaseException.class)
+                    .hasMessage(UserErrorCode.USER_NOT_FOUND.getMessage());
+        }
+
+        @Test
         void 로그인_실패_비밀번호_불일치() {
             // given
-            User user = User.builder()
-                    .email(EMAIL)
-                    .password(ENCODED_PASSWORD)
-                    .build();
+            User user = User.builder().email(EMAIL).password(ENCODED_PASSWORD).build();
 
             given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(user));
             given(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD)).willReturn(false);
@@ -280,14 +301,12 @@ class AuthServiceV1Test {
         void 토큰_재발급_성공() {
             // given
             given(jwtTokenProvider.validateToken(REFRESH_TOKEN)).willReturn(true);
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
             given(jwtTokenProvider.getUserId(REFRESH_TOKEN)).willReturn(USER_ID);
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(valueOperations.get(RT_KEY)).willReturn(REFRESH_TOKEN);
 
-            User user = User.builder()
-                    .email(EMAIL)
-                    .role(UserRoleEnum.CUSTOMER)
-                    .build();
+            User user = User.builder().email(EMAIL).role(UserRoleEnum.CUSTOMER).build();
 
             given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
             given(jwtTokenProvider.createAccessToken(any(), any())).willReturn(ACCESS_TOKEN);
@@ -300,16 +319,13 @@ class AuthServiceV1Test {
             // then
             assertThat(response.getAccessToken()).isEqualTo(ACCESS_TOKEN);
             assertThat(response.getRefreshToken()).isEqualTo(REFRESH_TOKEN);
-            verify(valueOperations).set(
-                    eq(RT_KEY),
-                    eq(REFRESH_TOKEN),
-                    any()
-            );
+            verify(valueOperations).set(eq(RT_KEY), eq(REFRESH_TOKEN), any());
         }
 
         @Test
         void 토큰_재발급_실패_토큰_미유효() {
             // given
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
             given(jwtTokenProvider.validateToken(REFRESH_TOKEN)).willReturn(false);
 
             // when & then
@@ -322,6 +338,7 @@ class AuthServiceV1Test {
         void 토큰_재발급_실패_토큰_불일치() {
             // given
             given(jwtTokenProvider.validateToken(REFRESH_TOKEN)).willReturn(true);
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
             given(jwtTokenProvider.getUserId(REFRESH_TOKEN)).willReturn(USER_ID);
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(valueOperations.get(RT_KEY)).willReturn("other-token");
@@ -333,9 +350,10 @@ class AuthServiceV1Test {
         }
 
         @Test
-        void 토큰재발급_실패_사용자_없음() {
+        void 토큰_재발급_실패_사용자_없음() {
             // given
             given(jwtTokenProvider.validateToken(REFRESH_TOKEN)).willReturn(true);
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
             given(jwtTokenProvider.getUserId(REFRESH_TOKEN)).willReturn(USER_ID);
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(valueOperations.get(RT_KEY)).willReturn(REFRESH_TOKEN);
@@ -353,20 +371,22 @@ class AuthServiceV1Test {
     void 로그아웃_성공() {
         // given
         Authentication authentication = mock(Authentication.class);
-        given(authentication.getPrincipal()).willReturn(USER_ID.toString());
+        given(authentication.getName()).willReturn(USER_ID.toString());
 
         // when
-        authServiceV1.logout(authentication);
+        authServiceV1.logout(authentication.getName());
 
         // then
         verify(redisTemplate).delete(RT_KEY);
     }
 
     @Test
-    @DisplayName("sendPasswordResetLink()")
-    void 재설정_링크_전송_성공() {
+    @DisplayName("sendResetPasswordLink()")
+    void 비밀번호_재설정_링크_전송_성공() {
         // given
-        given(userRepository.existsByEmail(EMAIL)).willReturn(true);
+        User user = User.builder().email(EMAIL).build();
+
+        given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(user));
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
         // when
@@ -374,17 +394,13 @@ class AuthServiceV1Test {
 
         // then
         assertThat(response.getEmail()).isEqualTo(EMAIL);
-        verify(valueOperations).set(
-                startsWith(RESET_PASSWORD_PREFIX),
-                eq(EMAIL),
-                any()
-        );
-        verify(authMailService).sendResetPasswordLink(eq(EMAIL), anyString());
+        verify(valueOperations).set(startsWith(RESET_PASSWORD_PREFIX), eq(EMAIL), any());
+        verify(authMailService).sendPasswordResetLink(eq(EMAIL), anyString());
     }
 
     @Nested
-    @DisplayName("passwordReset()")
-    class PasswordReset {
+    @DisplayName("resetPassword()")
+    class ResetPassword {
         private final String NEW_PASSWORD = "decoded-new";
 
         @Test
@@ -393,16 +409,13 @@ class AuthServiceV1Test {
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(valueOperations.get(resetKey())).willReturn(EMAIL);
 
-            User user = User.builder()
-                    .email(EMAIL)
-                    .password("encoded-old")
-                    .build();
+            User user = User.builder().email(EMAIL).password("encoded-old").build();
 
             given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(user));
             given(passwordEncoder.encode(NEW_PASSWORD)).willReturn("encoded-new");
 
             // when
-            PasswordResetResponse response = authServiceV1.passwordReset(CODE, NEW_PASSWORD, NEW_PASSWORD);
+            ResetPasswordResponse response = authServiceV1.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD);
 
             // then
             assertThat(response.getEmail()).isEqualTo(EMAIL);
@@ -411,13 +424,13 @@ class AuthServiceV1Test {
         }
 
         @Test
-        void 비밀번호_재설정_실패_코드없음() {
+        void 비밀번호_재설정_실패_인증번호_없음() {
             // given
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(valueOperations.get(resetKey())).willReturn(null);
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.passwordReset(CODE, NEW_PASSWORD, NEW_PASSWORD))
+            assertThatThrownBy(() -> authServiceV1.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(AuthErrorCode.INVALID_VERIFICATION_CODE.getMessage());
         }
@@ -429,22 +442,37 @@ class AuthServiceV1Test {
             given(valueOperations.get(resetKey())).willReturn(EMAIL);
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.passwordReset(CODE, "a", "b"))
+            assertThatThrownBy(() -> authServiceV1.resetPassword(CODE, "a", "b"))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(UserErrorCode.PASSWORD_MISMATCH.getMessage());
         }
 
         @Test
-        void 비밀번호재설정_실패_사용자_없음() {
+        void 비밀번호_재설정_실패_사용자_없음() {
+            // given
+            given(redisTemplate.opsForValue()).willReturn(valueOperations);
+            given(valueOperations.get(resetKey())).willReturn(EMAIL);
+            given(userRepository.findByEmail(EMAIL)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> authServiceV1.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD))
+                    .isInstanceOf(BaseException.class)
+                    .hasMessage(UserErrorCode.USER_NOT_FOUND.getMessage());
+        }
+
+        @Test
+        void 비밀번호_재설정_실패_삭제된_사용자() {
             // given
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(valueOperations.get(resetKey())).willReturn(EMAIL);
 
-            given(userRepository.findByEmail(EMAIL))
-                    .willReturn(Optional.empty());
+            User user = User.builder().email(EMAIL).build();
+            user.softDelete(USER_ID);
+
+            given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(user));
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.passwordReset(CODE, NEW_PASSWORD, NEW_PASSWORD))
+            assertThatThrownBy(() -> authServiceV1.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(UserErrorCode.USER_NOT_FOUND.getMessage());
         }
