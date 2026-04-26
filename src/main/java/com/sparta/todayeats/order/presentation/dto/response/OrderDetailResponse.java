@@ -19,6 +19,9 @@ public record OrderDetailResponse(
         LocalDateTime createdAt,    // 주문 생성 일시 (JPA Auditing)
         LocalDateTime updatedAt     // 수정 일시 (JPA Auditing)
 ) {
+    /**
+     * OrderEntity로부터 응답 DTO 생성
+     */
     public static OrderDetailResponse from(OrderEntity order) {
         return new OrderDetailResponse(
                 order.getOrderId(),

@@ -16,6 +16,9 @@ public record OrderSummaryResponse(
         LocalDateTime updatedAt, // 수정 일시 (JPA Auditing)
         UUID updatedBy          // 수정자 ID (JPA Auditing)
 ) {
+    /**
+     * OrderEntity로부터 응답 DTO 생성
+     */
     public static OrderSummaryResponse from(OrderEntity order) {
         return new OrderSummaryResponse(
                 order.getOrderId(),
