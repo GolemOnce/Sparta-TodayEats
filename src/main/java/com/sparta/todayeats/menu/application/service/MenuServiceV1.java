@@ -10,6 +10,8 @@ import com.sparta.todayeats.menu.presentation.dto.request.MenuUpdateRequest;
 import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import com.sparta.todayeats.store.domain.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,18 +52,36 @@ public class MenuServiceV1 {
     }
 
     // 사장님 메뉴 조회
-    public List<MenuEntity> getOwnerMenusByStore(UUID storeId) {
-        return menuRepository.findOwnerMenusByStoreId(storeId);
+    public Page<MenuEntity> getOwnerMenusByStore(
+            UUID storeId,
+            String keyword,
+            Pageable pageable
+    ) {
+        return menuRepository.findOwnerMenusByStoreId(storeId, keyword, pageable);
     }
 
     // 고객용 가게 메뉴 조회
-    public List<MenuEntity> getMenusByStore(UUID storeId) {
-        return menuRepository.findOrderableMenusByStoreId(storeId);
+    public Page<MenuEntity> getMenusByStore(
+            UUID storeId,
+            String keyword,
+            Pageable pageable
+    ) {
+        return menuRepository.findOrderableMenusByStoreId(storeId, keyword, pageable);
     }
 
     // 고객용 카테고리별 조회
-    public List<MenuEntity> getMenusByCategory(UUID storeId, UUID categoryId) {
-        return menuRepository.findVisibleMenusByStoreAndCategory(storeId, categoryId);
+    public Page<MenuEntity> getMenusByCategory(
+            UUID storeId,
+            UUID categoryId,
+            String keyword,
+            Pageable pageable
+    ) {
+        return menuRepository.findVisibleMenusByStoreAndCategory(
+                storeId,
+                categoryId,
+                keyword,
+                pageable
+        );
     }
 
     // 메뉴 상세 조회

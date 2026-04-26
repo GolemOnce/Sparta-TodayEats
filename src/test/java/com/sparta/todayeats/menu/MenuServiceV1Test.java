@@ -18,6 +18,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -147,15 +152,18 @@ class MenuServiceV1Test {
                     .price(9000)
                     .build();
 
-            given(menuRepository.findOrderableMenusByStoreId(storeId))
-                    .willReturn(List.of(menu));
+            String keyword = "김치";
+            Pageable pageable = PageRequest.of(0, 10);
+
+            given(menuRepository.findOrderableMenusByStoreId(storeId, keyword, pageable))
+                    .willReturn(new PageImpl<>(List.of(menu)));
 
             // when
-            List<MenuEntity> result = menuService.getMenusByStore(storeId);
+            Page<MenuEntity> result = menuService.getMenusByStore(storeId, keyword, pageable);
 
             // then
-            assertThat(result).hasSize(1);
-            assertThat(result.get(0).getName()).isEqualTo("김치찌개");
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).getName()).isEqualTo("김치찌개");
         }
     }
 
@@ -176,16 +184,19 @@ class MenuServiceV1Test {
                     .isDeleted(false)
                     .build();
 
-            given(menuRepository.findOwnerMenusByStoreId(storeId))
-                    .willReturn(List.of(hiddenMenu));
+            String keyword = "숨김";
+            Pageable pageable = PageRequest.of(0, 10);
+
+            given(menuRepository.findOwnerMenusByStoreId(storeId, keyword, pageable))
+                    .willReturn(new PageImpl<>(List.of(hiddenMenu)));
 
             // when
-            List<MenuEntity> result = menuService.getOwnerMenusByStore(storeId);
+            Page<MenuEntity> result = menuService.getOwnerMenusByStore(storeId, keyword, pageable);
 
             // then
-            assertThat(result).hasSize(1);
-            assertThat(result.get(0).isHidden()).isTrue();
-            assertThat(result.get(0).isDeleted()).isFalse();
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).isHidden()).isTrue();
+            assertThat(result.getContent().get(0).isDeleted()).isFalse();
         }
     }
 
@@ -205,15 +216,27 @@ class MenuServiceV1Test {
                     .price(2000)
                     .build();
 
-            given(menuRepository.findVisibleMenusByStoreAndCategory(storeId, categoryId))
-                    .willReturn(List.of(menu));
+            String keyword = "콜라";
+            Pageable pageable = PageRequest.of(0, 10);
+
+            given(menuRepository.findVisibleMenusByStoreAndCategory(
+                    storeId,
+                    categoryId,
+                    keyword,
+                    pageable
+            )).willReturn(new PageImpl<>(List.of(menu)));
 
             // when
-            List<MenuEntity> result = menuService.getMenusByCategory(storeId, categoryId);
+            Page<MenuEntity> result = menuService.getMenusByCategory(
+                    storeId,
+                    categoryId,
+                    keyword,
+                    pageable
+            );
 
             // then
-            assertThat(result).hasSize(1);
-            assertThat(result.get(0).getName()).isEqualTo("콜라");
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).getName()).isEqualTo("콜라");
         }
     }
 
