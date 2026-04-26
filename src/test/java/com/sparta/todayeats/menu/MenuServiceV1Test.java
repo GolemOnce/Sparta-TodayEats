@@ -334,6 +334,43 @@ class MenuServiceV1Test {
         }
     }
 
+    @Test
+    @DisplayName("실패 - 메뉴가 없을 경우")
+    void fail_menu_not_found() {
+        // given
+        UUID menuId = UUID.randomUUID();
+        MenuStatusUpdateRequest request = new MenuStatusUpdateRequest(true, true);
+
+        given(menuRepository.findById(menuId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> menuService.updateMenuStatus(menuId, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("메뉴 없음");
+    }
+
+    @Test
+    @DisplayName("실패 - 삭제된 메뉴 상태 변경")
+    void fail_deleted_menu() {
+        // given
+        UUID menuId = UUID.randomUUID();
+
+        MenuEntity menu = MenuEntity.builder()
+                .name("삭제된 메뉴")
+                .price(9000)
+                .isDeleted(true)
+                .build();
+
+        MenuStatusUpdateRequest request = new MenuStatusUpdateRequest(true, true);
+
+        given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
+
+        // when & then
+        assertThatThrownBy(() -> menuService.updateMenuStatus(menuId, request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("삭제된 메뉴입니다.");
+    }
+
     @Nested
     @DisplayName("deleteMenu()")
     class DeleteMenu {
