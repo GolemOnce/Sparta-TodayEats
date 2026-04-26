@@ -21,7 +21,7 @@ public enum OrderStatus {
      * 허용된 상태 전이 규칙표
      * 각 상태에서 이동할 수 있는 다음 상태만 정의
      * 정의되지 않은 전이는 validateTransition()에서 차단
-     * PENDING    → ACCEPTED, CANCELED 만 가능
+     * PENDING    → ACCEPTED, CANCELED, REJECTED 만 가능
      * ACCEPTED   → COOKING 만 가능
      * COOKING    → DELIVERING 만 가능
      * DELIVERING → DELIVERED 만 가능
