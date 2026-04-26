@@ -7,7 +7,7 @@ import com.sparta.todayeats.menu.domain.repository.MenuRepository;
 import com.sparta.todayeats.menu.presentation.dto.request.MenuCreateRequest;
 import com.sparta.todayeats.menu.presentation.dto.request.MenuStatusUpdateRequest;
 import com.sparta.todayeats.menu.presentation.dto.request.MenuUpdateRequest;
-import com.sparta.todayeats.store.domain.entity.Store;
+import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import com.sparta.todayeats.store.domain.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,7 +31,7 @@ public class MenuServiceV1 {
         Category category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new IllegalArgumentException("카테고리 없음"));
 
-        Store store = storeRepository.findById(storeId)
+        StoreEntity store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게 없음"));
 
         MenuEntity menu = MenuEntity.builder()
