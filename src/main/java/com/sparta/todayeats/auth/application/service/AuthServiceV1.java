@@ -135,10 +135,10 @@ public class AuthServiceV1 {
         String accessToken = jwtTokenProvider.createAccessToken(userId, role);
         String refreshToken = jwtTokenProvider.createRefreshToken(userId);
 
-        // Redis에 Refresh Token 저장
+        // Redis에 순수 Refresh Token 저장
         redisTemplate.opsForValue().set(
                 RT_PREFIX + userId,
-                refreshToken,
+                jwtTokenProvider.substringToken(refreshToken),
                 jwtTokenProvider.getRefreshTokenValidityDuration()
         );
 
@@ -153,17 +153,18 @@ public class AuthServiceV1 {
 
     public TokenResponse reissue(String refreshToken) {
         // 토큰 유효성 검사
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
+        String pureToken = jwtTokenProvider.substringToken(refreshToken);
+        if (pureToken == null || !jwtTokenProvider.validateToken(pureToken)) {
             throw new BaseException(AuthErrorCode.INVALID_TOKEN);
         }
 
         // userId 추출
-        UUID userId = jwtTokenProvider.getUserId(refreshToken);
+        UUID userId = jwtTokenProvider.getUserId(pureToken);
 
         // Refresh Token 조회
         String rtKey = RT_PREFIX + userId;
         String savedRefreshToken = redisTemplate.opsForValue().get(rtKey);
-        if (savedRefreshToken == null || !savedRefreshToken.equals(refreshToken)) {
+        if (savedRefreshToken == null || !savedRefreshToken.equals(pureToken)) {
             throw new BaseException(AuthErrorCode.INVALID_TOKEN);
         }
 
@@ -173,10 +174,10 @@ public class AuthServiceV1 {
         String newAccessToken = jwtTokenProvider.createAccessToken(userId, user.getRole());
         String newRefreshToken = jwtTokenProvider.createRefreshToken(userId);
 
-        // Redis에 Refresh Token 저장
+        // Redis에 순수 Refresh Token 저장
         redisTemplate.opsForValue().set(
                 rtKey,
-                newRefreshToken,
+                jwtTokenProvider.substringToken(newRefreshToken),
                 jwtTokenProvider.getRefreshTokenValidityDuration()
         );
 
@@ -184,7 +185,7 @@ public class AuthServiceV1 {
     }
 
     public void logout(String userId) {
-        // Redis에서 Refresh Token 삭제
+        // Redis에서 순수 Refresh Token 삭제
         redisTemplate.delete(RT_PREFIX + userId);
     }
 
