@@ -79,14 +79,20 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
                                   @Param("currentStatus") OrderStatus currentStatus,
                                   @Param("nextStatus") OrderStatus nextStatus);
 
-    // 취소 조건부 UPDATE (PENDING일 때만)
+    // 취소 조건부 UPDATE (PENDING + 5분 이내일 때만, DB NOW() 기준으로 원자적 처리)
+    // PostgreSQL native query 사용 이유:
+    // JPQL은 DB 함수 기반 날짜 연산을 표준으로 지원하지 않아 DB NOW()를 직접 쓸 수 없음
+    // 5분 제한을 상태 변경과 원자적으로 처리하기 위해 native query 사용
+    // rejectConditionally는 시간 조건이 없어 JPQL 사용
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE OrderEntity o SET o.status = :nextStatus, o.cancelReason = :cancelReason " +
-            "WHERE o.orderId = :orderId AND o.status = :currentStatus AND o.deletedAt IS NULL")
+    @Query(value = "UPDATE p_order SET status = :nextStatus, cancel_reason = :cancelReason " +
+            "WHERE order_id = :orderId AND status = :currentStatus " +
+            "AND created_at > NOW() - INTERVAL '5 minutes' " +
+            "AND deleted_at IS NULL", nativeQuery = true)
     int cancelConditionally(@Param("orderId") UUID orderId,
                             @Param("cancelReason") String cancelReason,
-                            @Param("currentStatus") OrderStatus currentStatus,
-                            @Param("nextStatus") OrderStatus nextStatus);
+                            @Param("currentStatus") String currentStatus,
+                            @Param("nextStatus") String nextStatus);
 
     // 거절 조건부 UPDATE (PENDING일 때만)
     @Modifying(clearAutomatically = true)

@@ -584,7 +584,7 @@ class OrderServiceV1Test {
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order))
                     .willReturn(Optional.of(canceledOrder));
-            given(orderRepository.cancelConditionally(eq(orderId), eq("단순 변심"), eq(OrderStatus.PENDING), eq(OrderStatus.CANCELED)))
+            given(orderRepository.cancelConditionally(eq(orderId), eq("단순 변심"), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name())))
                     .willReturn(1);
 
             // when
@@ -607,7 +607,7 @@ class OrderServiceV1Test {
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order))
                     .willReturn(Optional.of(canceledOrder));
-            given(orderRepository.cancelConditionally(eq(orderId), isNull(), eq(OrderStatus.PENDING), eq(OrderStatus.CANCELED)))
+            given(orderRepository.cancelConditionally(eq(orderId), isNull(), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name())))
                     .willReturn(1);
 
             // when
@@ -686,15 +686,16 @@ class OrderServiceV1Test {
         }
 
         @Test
-        @DisplayName("실패 - 동시 요청으로 인한 충돌")
+        @DisplayName("실패 - 동시 요청으로 인한 충돌 (다른 요청이 먼저 상태 변경)")
         void 동시_요청_충돌_예외발생() throws Exception {
             // given
             OrderEntity order = pendingOrder();
             setCreatedAt(order, LocalDateTime.now().minusMinutes(3));
+
             given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(order));
-            given(orderRepository.cancelConditionally(eq(orderId), any(), eq(OrderStatus.PENDING), eq(OrderStatus.CANCELED)))
-                    .willReturn(0);  // 다른 요청이 이미 상태 변경 → 0건 업데이트
+                    .willReturn(Optional.of(order));             // 첫 번째 조회 (검증용)
+            given(orderRepository.cancelConditionally(eq(orderId), any(), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name())))
+                    .willReturn(0);
 
             // when & then
             assertThatThrownBy(() -> orderService.cancelOrder(

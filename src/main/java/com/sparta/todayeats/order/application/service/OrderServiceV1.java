@@ -282,7 +282,7 @@ public class OrderServiceV1 {
 
         order.cancelByCustomer();  // 검증만
 
-        int rows = orderRepository.cancelConditionally(orderId, request != null ? request.cancelReason() : null, OrderStatus.PENDING, OrderStatus.CANCELED);
+        int rows = orderRepository.cancelConditionally(orderId, request != null ? request.cancelReason() : null, OrderStatus.PENDING.name(), OrderStatus.CANCELED.name());
         if (rows == 0) {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
