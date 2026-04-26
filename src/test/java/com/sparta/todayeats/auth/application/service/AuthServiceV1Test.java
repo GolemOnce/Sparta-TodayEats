@@ -356,21 +356,21 @@ class AuthServiceV1Test {
         given(authentication.getPrincipal()).willReturn(USER_ID.toString());
 
         // when
-        authServiceV1.logout(authentication);
+        authServiceV1.logout(authentication.getName());
 
         // then
         verify(redisTemplate).delete(RT_KEY);
     }
 
     @Test
-    @DisplayName("sendPasswordResetLink()")
+    @DisplayName("sendResetPasswordLink()")
     void 재설정_링크_전송_성공() {
         // given
         given(userRepository.existsByEmail(EMAIL)).willReturn(true);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
         // when
-        SendCodeResponse response = authServiceV1.sendPasswordResetLink(EMAIL);
+        SendCodeResponse response = authServiceV1.sendResetPasswordLink(EMAIL);
 
         // then
         assertThat(response.getEmail()).isEqualTo(EMAIL);
@@ -383,8 +383,8 @@ class AuthServiceV1Test {
     }
 
     @Nested
-    @DisplayName("passwordReset()")
-    class PasswordReset {
+    @DisplayName("resetPassword()")
+    class ResetPassword {
         private final String NEW_PASSWORD = "decoded-new";
 
         @Test
@@ -402,7 +402,7 @@ class AuthServiceV1Test {
             given(passwordEncoder.encode(NEW_PASSWORD)).willReturn("encoded-new");
 
             // when
-            PasswordResetResponse response = authServiceV1.passwordReset(CODE, NEW_PASSWORD, NEW_PASSWORD);
+            ResetPasswordResponse response = authServiceV1.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD);
 
             // then
             assertThat(response.getEmail()).isEqualTo(EMAIL);
@@ -417,7 +417,7 @@ class AuthServiceV1Test {
             given(valueOperations.get(resetKey())).willReturn(null);
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.passwordReset(CODE, NEW_PASSWORD, NEW_PASSWORD))
+            assertThatThrownBy(() -> authServiceV1.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(AuthErrorCode.INVALID_VERIFICATION_CODE.getMessage());
         }
@@ -429,7 +429,7 @@ class AuthServiceV1Test {
             given(valueOperations.get(resetKey())).willReturn(EMAIL);
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.passwordReset(CODE, "a", "b"))
+            assertThatThrownBy(() -> authServiceV1.resetPassword(CODE, "a", "b"))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(UserErrorCode.PASSWORD_MISMATCH.getMessage());
         }
@@ -444,7 +444,7 @@ class AuthServiceV1Test {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.passwordReset(CODE, NEW_PASSWORD, NEW_PASSWORD))
+            assertThatThrownBy(() -> authServiceV1.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(UserErrorCode.USER_NOT_FOUND.getMessage());
         }

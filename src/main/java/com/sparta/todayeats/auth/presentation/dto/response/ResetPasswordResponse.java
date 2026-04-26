@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @AllArgsConstructor
-public class PasswordResetResponse {
+public class ResetPasswordResponse {
     private String email;
     private LocalDateTime updatedAt;
 }

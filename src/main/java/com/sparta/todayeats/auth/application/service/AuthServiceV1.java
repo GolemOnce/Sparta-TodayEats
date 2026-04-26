@@ -11,7 +11,6 @@ import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import com.sparta.todayeats.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -175,12 +174,12 @@ public class AuthServiceV1 {
         return new TokenResponse(newAccessToken, newRefreshToken);
     }
 
-    public void logout(Authentication authentication) {
+    public void logout(String userId) {
         // Redis에서 Refresh Token 삭제
-        redisTemplate.delete(RT_PREFIX + authentication.getPrincipal());
+        redisTemplate.delete(RT_PREFIX + userId);
     }
 
-    public SendCodeResponse sendPasswordResetLink(String email) {
+    public SendCodeResponse sendResetPasswordLink(String email) {
         // 이메일 존재 시에만 수행
         if (userRepository.existsByEmail(email)) {
             // 인증번호 생성
@@ -201,12 +200,12 @@ public class AuthServiceV1 {
     }
 
     @Transactional(readOnly = true)
-    public ConfirmCodeResponse confirmPasswordResetLink(String code) {
+    public ConfirmCodeResponse confirmResetPasswordLink(String code) {
         // 인증번호 조회
         return new ConfirmCodeResponse(getEmailByResetCode(code));
     }
 
-    public PasswordResetResponse passwordReset(String code, String newPassword, String confirmPassword) {
+    public ResetPasswordResponse resetPassword(String code, String newPassword, String confirmPassword) {
         // 인증번호 조회
         String email = getEmailByResetCode(code);
 
@@ -223,7 +222,7 @@ public class AuthServiceV1 {
         // Redis에 인증번호 삭제
         redisTemplate.delete(RESET_PASSWORD_PREFIX + code);
 
-        return new PasswordResetResponse(user.getEmail(), user.getUpdatedAt());
+        return new ResetPasswordResponse(user.getEmail(), user.getUpdatedAt());
     }
 
     private String getEmailByResetCode(String code) {
