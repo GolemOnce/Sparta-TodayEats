@@ -25,8 +25,8 @@ public class AuthMailService {
     // 이메일 인증번호 전송
     public void sendSignupCode(String email, String code) {
         Context context = new Context();
-        context.setVariable("title", "비밀번호 재설정 안내");
-        context.setVariable("description", "아래 버튼을 클릭하여 새로운 비밀번호를 설정하세요.");
+        context.setVariable("title", "회원가입 인증번호");
+        context.setVariable("description", "아래 인증번호를 입력하여 회원가입을 완료해주세요.");
         context.setVariable("code", code);
 
         sendEmail(
