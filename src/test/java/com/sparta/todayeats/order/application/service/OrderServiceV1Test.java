@@ -93,6 +93,18 @@ class OrderServiceV1Test {
         field.set(order, time);
     }
 
+    private void setStatus(OrderEntity order, OrderStatus status) throws Exception {
+        Field field = order.getClass().getDeclaredField("status");
+        field.setAccessible(true);
+        field.set(order, status);
+    }
+
+    private void setRejectReason(OrderEntity order, String rejectReason) throws Exception {
+        Field field = order.getClass().getDeclaredField("rejectReason");
+        field.setAccessible(true);
+        field.set(order, rejectReason);
+    }
+
     // ========================================================
     // 🎥 test(#9): 주문 생성 단위 테스트
     // ========================================================
@@ -422,7 +434,7 @@ class OrderServiceV1Test {
         void PENDING_아닌_상태에서_수정_예외발생() throws Exception {
             // given
             OrderEntity order = pendingOrder();
-            order.changeStatus(OrderStatus.ACCEPTED);
+            setStatus(order, OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
 
@@ -445,10 +457,16 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - PENDING → ACCEPTED 상태 전이")
-        void PENDING에서_ACCEPTED_상태전이_성공() {
+        void PENDING에서_ACCEPTED_상태전이_성공() throws Exception {
             // given
+            OrderEntity acceptedOrder = pendingOrder();
+            setStatus(acceptedOrder, OrderStatus.ACCEPTED);  // DB 업데이트 후 재조회 결과 시뮬레이션
+
             given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(pendingOrder()));
+                    .willReturn(Optional.of(pendingOrder()))   // 첫 번째 조회 (검증용)
+                    .willReturn(Optional.of(acceptedOrder));   // 두 번째 조회 (재조회용)
+            given(orderRepository.updateStatusConditionally(orderId, OrderStatus.PENDING, OrderStatus.ACCEPTED))
+                    .willReturn(1);
 
             // when
             UpdateOrderStatusResponse result = orderService.updateOrderStatus(
@@ -460,12 +478,18 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - ACCEPTED → COOKING 상태 전이")
-        void ACCEPTED에서_COOKING_상태전이_성공() {
+        void ACCEPTED에서_COOKING_상태전이_성공() throws Exception {
             // given
-            OrderEntity order = pendingOrder();
-            order.changeStatus(OrderStatus.ACCEPTED);
+            OrderEntity acceptedOrder = pendingOrder();
+            setStatus(acceptedOrder, OrderStatus.ACCEPTED);
+            OrderEntity cookingOrder = pendingOrder();
+            setStatus(cookingOrder, OrderStatus.COOKING);
+
             given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(order));
+                    .willReturn(Optional.of(acceptedOrder))   // 첫 번째 조회 (검증용)
+                    .willReturn(Optional.of(cookingOrder));    // 두 번째 조회 (재조회용)
+            given(orderRepository.updateStatusConditionally(orderId, OrderStatus.ACCEPTED, OrderStatus.COOKING))
+                    .willReturn(1);
 
             // when
             UpdateOrderStatusResponse result = orderService.updateOrderStatus(
@@ -507,10 +531,10 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - 역방향 상태 전이 (ACCEPTED → PENDING)")
-        void 역방향_상태전이_예외발생() {
+        void 역방향_상태전이_예외발생() throws Exception {
             // given
             OrderEntity order = pendingOrder();
-            order.changeStatus(OrderStatus.ACCEPTED);
+            setStatus(order, OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
 
@@ -520,6 +544,23 @@ class OrderServiceV1Test {
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.INVALID_ORDER_STATUS));
+        }
+
+        @Test
+        @DisplayName("실패 - 동시 요청으로 인한 충돌")
+        void 동시_요청_충돌_예외발생() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder()));
+            given(orderRepository.updateStatusConditionally(orderId, OrderStatus.PENDING, OrderStatus.ACCEPTED))
+                    .willReturn(0);  // 다른 요청이 이미 상태 변경 → 0건 업데이트
+
+            // when & then
+            assertThatThrownBy(() -> orderService.updateOrderStatus(
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.ACCEPTED)))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.ORDER_CONFLICT));
         }
     }
 
@@ -537,8 +578,14 @@ class OrderServiceV1Test {
             // given
             OrderEntity order = pendingOrder();
             setCreatedAt(order, LocalDateTime.now().minusMinutes(3));
+            OrderEntity canceledOrder = pendingOrder();
+            setStatus(canceledOrder, OrderStatus.CANCELED);
+
             given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(order));
+                    .willReturn(Optional.of(order))
+                    .willReturn(Optional.of(canceledOrder));
+            given(orderRepository.cancelConditionally(eq(orderId), eq("단순 변심")))
+                    .willReturn(1);
 
             // when
             CancelOrderResponse result = orderService.cancelOrder(
@@ -554,8 +601,14 @@ class OrderServiceV1Test {
             // given
             OrderEntity order = pendingOrder();
             setCreatedAt(order, LocalDateTime.now().minusMinutes(3));
+            OrderEntity canceledOrder = pendingOrder();
+            setStatus(canceledOrder, OrderStatus.CANCELED);
+
             given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(order));
+                    .willReturn(Optional.of(order))
+                    .willReturn(Optional.of(canceledOrder));
+            given(orderRepository.cancelConditionally(eq(orderId), isNull()))
+                    .willReturn(1);
 
             // when
             CancelOrderResponse result = orderService.cancelOrder(orderId, null);
@@ -587,7 +640,7 @@ class OrderServiceV1Test {
             // given
             OrderEntity order = pendingOrder();
             setCreatedAt(order, LocalDateTime.now().minusMinutes(1));
-            order.changeStatus(OrderStatus.ACCEPTED);
+            setStatus(order, OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
 
@@ -605,7 +658,7 @@ class OrderServiceV1Test {
             // given
             OrderEntity order = pendingOrder();
             setCreatedAt(order, LocalDateTime.now().minusMinutes(3));
-            order.changeStatus(OrderStatus.ACCEPTED);
+            setStatus(order, OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
 
@@ -631,6 +684,25 @@ class OrderServiceV1Test {
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
         }
+
+        @Test
+        @DisplayName("실패 - 동시 요청으로 인한 충돌")
+        void 동시_요청_충돌_예외발생() throws Exception {
+            // given
+            OrderEntity order = pendingOrder();
+            setCreatedAt(order, LocalDateTime.now().minusMinutes(3));
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+            given(orderRepository.cancelConditionally(eq(orderId), any()))
+                    .willReturn(0);  // 다른 요청이 이미 상태 변경 → 0건 업데이트
+
+            // when & then
+            assertThatThrownBy(() -> orderService.cancelOrder(
+                    orderId, new CancelOrderRequest("단순 변심")))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.ORDER_CONFLICT));
+        }
     }
 
     // ========================================================
@@ -643,10 +715,17 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - 주문 거절 (사유 있음)")
-        void 주문_거절_사유있음_성공() {
+        void 주문_거절_사유있음_성공() throws Exception {
             // given
+            OrderEntity rejectedOrder = pendingOrder();
+            setStatus(rejectedOrder, OrderStatus.REJECTED);
+            setRejectReason(rejectedOrder, "재료 소진");
+
             given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(pendingOrder()));
+                    .willReturn(Optional.of(pendingOrder()))
+                    .willReturn(Optional.of(rejectedOrder));
+            given(orderRepository.rejectConditionally(eq(orderId), eq("재료 소진")))
+                    .willReturn(1);
 
             // when
             RejectOrderResponse result = orderService.rejectOrder(
@@ -659,10 +738,16 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("성공 - 주문 거절 (사유 없음)")
-        void 주문_거절_사유없음_성공() {
+        void 주문_거절_사유없음_성공() throws Exception {
             // given
+            OrderEntity rejectedOrder = pendingOrder();
+            setStatus(rejectedOrder, OrderStatus.REJECTED);
+
             given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(pendingOrder()));
+                    .willReturn(Optional.of(pendingOrder()))
+                    .willReturn(Optional.of(rejectedOrder));
+            given(orderRepository.rejectConditionally(eq(orderId), isNull()))
+                    .willReturn(1);
 
             // when
             RejectOrderResponse result = orderService.rejectOrder(orderId, null);
@@ -689,10 +774,10 @@ class OrderServiceV1Test {
 
         @Test
         @DisplayName("실패 - PENDING이 아닌 상태에서 거절 시도")
-        void PENDING_아닌_상태에서_거절_예외발생() {
+        void PENDING_아닌_상태에서_거절_예외발생() throws Exception {
             // given
             OrderEntity order = pendingOrder();
-            order.changeStatus(OrderStatus.ACCEPTED);
+            setStatus(order, OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
 
@@ -702,6 +787,23 @@ class OrderServiceV1Test {
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_REJECT_NOT_ALLOWED));
+        }
+
+        @Test
+        @DisplayName("실패 - 동시 요청으로 인한 충돌")
+        void 동시_요청_충돌_예외발생() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder()));
+            given(orderRepository.rejectConditionally(eq(orderId), any()))
+                    .willReturn(0);  // 다른 요청이 이미 상태 변경 → 0건 업데이트
+
+            // when & then
+            assertThatThrownBy(() -> orderService.rejectOrder(
+                    orderId, new RejectOrderRequest("재료 소진")))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.ORDER_CONFLICT));
         }
     }
 
