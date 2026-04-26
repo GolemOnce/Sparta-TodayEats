@@ -1,7 +1,6 @@
 package com.sparta.todayeats.auth.presentation.dto.response;
 
 import com.sparta.todayeats.user.domain.entity.User;
-import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import lombok.Getter;
 
 import java.time.LocalDateTime;

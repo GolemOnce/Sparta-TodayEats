@@ -34,4 +34,8 @@ public class SignupRequest {
     public boolean isValidRole() {
         return role == UserRoleEnum.CUSTOMER || role == UserRoleEnum.OWNER;
     }
+
+    public void encryptPassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
 }

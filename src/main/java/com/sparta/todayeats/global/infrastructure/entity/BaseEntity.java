@@ -35,6 +35,11 @@ public abstract class BaseEntity {
 
     private UUID deletedBy;
 
+    public void restore() {
+        this.deletedAt = null;
+        this.deletedBy = null;
+    }
+
     public void softDelete(UUID userId) {
         if (this.deletedAt == null) {
             this.deletedAt = LocalDateTime.now();

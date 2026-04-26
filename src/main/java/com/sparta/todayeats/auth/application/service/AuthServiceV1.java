@@ -53,12 +53,18 @@ public class AuthServiceV1 {
         }
 
         // 사용자 생성 및 저장
-        User user = User.builder()
-                .email(email)
-                .password(passwordEncoder.encode(password))
-                .nickname(request.getNickname())
-                .role(request.getRole())
-                .build();
+        request.encryptPassword(passwordEncoder.encode(password));
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user != null) {
+            user.restore(request);
+        } else {
+            user = User.builder()
+                    .email(email)
+                    .password(request.getPassword())
+                    .nickname(request.getNickname())
+                    .role(request.getRole())
+                    .build();
+        }
         userRepository.save(user);
 
         // Redis에 이메일 인증 여부 삭제
@@ -69,12 +75,16 @@ public class AuthServiceV1 {
 
     public SendCodeResponse sendSignupCode(String email) {
         // 이메일 중복 확인
-        if (userRepository.existsByEmail(email)) {
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user != null && !user.isDeleted()) {
             throw new BaseException(UserErrorCode.DUPLICATE_EMAIL);
         }
 
         // 인증번호 생성
         String code = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
+
+        // 메일 전송
+        authMailService.sendSignupCode(email, code);
 
         // Redis에 인증번호 저장
         redisTemplate.opsForValue().set(
@@ -82,9 +92,6 @@ public class AuthServiceV1 {
                 code,
                 Duration.ofMinutes(CODE_VALID_MINUTES)
         );
-
-        // 메일 전송
-        authMailService.sendSignupCode(email, code);
 
         return new SendCodeResponse(email, LocalDateTime.now().plusMinutes(CODE_VALID_MINUTES));
     }
