@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class PasswordResetRequest {
+public class ResetPasswordRequest {
     @NotBlank(message = "비밀번호는 필수입니다.")
     @Pattern(
             regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,15}$",

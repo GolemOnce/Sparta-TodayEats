@@ -42,24 +42,24 @@ public class AuthControllerV1 {
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(Authentication authentication) {
-        authServiceV1.logout(authentication);
+        authServiceV1.logout(authentication.getName());
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/password-reset/send")
-    public ResponseEntity<SendCodeResponse> sendPasswordResetLink(@Valid @RequestBody SendCodeRequest request) {
-        return ResponseEntity.ok(authServiceV1.sendPasswordResetLink(request.getEmail()));
+    @PostMapping("/reset-password/send")
+    public ResponseEntity<SendCodeResponse> sendResetPasswordLink(@Valid @RequestBody SendCodeRequest request) {
+        return ResponseEntity.ok(authServiceV1.sendResetPasswordLink(request.getEmail()));
     }
 
-    @GetMapping("/password-reset")
-    public ResponseEntity<ConfirmCodeResponse> confirmPasswordResetLink(@RequestParam String code) {
-        return ResponseEntity.ok(authServiceV1.confirmPasswordResetLink(code));
+    @GetMapping("/reset-password")
+    public ResponseEntity<ConfirmCodeResponse> confirmResetPasswordLink(@RequestParam String code) {
+        return ResponseEntity.ok(authServiceV1.confirmResetPasswordLink(code));
     }
 
-    @PatchMapping("/password-reset")
-    public ResponseEntity<PasswordResetResponse> passwordReset(
-            @RequestParam String code, @Valid @RequestBody PasswordResetRequest request
+    @PatchMapping("/reset-password")
+    public ResponseEntity<ResetPasswordResponse> resetPassword(
+            @RequestParam String code, @Valid @RequestBody ResetPasswordRequest request
     ) {
-        return ResponseEntity.ok(authServiceV1.passwordReset(code, request.getNewPassword(), request.getConfirmPassword()));
+        return ResponseEntity.ok(authServiceV1.resetPassword(code, request.getNewPassword(), request.getConfirmPassword()));
     }
 }
