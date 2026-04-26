@@ -124,17 +124,6 @@ public class OrderServiceV1 {
      * - OWNER: 본인 가게 주문만 조회
      * - MANAGER/MASTER: 전체 조회
      */
-    /**
-     * 주문 목록 조회
-     * - soft delete 제외
-     * - 페이지네이션 (기본 10개, createdAt DESC)
-     * - 검색 조건: status, storeName
-     * TODO: JWT 완성 후 주석 해제
-     * - CUSTOMER: 본인 주문만 조회
-     * - OWNER: 본인 가게 주문만 조회
-     * - MANAGER: 전체 조회 (soft delete 제외)
-     * - MASTER: 전체 조회 (삭제된 주문 포함)
-     */
     public Page<OrderSummaryResponse> getOrders(UUID userId,
                                                 OrderStatus status,
                                                 String storeName,
@@ -254,10 +243,16 @@ public class OrderServiceV1 {
         //     }
         // }
 
-        order.changeStatus(request.status());
+        order.changeStatus(request.status()); // 검증만 (validateTransition)
 
+        int rows = orderRepository.updateStatusConditionally(orderId, order.getStatus(), request.status());
+        if (rows == 0) {
+            throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
+        }
+
+        OrderEntity updated = findActiveOrder(orderId);
         log.info("주문 상태 변경: orderId={}, status={}", orderId, request.status());
-        return UpdateOrderStatusResponse.from(order);
+        return UpdateOrderStatusResponse.from(updated);
     }
 
     // ========================================================
@@ -285,14 +280,20 @@ public class OrderServiceV1 {
         //     throw new BaseException(CommonErrorCode.FORBIDDEN);
         // }
 
-        order.cancelByCustomer(request != null ? request.cancelReason() : null);
+        order.cancelByCustomer();  // 검증만
+
+        int rows = orderRepository.cancelConditionally(orderId, request != null ? request.cancelReason() : null);
+        if (rows == 0) {
+            throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
+        }
 
         // TODO: Payment 코드 완성 후 주석 해제
         // 주문 취소 시 환불 처리 같이 처리 (트랜잭션 묶음)
         // paymentService.refund(orderId);
 
+        OrderEntity updated = findActiveOrder(orderId);
         log.info("주문 취소: orderId={}", orderId);
-        return CancelOrderResponse.from(order);
+        return CancelOrderResponse.from(updated);
     }
 
     // ========================================================
@@ -325,14 +326,20 @@ public class OrderServiceV1 {
         //     }
         // }
 
-        order.rejectByOwner(request != null ? request.rejectReason() : null);
+        order.rejectByOwner();  // 검증만
+
+        int rows = orderRepository.rejectConditionally(orderId, request != null ? request.rejectReason() : null);
+        if (rows == 0) {
+            throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
+        }
 
         // TODO: Payment 코드 완성 후 주석 해제
         // 주문 거절 시 환불 처리 같이 처리 (트랜잭션 묶음)
         // paymentService.refund(orderId);
 
+        OrderEntity updated = findActiveOrder(orderId);
         log.info("주문 거절: orderId={}", orderId);
-        return RejectOrderResponse.from(order);
+        return RejectOrderResponse.from(updated);
     }
 
 

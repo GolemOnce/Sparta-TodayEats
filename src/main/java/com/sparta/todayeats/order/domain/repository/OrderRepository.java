@@ -5,6 +5,7 @@ import com.sparta.todayeats.order.domain.entity.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -69,4 +70,27 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
             @Param("status") OrderStatus status,
             @Param("storeName") String storeName,
             Pageable pageable);
+
+    // 상태 전이 조건부 UPDATE (currentStatus일 때만 nextStatus로 변경)
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE OrderEntity o SET o.status = :nextStatus " +
+            "WHERE o.orderId = :orderId AND o.status = :currentStatus AND o.deletedAt IS NULL")
+    int updateStatusConditionally(@Param("orderId") UUID orderId,
+                                  @Param("currentStatus") OrderStatus currentStatus,
+                                  @Param("nextStatus") OrderStatus nextStatus);
+
+    // 취소 조건부 UPDATE (PENDING일 때만)
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE OrderEntity o SET o.status = 'CANCELED', o.cancelReason = :cancelReason " +
+            "WHERE o.orderId = :orderId AND o.status = 'PENDING' AND o.deletedAt IS NULL")
+    int cancelConditionally(@Param("orderId") UUID orderId,
+                            @Param("cancelReason") String cancelReason);
+
+    // 거절 조건부 UPDATE (PENDING일 때만)
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE OrderEntity o SET o.status = 'REJECTED', o.rejectReason = :rejectReason " +
+            "WHERE o.orderId = :orderId AND o.status = 'PENDING' AND o.deletedAt IS NULL")
+    int rejectConditionally(@Param("orderId") UUID orderId,
+                            @Param("rejectReason") String rejectReason);
+
 }
