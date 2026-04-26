@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import java.util.List;
 import java.util.UUID;
+import jakarta.validation.Valid;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,7 +27,7 @@ public class MenuControllerV1 {
     @PostMapping("/api/v1/stores/{storeId}/menus")
     public MenuResponse createMenu(
             @PathVariable UUID storeId,
-            @RequestBody MenuCreateRequest request
+            @Valid @RequestBody MenuCreateRequest request
     ) {
         MenuEntity menu = menuService.createMenu(storeId, request);
         return MenuResponse.from(menu);
@@ -77,7 +78,7 @@ public class MenuControllerV1 {
     @PatchMapping("/api/v1/menus/{menuId}")
     public void updateMenu(
             @PathVariable UUID menuId,
-            @RequestBody MenuUpdateRequest request
+            @Valid @RequestBody MenuUpdateRequest request
     ) {
         menuService.updateMenu(menuId, request);
     }
