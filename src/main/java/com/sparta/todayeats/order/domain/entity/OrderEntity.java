@@ -128,7 +128,6 @@ public class OrderEntity extends BaseEntity {
      */
     public void changeStatus(OrderStatus nextStatus) {
         this.status.validateTransition(nextStatus);
-        this.status = nextStatus;
 
         // TODO: JWT 완성 후 주석 해제
         // if (role == UserRole.OWNER) {
@@ -147,7 +146,7 @@ public class OrderEntity extends BaseEntity {
      * TODO: JWT 완성 후 주석 해제
      * - CUSTOMER 본인 또는 MASTER만 가능
      */
-    public void cancelByCustomer(String cancelReason) {
+    public void cancelByCustomer() {
         if (this.status != OrderStatus.PENDING) {
             throw new BaseException(OrderErrorCode.ORDER_CANCEL_NOT_ALLOWED);
         }
@@ -155,8 +154,6 @@ public class OrderEntity extends BaseEntity {
         if (LocalDateTime.now().isAfter(cancelDeadline)) {
             throw new BaseException(OrderErrorCode.CANCEL_TIME_EXCEEDED);
         }
-        this.status = OrderStatus.CANCELED;
-        this.cancelReason = cancelReason;  // null이어도 됨 (선택사항)
 
         // TODO: JWT 완성 후 주석 해제
         // if (role != UserRole.CUSTOMER && role != UserRole.MASTER) {
@@ -174,12 +171,10 @@ public class OrderEntity extends BaseEntity {
      * - OWNER: 본인 가게 주문만 거절 가능
      * - MANAGER/MASTER: 전체 거절 가능
      */
-    public void rejectByOwner(String rejectReason) {
+    public void rejectByOwner() {
         if (this.status != OrderStatus.PENDING) {
             throw new BaseException(OrderErrorCode.ORDER_REJECT_NOT_ALLOWED);
         }
-        this.status = OrderStatus.REJECTED;
-        this.rejectReason = rejectReason;  // null이어도 됨 (선택사항)
 
         // TODO: JWT 완성 후 주석 해제
         // if (role == UserRole.CUSTOMER) {
