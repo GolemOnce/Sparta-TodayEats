@@ -241,6 +241,7 @@ class AuthServiceV1Test {
             given(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD)).willReturn(true);
             given(jwtTokenProvider.createAccessToken(any(), any())).willReturn(ACCESS_TOKEN);
             given(jwtTokenProvider.createRefreshToken(any())).willReturn(REFRESH_TOKEN);
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(jwtTokenProvider.getRefreshTokenValidityDuration()).willReturn(Duration.ofDays(7));
 
@@ -300,6 +301,7 @@ class AuthServiceV1Test {
         void 토큰_재발급_성공() {
             // given
             given(jwtTokenProvider.validateToken(REFRESH_TOKEN)).willReturn(true);
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
             given(jwtTokenProvider.getUserId(REFRESH_TOKEN)).willReturn(USER_ID);
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(valueOperations.get(RT_KEY)).willReturn(REFRESH_TOKEN);
@@ -323,6 +325,7 @@ class AuthServiceV1Test {
         @Test
         void 토큰_재발급_실패_토큰_미유효() {
             // given
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
             given(jwtTokenProvider.validateToken(REFRESH_TOKEN)).willReturn(false);
 
             // when & then
@@ -335,6 +338,7 @@ class AuthServiceV1Test {
         void 토큰_재발급_실패_토큰_불일치() {
             // given
             given(jwtTokenProvider.validateToken(REFRESH_TOKEN)).willReturn(true);
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
             given(jwtTokenProvider.getUserId(REFRESH_TOKEN)).willReturn(USER_ID);
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(valueOperations.get(RT_KEY)).willReturn("other-token");
@@ -349,6 +353,7 @@ class AuthServiceV1Test {
         void 토큰_재발급_실패_사용자_없음() {
             // given
             given(jwtTokenProvider.validateToken(REFRESH_TOKEN)).willReturn(true);
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
             given(jwtTokenProvider.getUserId(REFRESH_TOKEN)).willReturn(USER_ID);
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(valueOperations.get(RT_KEY)).willReturn(REFRESH_TOKEN);
@@ -366,7 +371,7 @@ class AuthServiceV1Test {
     void 로그아웃_성공() {
         // given
         Authentication authentication = mock(Authentication.class);
-        given(authentication.getPrincipal()).willReturn(USER_ID.toString());
+        given(authentication.getName()).willReturn(USER_ID.toString());
 
         // when
         authServiceV1.logout(authentication.getName());
