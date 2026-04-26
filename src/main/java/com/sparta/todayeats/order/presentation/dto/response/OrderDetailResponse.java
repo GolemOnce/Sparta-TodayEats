@@ -17,9 +17,7 @@ public record OrderDetailResponse(
         String note,                // 주문 요청사항
         Long totalPrice,            // 총 주문 금액
         LocalDateTime createdAt,    // 주문 생성 일시 (JPA Auditing)
-        UUID createdBy,             // 주문자 ID (JPA Auditing)
-        LocalDateTime updatedAt,    // 수정 일시 (JPA Auditing)
-        UUID updatedBy              // 수정자 ID (JPA Auditing)
+        LocalDateTime updatedAt     // 수정 일시 (JPA Auditing)
 ) {
     public static OrderDetailResponse from(OrderEntity order) {
         return new OrderDetailResponse(
@@ -31,9 +29,7 @@ public record OrderDetailResponse(
                 order.getNote(),
                 order.getTotalPrice(),
                 order.getCreatedAt(),
-                order.getCreatedBy(),
-                order.getUpdatedAt(),
-                order.getUpdatedBy()
+                order.getUpdatedAt()
         );
     }
 
