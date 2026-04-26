@@ -96,7 +96,7 @@ public class OrderServiceV1 {
                     .build();
 
             order.addOrderItem(orderItem);
-            total += (long) menu.getPrice() * itemReq.quantity();
+            total = Math.addExact(total, Math.multiplyExact(menu.getPrice(), (long) itemReq.quantity()));
         }
 
         // 서버에서 계산한 총 금액 세팅
