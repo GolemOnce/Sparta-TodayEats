@@ -12,6 +12,9 @@ public record CancelOrderResponse(
         UUID canceledBy,            // 취소한 사용자 ID (updatedBy)
         LocalDateTime canceledAt    // 취소 일시 (updatedAt)
 ) {
+    /**
+     * OrderEntity로부터 응답 DTO 생성
+     */
     public static CancelOrderResponse from(OrderEntity order) {
         return new CancelOrderResponse(
                 order.getOrderId(),
