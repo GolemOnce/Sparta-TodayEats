@@ -53,7 +53,7 @@ public class AuthServiceV1 {
         }
 
         // 사용자 생성 및 저장
-        request.encryptPassword(passwordEncoder.encode(password));
+        request.encodePassword(passwordEncoder.encode(password));
         User user = userRepository.findByEmail(email).orElse(null);
         if (user != null) {
             user.restore(request);
@@ -119,8 +119,10 @@ public class AuthServiceV1 {
 
     public LoginResponse login(String email, String password) {
         // 사용자 조회
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BaseException(UserErrorCode.USER_NOT_FOUND));
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null || user.isDeleted()) {
+            throw new BaseException(UserErrorCode.USER_NOT_FOUND);
+        }
 
         // 비밀번호 일치 확인
         if (!passwordEncoder.matches(password, user.getPassword())) {
@@ -187,8 +189,9 @@ public class AuthServiceV1 {
     }
 
     public SendCodeResponse sendResetPasswordLink(String email) {
-        // 이메일 존재 시에만 수행
-        if (userRepository.existsByEmail(email)) {
+        // 삭제되지 않은 사용자만
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user != null && !user.isDeleted()) {
             // 인증번호 생성
             String code = UUID.randomUUID().toString();
 
@@ -222,9 +225,12 @@ public class AuthServiceV1 {
         }
 
         // 사용자 조회 및 비밀번호 변경
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BaseException(UserErrorCode.USER_NOT_FOUND));
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null || user.isDeleted()) {
+            throw new BaseException(UserErrorCode.USER_NOT_FOUND);
+        }
         user.updatePassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
 
         // Redis에 인증번호 삭제
         redisTemplate.delete(RESET_PASSWORD_PREFIX + code);

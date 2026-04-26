@@ -35,7 +35,7 @@ public class SignupRequest {
         return role == UserRoleEnum.CUSTOMER || role == UserRoleEnum.OWNER;
     }
 
-    public void encryptPassword(String encodedPassword) {
+    public void encodePassword(String encodedPassword) {
         this.password = encodedPassword;
     }
 }
