@@ -45,7 +45,6 @@ public class MenuServiceV1 {
                 .store(store)
                 .isHidden(false)
                 .soldOut(false)
-                .isDeleted(false)
                 .build();
 
         return menuRepository.save(menu);
@@ -124,11 +123,11 @@ public class MenuServiceV1 {
 
     // 메뉴 삭제
     @Transactional
-    public void deleteMenu(UUID menuId) {
+    public void deleteMenu(UUID menuId, UUID userId) {
         MenuEntity menu = findMenu(menuId);
         validateNotDeleted(menu);
 
-        menu.delete();
+        menu.delete(userId);
     }
 
     private MenuEntity findMenu(UUID menuId) {

@@ -16,7 +16,7 @@ public interface MenuRepository extends JpaRepository<MenuEntity, UUID> {
     @Query("""
         SELECT m FROM MenuEntity m
         WHERE m.store.id = :storeId
-        AND m.isDeleted = false
+        AND m.deletedAt IS NULL
         AND (:keyword IS NULL OR m.name LIKE CONCAT('%', :keyword, '%'))
     """)
     Page<MenuEntity> findOwnerMenusByStoreId(
@@ -30,7 +30,7 @@ public interface MenuRepository extends JpaRepository<MenuEntity, UUID> {
         SELECT m FROM MenuEntity m
         WHERE m.store.id = :storeId
         AND m.isHidden = false
-        AND m.isDeleted = false
+        AND m.deletedAt IS NULL
         AND (:keyword IS NULL OR m.name LIKE CONCAT('%', :keyword, '%'))
     """)
     Page<MenuEntity> findVisibleMenusByStoreId(
@@ -44,7 +44,7 @@ public interface MenuRepository extends JpaRepository<MenuEntity, UUID> {
         SELECT m FROM MenuEntity m
         WHERE m.store.id = :storeId
         AND m.isHidden = false
-        AND m.isDeleted = false
+        AND m.deletedAt IS NULL
         AND m.soldOut = false
         AND (:keyword IS NULL OR m.name LIKE CONCAT('%', :keyword, '%'))
     """)
@@ -58,7 +58,7 @@ public interface MenuRepository extends JpaRepository<MenuEntity, UUID> {
     @Query("""
         SELECT m FROM MenuEntity m
         WHERE m.category.id = :categoryId
-        AND m.isDeleted = false
+        AND m.deletedAt IS NULL
     """)
     List<MenuEntity> findMenusByCategoryId(@Param("categoryId") UUID categoryId);
 
@@ -68,7 +68,7 @@ public interface MenuRepository extends JpaRepository<MenuEntity, UUID> {
         WHERE m.store.id = :storeId
         AND m.category.id = :categoryId
         AND m.isHidden = false
-        AND m.isDeleted = false
+        AND m.deletedAt IS NULL
         AND (:keyword IS NULL OR m.name LIKE CONCAT('%', :keyword, '%'))
     """)
     Page<MenuEntity> findVisibleMenusByStoreAndCategory(

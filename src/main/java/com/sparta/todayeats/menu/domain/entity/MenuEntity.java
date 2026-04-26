@@ -47,10 +47,6 @@ public class MenuEntity extends BaseEntity {
     @Column(length = 255)
     private String imageUrl;
 
-    // Soft Delete
-    @Column(name = "is_deleted", nullable = false)
-    private boolean isDeleted;
-
     // 카테고리
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
@@ -90,7 +86,7 @@ public class MenuEntity extends BaseEntity {
         this.isHidden = false;
     }
 
-    public void delete() {
-        this.isDeleted = true;
+    public void delete(UUID userId) {
+        this.softDelete(userId);
     }
 }
