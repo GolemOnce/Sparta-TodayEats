@@ -87,7 +87,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
     @Modifying(clearAutomatically = true)
     @Query(value = "UPDATE p_order SET status = :nextStatus, cancel_reason = :cancelReason " +
             "WHERE order_id = :orderId AND status = :currentStatus " +
-            "AND created_at > NOW() - INTERVAL '5 minutes' " +
+            "AND created_at >= NOW() - INTERVAL '5 minutes' " +
             "AND deleted_at IS NULL", nativeQuery = true)
     int cancelConditionally(@Param("orderId") UUID orderId,
                             @Param("cancelReason") String cancelReason,
