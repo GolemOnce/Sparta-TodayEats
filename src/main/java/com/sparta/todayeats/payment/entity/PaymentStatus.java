@@ -1,7 +1,6 @@
-package com.sparta.todayeats.payment.domain.entity;
+package com.sparta.todayeats.payment.entity;
 
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
 public enum PaymentStatus {
