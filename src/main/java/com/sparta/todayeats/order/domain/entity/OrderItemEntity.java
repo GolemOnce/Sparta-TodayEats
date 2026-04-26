@@ -48,7 +48,9 @@ public class OrderItemEntity extends BaseEntity {
         this.quantity = quantity;
     }
 
-    // 주문 항목 소계 계산
+    /**
+     * 주문 항목 소계 (단가 * 수량)
+     */
     public long getSubtotal() {
         return (long) unitPrice * quantity;
     }

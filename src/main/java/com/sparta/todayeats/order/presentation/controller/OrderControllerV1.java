@@ -29,12 +29,11 @@ public class OrderControllerV1 {
 
     private final OrderServiceV1 orderService;
 
-    // ========================================================
-    // POST /api/v1/orders
-    // TODO: JWT 완성 후 주석 해제
-    // - CUSTOMER만 주문 생성 가능
-    // ========================================================
-
+    /**
+     * 주문 생성
+     * POST /api/v1/orders
+     * CUSTOMER만 주문 생성 가능 (JWT 완성 후 활성화)
+     */
     @PostMapping
     public ResponseEntity<ApiResponse<CreateOrderResponse>> createOrder(
             @Valid @RequestBody CreateOrderRequest request
@@ -48,15 +47,12 @@ public class OrderControllerV1 {
                 .body(ApiResponse.created(data));
     }
 
-    // ========================================================
-// GET /api/v1/orders
-// TODO: JWT 완성 후 주석 해제
-// - CUSTOMER: 본인 주문만 조회
-// - OWNER: 본인 가게 주문만 조회
-// - MANAGER: 전체 조회 (soft delete 제외)
-// - MASTER: 전체 조회 (삭제된 주문 포함)
-// ========================================================
-
+    /**
+     * 주문 목록 조회
+     * GET /api/v1/orders
+     * CUSTOMER: 본인 주문만 조회, OWNER: 본인 가게 주문만 조회
+     * MANAGER: 전체 조회(soft delete 제외), MASTER: 전체 조회(삭제 포함) - JWT 완성 후 활성화
+     */
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<OrderSummaryResponse>>> getOrders(
             //@AuthenticationPrincipal UserDetailsImpl userDetails,  // TODO: JWT 완성 후 주석 해제
@@ -85,14 +81,11 @@ public class OrderControllerV1 {
         ));
     }
 
-    // ========================================================
-    // GET /api/v1/orders/{orderId}
-    // TODO: JWT 완성 후 주석 해제
-    // - CUSTOMER: 본인 주문만 조회
-    // - OWNER: 본인 가게 주문만 조회
-    // - MANAGER/MASTER: 전체 조회
-    // ========================================================
-
+    /**
+     * 주문 단건 조회
+     * GET /api/v1/orders/{orderId}
+     * CUSTOMER: 본인 주문만, OWNER: 본인 가게 주문만, MANAGER/MASTER: 전체 - JWT 완성 후 활성화
+     */
     @GetMapping("/{orderId}")
     public ResponseEntity<ApiResponse<OrderDetailResponse>> getOrder(
             @PathVariable UUID orderId
@@ -104,13 +97,11 @@ public class OrderControllerV1 {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
-    // ========================================================
-    // PUT /api/v1/orders/{orderId}
-    // TODO: JWT 완성 후 주석 해제
-    // - CUSTOMER 본인만 수정 가능
-    // - PENDING 상태만 수정 가능
-    // ========================================================
-
+    /**
+     * 주문 요청사항 수정
+     * PUT /api/v1/orders/{orderId}
+     * PENDING 상태에서 CUSTOMER 본인만 수정 가능 - JWT 완성 후 활성화
+     */
     @PutMapping("/{orderId}")
     public ResponseEntity<ApiResponse<UpdateOrderResponse>> updateOrder(
             @PathVariable UUID orderId,
@@ -123,14 +114,11 @@ public class OrderControllerV1 {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
-    // ========================================================
-    // PATCH /api/v1/orders/{orderId}/status
-    // TODO: JWT 완성 후 주석 해제
-    // - OWNER: 본인 가게 주문만 변경 가능
-    // - MANAGER/MASTER: 전체 변경 가능
-    // - CUSTOMER: 상태 변경 불가
-    // ========================================================
-
+    /**
+     * 주문 상태 변경
+     * PATCH /api/v1/orders/{orderId}/status
+     * OWNER: 본인 가게 주문만, MANAGER/MASTER: 전체, CUSTOMER: 불가 - JWT 완성 후 활성화
+     */
     @PatchMapping("/{orderId}/status")
     public ResponseEntity<ApiResponse<UpdateOrderStatusResponse>> updateOrderStatus(
             @PathVariable UUID orderId,
@@ -143,12 +131,11 @@ public class OrderControllerV1 {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
-    // ========================================================
-    // PATCH /api/v1/orders/{orderId}/cancel
-    // TODO: JWT 완성 후 주석 해제
-    // - CUSTOMER 본인 또는 MASTER만 가능
-    // ========================================================
-
+    /**
+     * 주문 취소
+     * PATCH /api/v1/orders/{orderId}/cancel
+     * PENDING 상태에서 5분 이내, CUSTOMER 본인 또는 MASTER만 가능 - JWT 완성 후 활성화
+     */
     @PatchMapping("/{orderId}/cancel")
     public ResponseEntity<ApiResponse<CancelOrderResponse>> cancelOrder(
             @PathVariable UUID orderId,
@@ -161,14 +148,11 @@ public class OrderControllerV1 {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
-    // ========================================================
-    // PATCH /api/v1/orders/{orderId}/reject
-    // TODO: JWT 완성 후 주석 해제
-    // - OWNER: 본인 가게 주문만 거절 가능
-    // - MANAGER/MASTER: 전체 거절 가능
-    // - CUSTOMER: 거절 불가
-    // ========================================================
-
+    /**
+     * 주문 거절
+     * PATCH /api/v1/orders/{orderId}/reject
+     * PENDING 상태에서 OWNER: 본인 가게만, MANAGER/MASTER: 전체, CUSTOMER: 불가 - JWT 완성 후 활성화
+     */
     @PatchMapping("/{orderId}/reject")
     public ResponseEntity<ApiResponse<RejectOrderResponse>> rejectOrder(
             @PathVariable UUID orderId,
@@ -181,12 +165,11 @@ public class OrderControllerV1 {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
-    // ========================================================
-    // DELETE /api/v1/orders/{orderId}
-    // TODO: JWT 완성 후 주석 해제
-    // - MASTER만 삭제 가능
-    // ========================================================
-
+    /**
+     * 주문 삭제 (soft delete)
+     * DELETE /api/v1/orders/{orderId}
+     * MASTER만 가능 - JWT 완성 후 활성화
+     */
     @DeleteMapping("/{orderId}")
     public ResponseEntity<Void> deleteOrder(
             @PathVariable UUID orderId
@@ -198,6 +181,9 @@ public class OrderControllerV1 {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * 페이지 사이즈 10/30/50만 허용
+     */
     private void validatePageSize(int pageSize) {
         if (pageSize != 10 && pageSize != 30 && pageSize != 50) {
             throw new BaseException(CommonErrorCode.INVALID_PAGE_SIZE);

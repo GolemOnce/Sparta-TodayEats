@@ -19,6 +19,9 @@ public record CreateOrderResponse(
         LocalDateTime createdAt, // 주문 생성 일시 (JPA Auditing)
         UUID createdBy          // 주문자 ID (JPA Auditing)
 ) {
+    /**
+     * OrderEntity로부터 응답 DTO 생성
+     */
     public static CreateOrderResponse from(OrderEntity order) {
         return new CreateOrderResponse(
                 order.getOrderId(),

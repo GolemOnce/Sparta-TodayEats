@@ -91,12 +91,16 @@ public class OrderEntity extends BaseEntity {
         this.totalPrice = totalPrice;
     }
 
-    // 주문 항목 추가
+    /**
+     * 주문 항목 추가
+     */
     public void addOrderItem(OrderItemEntity item) {
         this.orderItems.add(item);
     }
 
-    // totalPrice 갱신 (서버에서 계산 후 세팅)
+    /**
+     * 서버에서 계산한 총 주문 금액 갱신
+     */
     public void updateTotalPrice(long total) {
         this.totalPrice = total;
     }

@@ -13,6 +13,9 @@ public record RejectOrderResponse(
         LocalDateTime updatedAt,    // 수정 일시 (JPA Auditing)
         UUID updatedBy              // 수정자 (JPA Auditing)
 ) {
+    /**
+     * OrderEntity로부터 응답 DTO 생성
+     */
     public static RejectOrderResponse from(OrderEntity order) {
         return new RejectOrderResponse(
                 order.getOrderId(),
