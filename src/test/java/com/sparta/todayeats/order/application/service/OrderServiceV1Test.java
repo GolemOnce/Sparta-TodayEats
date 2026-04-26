@@ -584,7 +584,7 @@ class OrderServiceV1Test {
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order))
                     .willReturn(Optional.of(canceledOrder));
-            given(orderRepository.cancelConditionally(eq(orderId), eq("단순 변심")))
+            given(orderRepository.cancelConditionally(eq(orderId), eq("단순 변심"), eq(OrderStatus.PENDING), eq(OrderStatus.CANCELED)))
                     .willReturn(1);
 
             // when
@@ -607,7 +607,7 @@ class OrderServiceV1Test {
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order))
                     .willReturn(Optional.of(canceledOrder));
-            given(orderRepository.cancelConditionally(eq(orderId), isNull()))
+            given(orderRepository.cancelConditionally(eq(orderId), isNull(), eq(OrderStatus.PENDING), eq(OrderStatus.CANCELED)))
                     .willReturn(1);
 
             // when
@@ -693,7 +693,7 @@ class OrderServiceV1Test {
             setCreatedAt(order, LocalDateTime.now().minusMinutes(3));
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
-            given(orderRepository.cancelConditionally(eq(orderId), any()))
+            given(orderRepository.cancelConditionally(eq(orderId), any(), eq(OrderStatus.PENDING), eq(OrderStatus.CANCELED)))
                     .willReturn(0);  // 다른 요청이 이미 상태 변경 → 0건 업데이트
 
             // when & then
@@ -724,7 +724,7 @@ class OrderServiceV1Test {
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(pendingOrder()))
                     .willReturn(Optional.of(rejectedOrder));
-            given(orderRepository.rejectConditionally(eq(orderId), eq("재료 소진")))
+            given(orderRepository.rejectConditionally(eq(orderId), eq("재료 소진"), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED)))
                     .willReturn(1);
 
             // when
@@ -746,7 +746,7 @@ class OrderServiceV1Test {
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(pendingOrder()))
                     .willReturn(Optional.of(rejectedOrder));
-            given(orderRepository.rejectConditionally(eq(orderId), isNull()))
+            given(orderRepository.rejectConditionally(eq(orderId), isNull(), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED)))
                     .willReturn(1);
 
             // when
@@ -795,7 +795,7 @@ class OrderServiceV1Test {
             // given
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(pendingOrder()));
-            given(orderRepository.rejectConditionally(eq(orderId), any()))
+            given(orderRepository.rejectConditionally(eq(orderId), any(), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED)))
                     .willReturn(0);  // 다른 요청이 이미 상태 변경 → 0건 업데이트
 
             // when & then
