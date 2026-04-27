@@ -43,8 +43,8 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
      * @return 해당 소유자의 가게에 속한 주문 페이지
      */
     @Query("SELECT o FROM Order o " +
-            "JOIN StoreEntity s ON o.storeId = s.storeId " +
-            "WHERE s.ownerId = :ownerId AND o.deletedAt IS NULL")
+            "JOIN Store s ON o.storeId = s.id " +
+            "WHERE s.owner.userId = :ownerId AND o.deletedAt IS NULL")
     Page<Order> findAllByStoreOwnerId(@Param("ownerId") UUID ownerId, Pageable pageable);
 
     /**
