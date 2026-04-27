@@ -3,6 +3,7 @@ package com.sparta.todayeats.payment.controller;
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
 import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
+import com.sparta.todayeats.payment.dto.response.PaymentDetailResponse;
 import com.sparta.todayeats.payment.dto.response.PaymentPageResponse;
 import com.sparta.todayeats.payment.service.PaymentService;
 import com.sparta.todayeats.payment.entity.Payment;
@@ -36,8 +37,9 @@ public class PaymentController {
     @GetMapping("/payments")
     public ResponseEntity<ApiResponse<PaymentPageResponse>> getPayments(
             @AuthenticationPrincipal UUID userId,
+            @RequestParam(name = "userId", required = false) UUID targetUserId,
             Pageable pageable) {
-        PaymentPageResponse response = paymentService.getPagedPayments(userId, pageable);
+        PaymentPageResponse response = paymentService.getPagedPayments(userId, targetUserId, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
