@@ -3,8 +3,10 @@ package com.sparta.todayeats.user.controller;
 import com.sparta.todayeats.global.annotation.LoginUser;
 import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import com.sparta.todayeats.user.dto.request.UpdatePasswordRequest;
+import com.sparta.todayeats.user.dto.request.UpdateRoleRequest;
 import com.sparta.todayeats.user.dto.request.UpdateUserRequest;
 import com.sparta.todayeats.user.dto.response.UpdatePasswordResponse;
+import com.sparta.todayeats.user.dto.response.UpdateRoleResponse;
 import com.sparta.todayeats.user.dto.response.UpdateUserResponse;
 import com.sparta.todayeats.user.dto.response.UserResponse;
 import com.sparta.todayeats.user.service.UserService;
@@ -55,5 +57,13 @@ public class UserController {
             @Valid @RequestBody UpdatePasswordRequest request, @LoginUser UUID userId
     ) {
         return ResponseEntity.ok(userService.updatePassword(request, userId));
+    }
+
+    @Secured("ROLE_MASTER")
+    @PatchMapping("/{targetUserId}/role")
+    public ResponseEntity<UpdateRoleResponse> updateRole(
+            @PathVariable UUID targetUserId, @Valid @RequestBody UpdateRoleRequest request
+    ) {
+        return ResponseEntity.ok(userService.updateRole(targetUserId, request));
     }
 }

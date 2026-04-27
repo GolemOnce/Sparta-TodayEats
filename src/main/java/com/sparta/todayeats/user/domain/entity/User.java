@@ -51,6 +51,10 @@ public class User extends BaseEntity {
         this.password = password;
     }
 
+    public void updateRole(UserRoleEnum role) {
+        this.role = role;
+    }
+
     public void restore(SignupRequest request) {
         this.password = request.getPassword();
         this.nickname = request.getNickname();

@@ -8,8 +8,10 @@ import com.sparta.todayeats.user.domain.entity.User;
 import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import com.sparta.todayeats.user.domain.repository.UserRepository;
 import com.sparta.todayeats.user.dto.request.UpdatePasswordRequest;
+import com.sparta.todayeats.user.dto.request.UpdateRoleRequest;
 import com.sparta.todayeats.user.dto.request.UpdateUserRequest;
 import com.sparta.todayeats.user.dto.response.UpdatePasswordResponse;
+import com.sparta.todayeats.user.dto.response.UpdateRoleResponse;
 import com.sparta.todayeats.user.dto.response.UpdateUserResponse;
 import com.sparta.todayeats.user.dto.response.UserResponse;
 import lombok.RequiredArgsConstructor;
@@ -96,5 +98,26 @@ public class UserService {
         user.updatePassword(passwordEncoder.encode(newPassword));
 
         return new UpdatePasswordResponse(user);
+    }
+
+    @Transactional
+    public UpdateRoleResponse updateRole(UUID targetUserId, UpdateRoleRequest request) {
+        // 대상 사용자 조회
+        User targetUser = userAuthorizationService.getUserById(targetUserId);
+
+        // Master의 권한 변경 차단
+        if (userAuthorizationService.isMaster(targetUser)) {
+            throw new BaseException(UserErrorCode.CANNOT_UPDATE_MASTER_ROLE);
+        }
+
+        // Master 권한 부여 차단
+        if (request.getRole() == UserRoleEnum.MASTER) {
+            throw new BaseException(UserErrorCode.CANNOT_GRANT_MASTER_ROLE);
+        }
+
+        // 대상 사용자 권한 변경
+        targetUser.updateRole(request.getRole());
+
+        return new UpdateRoleResponse(targetUser);
     }
 }
