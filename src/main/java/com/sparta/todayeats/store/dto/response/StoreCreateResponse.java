@@ -1,16 +1,15 @@
-package com.sparta.todayeats.store.dto;
+package com.sparta.todayeats.store.dto.response;
 
 import lombok.Builder;
 import lombok.Getter;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-// 가게 응답 DTO
+// 가게 생성 응답 DTO
 @Getter
 @Builder
-public class StoreResponse {
+public class StoreCreateResponse {
     private UUID storeId;
     private String ownerNickname;
     private String name;
@@ -20,10 +19,6 @@ public class StoreResponse {
     private String areaName;
     private UUID categoryId;
     private String categoryName;
-    private BigDecimal averageRating;
-    private Boolean isHidden;
     private LocalDateTime createdAt;
     private UUID createdBy;
-    private LocalDateTime updatedAt;
-    private UUID updatedBy;
 }
