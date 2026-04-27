@@ -5,10 +5,7 @@ import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import com.sparta.todayeats.user.dto.request.UpdatePasswordRequest;
 import com.sparta.todayeats.user.dto.request.UpdateRoleRequest;
 import com.sparta.todayeats.user.dto.request.UpdateUserRequest;
-import com.sparta.todayeats.user.dto.response.UpdatePasswordResponse;
-import com.sparta.todayeats.user.dto.response.UpdateRoleResponse;
-import com.sparta.todayeats.user.dto.response.UpdateUserResponse;
-import com.sparta.todayeats.user.dto.response.UserResponse;
+import com.sparta.todayeats.user.dto.response.*;
 import com.sparta.todayeats.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -65,5 +62,15 @@ public class UserController {
             @PathVariable UUID targetUserId, @Valid @RequestBody UpdateRoleRequest request
     ) {
         return ResponseEntity.ok(userService.updateRole(targetUserId, request));
+    }
+
+    @DeleteMapping("/{targetUserId}")
+    public ResponseEntity<?> deleteUser(@PathVariable UUID targetUserId, @LoginUser UUID currentUserId) {
+        DeleteUserResponse response = userService.deleteUser(targetUserId, currentUserId);
+
+        if (response == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(response);
     }
 }
