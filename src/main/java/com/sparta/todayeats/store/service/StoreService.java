@@ -110,13 +110,19 @@ public class StoreService {
 
     // 가게 수정
     @Transactional
-    public StoreResponse updateStore(UUID storeId, StoreUpdateRequest request, UUID userId) {
+    public StoreResponse updateStore(UUID storeId, StoreUpdateRequest request, UUID userId,Authentication authentication) {
         // 수정 대상 가게 조회
         Store store = getStoreEntity(storeId);
 
-        // TODO: 인증 구현 후 MANAGER, MASTER는 본인 가게 아니어도 수정 가능하도록 분기
-        // 본인 가게인지 확인
-        validateStoreOwner(store, userId);
+        // MANAGER, MASTER는 모든 가게 수정 가능 / OWNER는 본인 가게만 수정 가능
+        boolean isManagerOrMaster = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER") || a.getAuthority().equals("ROLE_MASTER"));
+
+        System.out.println("isManagerOrMaster: " + isManagerOrMaster);
+
+        if (!isManagerOrMaster) {
+            validateStoreOwner(store, userId);
+        }
 
         // 전체 교체
         store.update(request.getName(), request.getAddress(), request.getPhone());

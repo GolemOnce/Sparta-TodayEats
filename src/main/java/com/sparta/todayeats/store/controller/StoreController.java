@@ -65,13 +65,14 @@ public class StoreController {
     }
 
     // 가게 수정
+    // OWNER는 본인 가게만 수정 가능/ MANAGER, MASTER는 모든 가게 수정 가능
     @PatchMapping("/{storeId}")
     @PreAuthorize("hasAnyRole('OWNER','MANAGER','MASTER')")
     public ResponseEntity<ApiResponse<StoreResponse>> updateStore(
             @PathVariable UUID storeId,
-            @Valid @RequestBody StoreUpdateRequest request,@AuthenticationPrincipal UUID userId) {
+            @Valid @RequestBody StoreUpdateRequest request,@AuthenticationPrincipal UUID userId, Authentication authentication) {
 
-        StoreResponse response = storeService.updateStore(storeId, request,userId);
+        StoreResponse response = storeService.updateStore(storeId, request,userId,authentication);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
