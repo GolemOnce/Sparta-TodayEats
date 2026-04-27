@@ -1,6 +1,7 @@
 package com.sparta.todayeats.user.repository;
 
 import com.sparta.todayeats.global.infrastructure.config.JpaConfig;
+import com.sparta.todayeats.global.infrastructure.config.QueryDslConfig;
 import com.sparta.todayeats.user.entity.User;
 import com.sparta.todayeats.user.entity.UserRoleEnum;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +17,7 @@ import org.springframework.data.domain.Sort;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@Import(JpaConfig.class)
+@Import({JpaConfig.class, QueryDslConfig.class})
 class UserRepositoryTest {
     @Autowired
     private UserRepository userRepository;
