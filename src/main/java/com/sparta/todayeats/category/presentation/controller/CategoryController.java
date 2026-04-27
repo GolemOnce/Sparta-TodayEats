@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -22,9 +23,10 @@ public class CategoryController {
 
     private final CategoryService categoryService;
 
-    // TODO: 권한 처리, Auditing
+    // TODO: Auditing
     // 카테고리 생성
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
     public ResponseEntity<ApiResponse<CategoryCreateResponse>> createCategory(@Valid @RequestBody CategoryCreateRequest request) {
         CategoryCreateResponse response = categoryService.createCategory(request);
 
@@ -56,9 +58,10 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    // TODO: 권한 처리, Auditing
+    // TODO: Auditing
     // 카테고리 수정
     @PutMapping("/{categoryId}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(@PathVariable UUID categoryId, @Valid @RequestBody CategoryUpdateRequest request) {
 
         CategoryResponse response = categoryService.updateCategory(categoryId, request);
@@ -66,9 +69,10 @@ public class CategoryController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    // TODO: 권한 처리, Auditing (+ softDelete)
+    // TODO: Auditing (+ softDelete)
     // 카테고리 삭제
     @DeleteMapping("/{categoryId}")
+    @PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
     public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable UUID categoryId) {
 
         categoryService.deleteCategory(categoryId);

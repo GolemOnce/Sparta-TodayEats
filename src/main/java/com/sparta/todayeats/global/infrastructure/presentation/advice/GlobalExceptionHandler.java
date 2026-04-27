@@ -1,9 +1,11 @@
 package com.sparta.todayeats.global.infrastructure.presentation.advice;
 
+import com.sparta.todayeats.global.exception.AuthErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.CommonErrorCode;
 import com.sparta.todayeats.global.exception.ErrorCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -20,8 +22,15 @@ public class GlobalExceptionHandler {
         return buildResponse(e.getErrorCode());
     }
 
+    // 접근 권한 없음 (403)
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<?> handleAccessDeniedException(AuthorizationDeniedException e) {
+        return buildResponse(AuthErrorCode.FORBIDDEN);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(Exception e) {
+        e.printStackTrace();
         return buildResponse(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
 
