@@ -185,7 +185,11 @@ public class AuthServiceV1 {
     }
 
     public void logout(String userId) {
-        // Redis에서 순수 Refresh Token 삭제
+        deleteRefreshToken(userId);
+    }
+
+    public void deleteRefreshToken(String userId) {
+        // Redis에 Refresh Token 삭제
         redisTemplate.delete(RT_PREFIX + userId);
     }
 

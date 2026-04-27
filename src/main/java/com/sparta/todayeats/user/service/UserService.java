@@ -1,5 +1,6 @@
 package com.sparta.todayeats.user.service;
 
+import com.sparta.todayeats.auth.application.service.AuthServiceV1;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.UserErrorCode;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
@@ -10,10 +11,7 @@ import com.sparta.todayeats.user.domain.repository.UserRepository;
 import com.sparta.todayeats.user.dto.request.UpdatePasswordRequest;
 import com.sparta.todayeats.user.dto.request.UpdateRoleRequest;
 import com.sparta.todayeats.user.dto.request.UpdateUserRequest;
-import com.sparta.todayeats.user.dto.response.UpdatePasswordResponse;
-import com.sparta.todayeats.user.dto.response.UpdateRoleResponse;
-import com.sparta.todayeats.user.dto.response.UpdateUserResponse;
-import com.sparta.todayeats.user.dto.response.UserResponse;
+import com.sparta.todayeats.user.dto.response.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +26,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserService {
     private final UserAuthorizationService userAuthorizationService;
+    private final AuthServiceV1 authService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -119,5 +118,38 @@ public class UserService {
         targetUser.updateRole(request.getRole());
 
         return new UpdateRoleResponse(targetUser);
+    }
+
+    @Transactional
+    public DeleteUserResponse deleteUser(UUID targetUserId, UUID currentUserId) {
+        // 사용자 조회
+        User targetUser = userAuthorizationService.getUserById(targetUserId);
+        User currentUser = userAuthorizationService.getUserById(currentUserId);
+
+        // 타인 삭제: Master만 가능
+        if (!targetUserId.equals(currentUserId)) {
+            userAuthorizationService.validateMaster(currentUser);
+        }
+
+        // Master 삭제 불가
+        if (userAuthorizationService.isMaster(targetUser)) {
+            throw new BaseException(UserErrorCode.CANNOT_DELETE_MASTER);
+        }
+
+        if (!userAuthorizationService.isAdmin(targetUser)) {
+            // TODO: 일반 사용자는 진행 중인 주문 존재 시 삭제 불가
+        }
+
+        targetUser.softDelete(currentUserId);
+        // TODO: 관련 도메인에서 soft delete 처리 필요
+
+        // Redis에 Refresh Token 삭제
+        authService.deleteRefreshToken(targetUserId.toString());
+
+        // 응답 정책
+        if (userAuthorizationService.isMaster(currentUser)) {
+            return new DeleteUserResponse(targetUser);
+        }
+        return null;
     }
 }
