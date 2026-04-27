@@ -130,9 +130,9 @@ public class CategoryService {
                 .build();
     }
 
-    // 카테고리 이름 기준 중복 조회 (존재 여부 확인)
+    // 카테고리 이름 중복 여부 확인 (삭제 안 된 것만 중복 체크)
     private void validateDuplicateCategory(String name) {
-        if (categoryRepository.existsByNameIgnoreCase(name)) {
+        if (categoryRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(name)) {
             throw new BaseException(CategoryErrorCode.CATEGORY_ALREADY_EXISTS);
         }
     }
