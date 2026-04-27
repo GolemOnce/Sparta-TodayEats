@@ -386,7 +386,7 @@ class OrderServiceTest {
         void OWNER_본인_가게_주문_조회_성공() {
             // given
             Page<Order> page = new PageImpl<>(List.of(pendingOrder()));
-            given(orderRepository.findAllByStoreOwnerId(eq(userId), any(Pageable.class)))
+            given(orderRepository.searchOrdersByStoreOwner(eq(userId), isNull(), isNull(), any(Pageable.class)))
                     .willReturn(page);
 
             // when
@@ -395,7 +395,7 @@ class OrderServiceTest {
 
             // then
             assertThat(result.getContent()).hasSize(1);
-            verify(orderRepository).findAllByStoreOwnerId(eq(userId), any(Pageable.class));
+            verify(orderRepository).searchOrdersByStoreOwner(eq(userId), isNull(), isNull(), any(Pageable.class));
         }
 
         @Test
