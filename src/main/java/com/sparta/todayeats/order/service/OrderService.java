@@ -132,7 +132,7 @@ public class OrderService {
             return orderRepository.searchOrders(userId, status, storeName, pageable)
                     .map(OrderSummaryResponse::from);
         } else if (role == UserRoleEnum.OWNER) {
-            return orderRepository.findAllByStoreOwnerId(userId, pageable)
+            return orderRepository.searchOrdersByStoreOwner(userId, status, storeName, pageable)
                     .map(OrderSummaryResponse::from);
         } else if (role == UserRoleEnum.MANAGER) {
             return orderRepository.searchAllOrders(status, storeName, pageable)
