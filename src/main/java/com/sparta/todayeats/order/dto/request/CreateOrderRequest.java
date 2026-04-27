@@ -1,6 +1,6 @@
-package com.sparta.todayeats.order.presentation.dto.request;
+package com.sparta.todayeats.order.dto.request;
 
-import com.sparta.todayeats.order.domain.entity.OrderType;
+import com.sparta.todayeats.order.entity.OrderType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;

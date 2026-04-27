@@ -1,13 +1,13 @@
-package com.sparta.todayeats.order.presentation.controller;
+package com.sparta.todayeats.order.controller;
 
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.CommonErrorCode;
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.global.response.PageResponse;
-import com.sparta.todayeats.order.application.service.OrderServiceV1;
-import com.sparta.todayeats.order.domain.entity.OrderStatus;
-import com.sparta.todayeats.order.presentation.dto.request.*;
-import com.sparta.todayeats.order.presentation.dto.response.*;
+import com.sparta.todayeats.order.dto.request.*;
+import com.sparta.todayeats.order.dto.response.*;
+import com.sparta.todayeats.order.service.OrderService;
+import com.sparta.todayeats.order.entity.OrderStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,9 +26,9 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
-public class OrderControllerV1 {
+public class OrderController {
 
-    private final OrderServiceV1 orderService;
+    private final OrderService orderService;
 
     /**
      * 주문 생성

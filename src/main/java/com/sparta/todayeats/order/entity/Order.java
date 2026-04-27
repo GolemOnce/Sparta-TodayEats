@@ -1,4 +1,4 @@
-package com.sparta.todayeats.order.domain.entity;
+package com.sparta.todayeats.order.entity;
 
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.OrderErrorCode;
@@ -19,7 +19,7 @@ import java.util.UUID;
 @Table(name = "p_order")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class OrderEntity extends BaseEntity {
+public class Order extends BaseEntity {
 
     private static final int CANCEL_LIMIT_MINUTES = 5;
 
@@ -69,12 +69,12 @@ public class OrderEntity extends BaseEntity {
     private Long totalPrice;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItemEntity> orderItems = new ArrayList<>();
+    private List<OrderItem> orderItems = new ArrayList<>();
 
     @Builder
-    public OrderEntity(UUID customerId, UUID storeId, UUID addressId,
-                       String storeName, String deliveryAddress, String deliveryDetail,
-                       OrderType orderType, String note, Long totalPrice) {
+    public Order(UUID customerId, UUID storeId, UUID addressId,
+                 String storeName, String deliveryAddress, String deliveryDetail,
+                 OrderType orderType, String note, Long totalPrice) {
         this.customerId = customerId;
         this.storeId = storeId;
         this.addressId = addressId;
@@ -90,7 +90,7 @@ public class OrderEntity extends BaseEntity {
     /**
      * 주문 항목 추가
      */
-    public void addOrderItem(OrderItemEntity item) {
+    public void addOrderItem(OrderItem item) {
         this.orderItems.add(item);
     }
 

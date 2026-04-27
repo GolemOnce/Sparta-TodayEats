@@ -1,4 +1,4 @@
-package com.sparta.todayeats.order.domain.entity;
+package com.sparta.todayeats.order.entity;
 
 /**
  * 주문 유형 (온라인/오프라인)

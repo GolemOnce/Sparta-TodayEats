@@ -1,7 +1,7 @@
-package com.sparta.todayeats.order.presentation.dto.response;
+package com.sparta.todayeats.order.dto.response;
 
-import com.sparta.todayeats.order.domain.entity.OrderEntity;
-import com.sparta.todayeats.order.domain.entity.OrderStatus;
+import com.sparta.todayeats.order.entity.Order;
+import com.sparta.todayeats.order.entity.OrderStatus;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -17,7 +17,7 @@ public record RejectOrderResponse(
     /**
      * OrderEntity로부터 응답 DTO 생성
      */
-    public static RejectOrderResponse from(OrderEntity order) {
+    public static RejectOrderResponse from(Order order) {
         return new RejectOrderResponse(
                 order.getOrderId(),
                 order.getStatus(),
