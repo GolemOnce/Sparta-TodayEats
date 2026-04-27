@@ -2,7 +2,12 @@ package com.sparta.todayeats.store.controller;
 
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.response.ApiResponse;
-import com.sparta.todayeats.store.dto.*;
+import com.sparta.todayeats.store.dto.request.StoreCreateRequest;
+import com.sparta.todayeats.store.dto.request.StoreHiddenRequest;
+import com.sparta.todayeats.store.dto.request.StoreUpdateRequest;
+import com.sparta.todayeats.store.dto.response.StoreCreateResponse;
+import com.sparta.todayeats.store.dto.response.StoreHiddenResponse;
+import com.sparta.todayeats.store.dto.response.StoreResponse;
 import com.sparta.todayeats.store.service.StoreService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

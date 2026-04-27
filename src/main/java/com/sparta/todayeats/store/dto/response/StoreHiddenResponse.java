@@ -1,4 +1,4 @@
-package com.sparta.todayeats.store.dto;
+package com.sparta.todayeats.store.dto.response;
 
 import lombok.Builder;
 import lombok.Getter;
