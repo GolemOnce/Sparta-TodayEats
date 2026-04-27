@@ -31,6 +31,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -365,5 +366,94 @@ class PaymentServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("결제 삭제")
+    class deletePayment {
 
+        @Test
+        void MASTER_결제_삭제_성공() {
+            // given
+            UUID masterId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+
+            User master = User.builder().role(UserRoleEnum.MASTER).build();
+            Order order = buildOrder(UUID.randomUUID(), 15000L);
+            Payment payment = Payment.builder()
+                    .order(order)
+                    .amount(15000L)
+                    .build();
+
+            given(userAuthorizationService.getUserById(masterId)).willReturn(master);
+            given(paymentRepository.findById(paymentId)).willReturn(Optional.of(payment));
+
+            // when
+            paymentService.deletePayment(paymentId, masterId);
+
+            // then
+            assertThat(payment.isDeleted()).isTrue();
+            assertThat(payment.getDeletedBy()).isEqualTo(masterId);
+            verify(userAuthorizationService).validateMaster(master);
+        }
+
+        @Test
+        void 일반_유저가_삭제_시도시_예외() {
+            // given
+            UUID userId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+
+            User normalUser = User.builder().role(UserRoleEnum.CUSTOMER).build();
+
+            given(userAuthorizationService.getUserById(userId)).willReturn(normalUser);
+            doThrow(new BaseException(AuthErrorCode.FORBIDDEN))
+                    .when(userAuthorizationService).validateMaster(normalUser);
+
+            // when & then
+            assertThatThrownBy(() -> paymentService.deletePayment(paymentId, userId))
+                    .isInstanceOf(BaseException.class);
+
+            verify(paymentRepository, never()).findById(any()); // 권한 없으면 DB 조회 안 함
+        }
+
+        @Test
+        void 존재하지_않는_결제내역_삭제시_예외() {
+            // given
+            UUID masterId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+
+            User master = User.builder().role(UserRoleEnum.MASTER).build();
+
+            given(userAuthorizationService.getUserById(masterId)).willReturn(master);
+            given(paymentRepository.findById(paymentId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> paymentService.deletePayment(paymentId, masterId))
+                    .isInstanceOf(BaseException.class);
+        }
+
+        @Test
+        void 이미_삭제된_결제내역은_재삭제_안됨() {
+            // given
+            UUID masterId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+
+            User master = User.builder().role(UserRoleEnum.MASTER).build();
+            Order order = buildOrder(UUID.randomUUID(), 15000L);
+            Payment payment = Payment.builder()
+                    .order(order)
+                    .amount(15000L)
+                    .build();
+
+            payment.softDelete(masterId); // 미리 삭제된 상태
+            LocalDateTime firstDeletedAt = payment.getDeletedAt();
+
+            given(userAuthorizationService.getUserById(masterId)).willReturn(master);
+            given(paymentRepository.findById(paymentId)).willReturn(Optional.of(payment));
+
+            // when
+            paymentService.deletePayment(paymentId, masterId);
+
+            // then
+            assertThat(payment.getDeletedAt()).isEqualTo(firstDeletedAt); // deletedAt 변경 없음
+        }
+    }
 }
