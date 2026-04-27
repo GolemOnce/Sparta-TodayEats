@@ -67,8 +67,9 @@ class AuthServiceV1Test {
     private static final String NICKNAME = "nick";
     private static final String CODE = "123456";
 
-    private static final String ACCESS_TOKEN = "access-token";
-    private static final String REFRESH_TOKEN = "refresh-token";
+    private static final String ACCESS_TOKEN = "Bearer access-token";
+    private static final String REFRESH_TOKEN = "Bearer refresh-token";
+    private static final String PURE_REFRESH_TOKEN = "refresh-token";
 
     private static final String RT_KEY = RT_PREFIX + USER_ID;
 
@@ -161,6 +162,7 @@ class AuthServiceV1Test {
 
             // then
             assertThat(response.getEmail()).isEqualTo(EMAIL);
+            verify(valueOperations).set(eq(SIGNUP_PREFIX + EMAIL), anyString(), any(Duration.class));
             verify(authMailService).sendSignupCode(eq(EMAIL), anyString());
         }
 
@@ -241,7 +243,7 @@ class AuthServiceV1Test {
             given(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD)).willReturn(true);
             given(jwtTokenProvider.createAccessToken(any(), any())).willReturn(ACCESS_TOKEN);
             given(jwtTokenProvider.createRefreshToken(any())).willReturn(REFRESH_TOKEN);
-            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(PURE_REFRESH_TOKEN);
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(jwtTokenProvider.getRefreshTokenValidityDuration()).willReturn(Duration.ofDays(7));
 
@@ -251,7 +253,7 @@ class AuthServiceV1Test {
             // then
             assertThat(response).isNotNull();
             assertThat(response.getAccessToken()).isEqualTo(ACCESS_TOKEN);
-            verify(redisTemplate.opsForValue()).set(startsWith(RT_PREFIX), eq(REFRESH_TOKEN), any());
+            verify(redisTemplate.opsForValue()).set(startsWith(RT_PREFIX), eq(PURE_REFRESH_TOKEN), any());
         }
 
         @Test
@@ -300,17 +302,18 @@ class AuthServiceV1Test {
         @Test
         void 토큰_재발급_성공() {
             // given
-            given(jwtTokenProvider.validateToken(REFRESH_TOKEN)).willReturn(true);
-            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
-            given(jwtTokenProvider.getUserId(REFRESH_TOKEN)).willReturn(USER_ID);
+            given(jwtTokenProvider.validateToken(PURE_REFRESH_TOKEN)).willReturn(true);
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(PURE_REFRESH_TOKEN);
+            given(jwtTokenProvider.getUserId(PURE_REFRESH_TOKEN)).willReturn(USER_ID);
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
-            given(valueOperations.get(RT_KEY)).willReturn(REFRESH_TOKEN);
+            given(valueOperations.get(RT_KEY)).willReturn(PURE_REFRESH_TOKEN);
 
             User user = User.builder().email(EMAIL).role(UserRoleEnum.CUSTOMER).build();
 
             given(userRepository.findById(USER_ID)).willReturn(Optional.of(user));
             given(jwtTokenProvider.createAccessToken(any(), any())).willReturn(ACCESS_TOKEN);
             given(jwtTokenProvider.createRefreshToken(any())).willReturn(REFRESH_TOKEN);
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(PURE_REFRESH_TOKEN);
             given(jwtTokenProvider.getRefreshTokenValidityDuration()).willReturn(Duration.ofDays(7));
 
             // when
@@ -319,14 +322,14 @@ class AuthServiceV1Test {
             // then
             assertThat(response.getAccessToken()).isEqualTo(ACCESS_TOKEN);
             assertThat(response.getRefreshToken()).isEqualTo(REFRESH_TOKEN);
-            verify(valueOperations).set(eq(RT_KEY), eq(REFRESH_TOKEN), any());
+            verify(valueOperations).set(eq(RT_KEY), eq(PURE_REFRESH_TOKEN), any());
         }
 
         @Test
         void 토큰_재발급_실패_토큰_미유효() {
             // given
-            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
-            given(jwtTokenProvider.validateToken(REFRESH_TOKEN)).willReturn(false);
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(PURE_REFRESH_TOKEN);
+            given(jwtTokenProvider.validateToken(PURE_REFRESH_TOKEN)).willReturn(false);
 
             // when & then
             assertThatThrownBy(() -> authServiceV1.reissue(REFRESH_TOKEN))
@@ -337,9 +340,9 @@ class AuthServiceV1Test {
         @Test
         void 토큰_재발급_실패_토큰_불일치() {
             // given
-            given(jwtTokenProvider.validateToken(REFRESH_TOKEN)).willReturn(true);
-            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
-            given(jwtTokenProvider.getUserId(REFRESH_TOKEN)).willReturn(USER_ID);
+            given(jwtTokenProvider.validateToken(PURE_REFRESH_TOKEN)).willReturn(true);
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(PURE_REFRESH_TOKEN);
+            given(jwtTokenProvider.getUserId(PURE_REFRESH_TOKEN)).willReturn(USER_ID);
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
             given(valueOperations.get(RT_KEY)).willReturn("other-token");
 
@@ -352,11 +355,11 @@ class AuthServiceV1Test {
         @Test
         void 토큰_재발급_실패_사용자_없음() {
             // given
-            given(jwtTokenProvider.validateToken(REFRESH_TOKEN)).willReturn(true);
-            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(REFRESH_TOKEN);
-            given(jwtTokenProvider.getUserId(REFRESH_TOKEN)).willReturn(USER_ID);
+            given(jwtTokenProvider.validateToken(PURE_REFRESH_TOKEN)).willReturn(true);
+            given(jwtTokenProvider.substringToken(REFRESH_TOKEN)).willReturn(PURE_REFRESH_TOKEN);
+            given(jwtTokenProvider.getUserId(PURE_REFRESH_TOKEN)).willReturn(USER_ID);
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
-            given(valueOperations.get(RT_KEY)).willReturn(REFRESH_TOKEN);
+            given(valueOperations.get(RT_KEY)).willReturn(PURE_REFRESH_TOKEN);
             given(userRepository.findById(USER_ID)).willReturn(Optional.empty());
 
             // when & then
