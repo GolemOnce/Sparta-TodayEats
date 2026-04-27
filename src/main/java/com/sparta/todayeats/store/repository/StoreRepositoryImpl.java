@@ -21,7 +21,7 @@ public class StoreRepositoryImpl implements StoreRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<Store> searchStores(String categoryName, String keyword, Pageable pageable) {
+    public Page<Store> searchStores(String categoryName, String keyword, Pageable pageable, boolean isCustomer) {
 
         // compileJava로 자동 생성된 Q클래스 (Store 엔티티 기반)
         // 타입 안전하게 컬럼명, 조건 등을 작성할 수 있게 해줌
@@ -29,6 +29,12 @@ public class StoreRepositoryImpl implements StoreRepositoryCustom {
 
         // 동적 조건을 조합하는 빌더 (AND)
         BooleanBuilder builder = new BooleanBuilder();
+
+        // CUSTOMER or 비로그인 → 공개된 가게만 노출
+        // OWNER / MANAGER / MASTER → 숨긴 가게 포함 전체 노출
+        if (isCustomer) {
+            builder.and(store.isHidden.isFalse());
+        }
 
         // 카테고리 이름으로 필터
         if (categoryName != null && !categoryName.isBlank()) {
@@ -39,11 +45,6 @@ public class StoreRepositoryImpl implements StoreRepositoryCustom {
         if (keyword != null && !keyword.isBlank()) {
             builder.and(store.name.containsIgnoreCase(keyword));
         }
-
-        // 숨김 처리된 가게 제외
-        // TODO: 권한 구현 후 OWNER, MASTER, MANAGER는 isHidden 조건 제거
-        // 숨김 처리된 가게 제외 (CUSTOMER만 적용)
-        builder.and(store.isHidden.isFalse());
 
         // 실제 데이터 조회 (페이징 적용)
         List<Store> content = queryFactory
