@@ -1,7 +1,7 @@
 package com.sparta.todayeats.user.controller;
 
 import com.sparta.todayeats.global.annotation.LoginUser;
-import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
+import com.sparta.todayeats.user.entity.UserRoleEnum;
 import com.sparta.todayeats.user.dto.request.UpdatePasswordRequest;
 import com.sparta.todayeats.user.dto.request.UpdateRoleRequest;
 import com.sparta.todayeats.user.dto.request.UpdateUserRequest;
