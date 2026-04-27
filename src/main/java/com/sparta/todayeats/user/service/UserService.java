@@ -5,6 +5,8 @@ import com.sparta.todayeats.global.util.PageableUtils;
 import com.sparta.todayeats.user.domain.entity.User;
 import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import com.sparta.todayeats.user.domain.repository.UserRepository;
+import com.sparta.todayeats.user.dto.request.UpdateUserRequest;
+import com.sparta.todayeats.user.dto.response.UpdateUserResponse;
 import com.sparta.todayeats.user.dto.response.UserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -49,5 +51,16 @@ public class UserService {
 
         // 권한에 맞는 결과 반환
         return new UserResponse(targetUser, userAuthorizationService.isAdmin(currentUser));
+    }
+
+    @Transactional
+    public UpdateUserResponse updateUser(UpdateUserRequest request, UUID userId) {
+        // 사용자 조회
+        User user = userAuthorizationService.getUserById(userId);
+
+        // 사용자 수정
+        user.update(request.getNickname(), request.isVisible());
+
+        return new UpdateUserResponse(user);
     }
 }
