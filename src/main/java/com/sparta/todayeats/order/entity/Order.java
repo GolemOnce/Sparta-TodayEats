@@ -1,5 +1,6 @@
 package com.sparta.todayeats.order.entity;
 
+import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.OrderErrorCode;
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
