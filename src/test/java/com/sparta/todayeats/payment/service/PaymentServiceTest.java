@@ -1,16 +1,21 @@
 package com.sparta.todayeats.payment.service;
 
+import com.sparta.todayeats.global.exception.AuthErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
+import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.order.entity.OrderStatus;
 import com.sparta.todayeats.order.entity.OrderType;
 import com.sparta.todayeats.order.repository.OrderRepository;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
 import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
+import com.sparta.todayeats.payment.dto.response.PaymentDetailResponse;
 import com.sparta.todayeats.payment.dto.response.PaymentPageResponse;
 import com.sparta.todayeats.payment.entity.Payment;
 import com.sparta.todayeats.payment.entity.PaymentStatus;
 import com.sparta.todayeats.payment.repository.PaymentRepository;
+import com.sparta.todayeats.user.domain.entity.User;
+import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,6 +49,9 @@ class PaymentServiceTest {
     @Mock
     private OrderRepository orderRepository;
 
+    @Mock
+    private UserAuthorizationService userAuthorizationService;
+
     @InjectMocks
     private PaymentService paymentService;
 
@@ -51,11 +60,7 @@ class PaymentServiceTest {
         return Order.builder()
                 .customerId(customerId)
                 .storeId(UUID.randomUUID())
-                .addressId(UUID.randomUUID())
                 .storeName("테스트 가게")
-                .deliveryAddress("서울시 강남구")
-                .deliveryDetail("101호")
-                .orderType(OrderType.ONLINE)
                 .totalPrice(totalPrice)
                 .build();
     }
@@ -166,7 +171,7 @@ class PaymentServiceTest {
             given(paymentRepository.findByOrder_userId(userId, pageable)).willReturn(paymentPage);
 
             // when
-            PaymentPageResponse response = paymentService.getPagedPayments(userId, pageable);
+            PaymentPageResponse response = paymentService.getPagedPayments(userId, null, pageable);
 
             // then
             assertThat(response).isNotNull();
@@ -184,10 +189,109 @@ class PaymentServiceTest {
                     .willReturn(Page.empty(pageable));
 
             // when
-            PaymentPageResponse response = paymentService.getPagedPayments(userId, pageable);
+            PaymentPageResponse response = paymentService.getPagedPayments(userId,null, pageable);
 
             // then
             assertThat(response.getPayments()).isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("결제 상세 조회")
+    class getPaymentDetails {
+
+        @Test
+        void 본인_결제내역_조회_성공() {
+            // given
+            UUID userId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+
+            Order order = buildOrder(userId, 15000L);
+            Payment payment = Payment.builder()
+                    .order(order)
+                    .amount(15000L)
+                    .build();
+
+            given(paymentRepository.findByIdAndOrder_CustomerId(paymentId, userId))
+                    .willReturn(Optional.of(payment));
+
+            // when
+            PaymentDetailResponse response = paymentService.getPaymentDetails(userId, paymentId);
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.getAmount()).isEqualTo(15000L);
+        }
+
+        @Test
+        void 관리자가_타인_결제내역_조회_성공() {
+            // given
+            UUID adminId = UUID.randomUUID();
+            UUID customerId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+
+            Order order = buildOrder(customerId, 15000L);
+            Payment payment = Payment.builder()
+                    .order(order)
+                    .amount(15000L)
+                    .build();
+
+            User admin = User.builder().role(UserRoleEnum.MASTER).build();
+
+            given(paymentRepository.findByIdAndOrder_CustomerId(paymentId, adminId))
+                    .willReturn(Optional.empty());
+            given(userAuthorizationService.getUserById(adminId))
+                    .willReturn(admin);
+            given(paymentRepository.findById(paymentId))
+                    .willReturn(Optional.of(payment));
+
+            // when
+            PaymentDetailResponse response = paymentService.getPaymentDetails(adminId, paymentId);
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.getAmount()).isEqualTo(15000L);
+            verify(userAuthorizationService).validateAdmin(admin);
+        }
+
+        @Test
+        void 일반_유저가_타인_결제내역_조회시_예외() {
+            // given
+            UUID otherUserId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+
+            User normalUser = User.builder().role(UserRoleEnum.CUSTOMER).build();
+
+            given(paymentRepository.findByIdAndOrder_CustomerId(paymentId, otherUserId))
+                    .willReturn(Optional.empty());
+            given(userAuthorizationService.getUserById(otherUserId))
+                    .willReturn(normalUser);
+            doThrow(new BaseException(AuthErrorCode.FORBIDDEN))
+                    .when(userAuthorizationService).validateAdmin(normalUser);
+
+            // when & then
+            assertThatThrownBy(() -> paymentService.getPaymentDetails(otherUserId, paymentId))
+                    .isInstanceOf(BaseException.class);
+        }
+
+        @Test
+        void 존재하지_않는_결제내역_조회시_예외() {
+            // given
+            UUID adminId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+
+            User admin = User.builder().role(UserRoleEnum.MASTER).build();
+
+            given(paymentRepository.findByIdAndOrder_CustomerId(paymentId, adminId))
+                    .willReturn(Optional.empty());
+            given(userAuthorizationService.getUserById(adminId))
+                    .willReturn(admin);
+            given(paymentRepository.findById(paymentId))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> paymentService.getPaymentDetails(adminId, paymentId))
+                    .isInstanceOf(BaseException.class);
         }
     }
 }
