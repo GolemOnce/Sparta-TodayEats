@@ -1,18 +1,18 @@
 package com.sparta.todayeats.payment.controller;
 
-import com.sparta.todayeats.category.presentation.dto.PageResponse;
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
 import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
+import com.sparta.todayeats.payment.dto.response.PaymentPageResponse;
 import com.sparta.todayeats.payment.service.PaymentService;
 import com.sparta.todayeats.payment.entity.Payment;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -22,6 +22,7 @@ public class PaymentController {
 
     private final PaymentService paymentService;
 
+    // 결제 처리
     @PostMapping("/orders/{orderId}/payments")
     public ResponseEntity<ApiResponse<PaymentCreateResponse>> createPayment(
             @PathVariable("orderId") UUID orderId,
@@ -31,21 +32,28 @@ public class PaymentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
+    // 결제 목록 조회
     @GetMapping("/payments")
-    public ResponseEntity<List<Payment>> getPayments(@PathVariable("orderId") UUID orderId) {
-
+    public ResponseEntity<ApiResponse<PaymentPageResponse>> getPayments(
+            @AuthenticationPrincipal UUID userId,
+            Pageable pageable) {
+        PaymentPageResponse response = paymentService.getPagedPayments(userId, pageable);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
+    // 결제 상세 조회
     @GetMapping("/payments/{paymentId}")
     public ResponseEntity<Payment> getPayment(@PathVariable("paymentId") UUID paymentId) {
 
     }
 
+    // 결제 상태 변경
     @PutMapping("/payments/{paymentId}")
     public ResponseEntity<Payment> updatePayment(@PathVariable("paymentId") UUID paymentId, @RequestBody Payment payment) {
 
     }
 
+    // 결제 삭제
     @DeleteMapping("/payments/{paymentId}")
     public ResponseEntity<Payment> deletePayment(@PathVariable("paymentId") UUID paymentId) {
 
