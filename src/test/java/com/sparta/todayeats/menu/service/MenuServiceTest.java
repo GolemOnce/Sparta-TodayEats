@@ -8,6 +8,7 @@ import com.sparta.todayeats.menu.dto.request.MenuCreateRequest;
 import com.sparta.todayeats.menu.dto.request.MenuStatusUpdateRequest;
 import com.sparta.todayeats.menu.dto.request.MenuUpdateRequest;
 import com.sparta.todayeats.store.entity.Store;
+import com.sparta.todayeats.user.domain.entity.User;
 import com.sparta.todayeats.store.repository.StoreRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -54,25 +55,30 @@ class MenuServiceTest {
             // given
             UUID storeId = UUID.randomUUID();
             UUID categoryId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
 
             MenuCreateRequest request = new MenuCreateRequest(
                     "김치찌개",
                     9000,
                     "돼지고기 김치찌개",
                     "image-url",
-                    categoryId
+                    categoryId,
+                    false
             );
 
             Category category = mock(Category.class);
             Store store = mock(Store.class);
+            User user = mock(User.class);
 
             given(categoryRepository.findById(categoryId)).willReturn(Optional.of(category));
             given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
+            given(store.getOwner()).willReturn(user);
+            given(user.getUserId()).willReturn(userId);
             given(menuRepository.save(any(Menu.class)))
                     .willAnswer(invocation -> invocation.getArgument(0));
 
             // when
-            Menu result = menuService.createMenu(storeId, request);
+            Menu result = menuService.createMenu(storeId, request, userId);
 
             // then
             assertThat(result.getName()).isEqualTo("김치찌개");
@@ -92,19 +98,21 @@ class MenuServiceTest {
             // given
             UUID storeId = UUID.randomUUID();
             UUID categoryId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
 
             MenuCreateRequest request = new MenuCreateRequest(
                     "김치찌개",
                     9000,
                     "돼지고기 김치찌개",
                     "image-url",
-                    categoryId
+                    categoryId,
+                    false
             );
 
             given(categoryRepository.findById(categoryId)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> menuService.createMenu(storeId, request))
+            assertThatThrownBy(() -> menuService.createMenu(storeId, request, userId))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("카테고리 없음");
         }
@@ -115,13 +123,15 @@ class MenuServiceTest {
             // given
             UUID storeId = UUID.randomUUID();
             UUID categoryId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
 
             MenuCreateRequest request = new MenuCreateRequest(
                     "김치찌개",
                     9000,
                     "돼지고기 김치찌개",
                     "image-url",
-                    categoryId
+                    categoryId,
+                    false
             );
 
             Category category = mock(Category.class);
@@ -130,7 +140,8 @@ class MenuServiceTest {
             given(storeRepository.findById(storeId)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> menuService.createMenu(storeId, request))
+            UUID finalUserId = userId;
+            assertThatThrownBy(() -> menuService.createMenu(storeId, request, finalUserId))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("가게 없음");
         }
@@ -175,6 +186,14 @@ class MenuServiceTest {
         void success() {
             // given
             UUID storeId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
+
+            Store store = mock(Store.class);
+            User owner = mock(User.class);
+
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
+            given(store.getOwner()).willReturn(owner);
+            given(owner.getUserId()).willReturn(userId);
 
             Menu hiddenMenu = Menu.builder()
                     .name("숨김 메뉴")
@@ -189,7 +208,7 @@ class MenuServiceTest {
                     .willReturn(new PageImpl<>(List.of(hiddenMenu)));
 
             // when
-            Page<Menu> result = menuService.getOwnerMenusByStore(storeId, keyword, pageable);
+            Page<Menu> result = menuService.getOwnerMenusByStore(storeId, userId, keyword, pageable);
 
             // then
             assertThat(result.getContent()).hasSize(1);
