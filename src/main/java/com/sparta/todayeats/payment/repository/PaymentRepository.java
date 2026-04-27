@@ -18,8 +18,8 @@ import java.util.UUID;
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     // 목록 조회
     @Query(
-            value = "SELECT p FROM Payment p JOIN FETCH p.order o WHERE o.customerId = :userId",
-            countQuery = "SELECT COUNT(p) FROM Payment p JOIN p.order o WHERE o.customerId = :userId"
+            value = "SELECT p FROM Payment p JOIN FETCH p.order o WHERE o.customerId = :userId AND p.deletedAt IS NULL",
+            countQuery = "SELECT COUNT(p) FROM Payment p JOIN p.order o WHERE o.customerId = :userId AND p.deletedAt IS NULL"
     )
     Page<Payment> findByUserId(@Param("userId") UUID userId, Pageable pageable);
 

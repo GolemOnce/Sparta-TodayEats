@@ -116,6 +116,10 @@ public class PaymentService {
                             .orElseThrow(() -> new BaseException(PaymentErrorCode.PAYMENT_NOT_FOUND));
                 });
 
+        // 3. 삭제된 결제내역 예외처리
+        if (payment.isDeleted()) {
+            throw new BaseException(PaymentErrorCode.PAYMENT_NOT_FOUND);
+        }
         return PaymentDetailResponse.from(payment);
     }
 
