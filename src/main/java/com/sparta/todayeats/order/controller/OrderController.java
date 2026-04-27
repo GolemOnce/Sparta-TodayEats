@@ -199,7 +199,13 @@ public class OrderController {
     private UserRoleEnum extractRole(Authentication authentication) {
         return authentication.getAuthorities().stream()
                 .findFirst()
-                .map(a -> UserRoleEnum.valueOf(a.getAuthority().replace("ROLE_", "")))
+                .map(a -> {
+                    try {
+                        return UserRoleEnum.valueOf(a.getAuthority().replace("ROLE_", ""));
+                    } catch (IllegalArgumentException e) {
+                        throw new BaseException(CommonErrorCode.FORBIDDEN);
+                    }
+                })
                 .orElseThrow(() -> new BaseException(CommonErrorCode.FORBIDDEN));
     }
 }
