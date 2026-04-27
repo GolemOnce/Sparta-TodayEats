@@ -6,6 +6,7 @@ import com.sparta.todayeats.menu.dto.request.MenuCreateRequest;
 import com.sparta.todayeats.menu.dto.request.MenuUpdateRequest;
 import com.sparta.todayeats.menu.dto.response.MenuResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,12 +26,14 @@ public class MenuController {
 
     // 메뉴 등록
     // POST /api/v1/stores/{storeId}/menus
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @PostMapping("/api/v1/stores/{storeId}/menus")
     public MenuResponse createMenu(
             @PathVariable UUID storeId,
+            @AuthenticationPrincipal UUID userId,
             @Valid @RequestBody MenuCreateRequest request
     ) {
-        Menu menu = menuService.createMenu(storeId, request);
+        Menu menu = menuService.createMenu(storeId, request, userId);
         return MenuResponse.from(menu);
     }
 
@@ -51,16 +54,18 @@ public class MenuController {
 
     // 사장님 메뉴 조회
     // GET /api/v1/stores/{storeId}/menus/owner
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/api/v1/stores/{storeId}/menus/owner")
     public Page<MenuResponse> getOwnerMenusByStore(
             @PathVariable UUID storeId,
+            @AuthenticationPrincipal UUID userId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
         Pageable pageable = createPageable(page, size);
 
-        return menuService.getOwnerMenusByStore(storeId, keyword, pageable)
+        return menuService.getOwnerMenusByStore(storeId, userId, keyword, pageable)
                 .map(MenuResponse::from);
     }
 

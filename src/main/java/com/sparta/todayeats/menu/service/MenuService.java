@@ -1,5 +1,6 @@
 package com.sparta.todayeats.menu.service;
 
+import com.sparta.todayeats.ai.service.AiService;
 import com.sparta.todayeats.category.domain.entity.Category;
 import com.sparta.todayeats.category.domain.repository.CategoryRepository;
 import com.sparta.todayeats.menu.entity.Menu;
@@ -15,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 import java.util.UUID;
 
 @Service
@@ -25,20 +27,34 @@ public class MenuService {
     private final MenuRepository menuRepository;
     private final CategoryRepository categoryRepository;
     private final StoreRepository storeRepository;
+    private final AiService aiService;
 
     // 메뉴 생성
     @Transactional
-    public Menu createMenu(UUID storeId, MenuCreateRequest request) {
+    public Menu createMenu(UUID storeId, MenuCreateRequest request, UUID userId) {
         Category category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new IllegalArgumentException("카테고리 없음"));
 
         Store store = storeRepository.findById(storeId)
                 .orElseThrow(() -> new IllegalArgumentException("가게 없음"));
 
+        validateStoreOwner(store, userId);
+
+        String description = request.description();
+
+        if (request.aiDescription()) {
+            description = aiService
+                    .generateProductDescription(
+                            request.name() + " 상품 설명을 추천해줘",
+                            userId
+                    )
+                    .description();
+        }
+
         Menu menu = Menu.builder()
                 .name(request.name())
                 .price(request.price())
-                .description(request.description())
+                .description(description)
                 .imageUrl(request.imageUrl())
                 .category(category)
                 .store(store)
@@ -52,9 +68,15 @@ public class MenuService {
     // 사장님 메뉴 조회
     public Page<Menu> getOwnerMenusByStore(
             UUID storeId,
+            UUID userId,
             String keyword,
             Pageable pageable
     ) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new IllegalArgumentException("가게 없음"));
+
+        validateStoreOwner(store, userId);
+
         return menuRepository.findOwnerMenusByStoreId(storeId, keyword, pageable);
     }
 
@@ -129,6 +151,39 @@ public class MenuService {
         menu.delete(userId);
     }
 
+    // AI 설명
+//    @Transactional
+//    public MenuResponse createMenu(UUID storeId, MenuCreateRequest request, UUID userId) {
+//        Category category = categoryRepository.findById(request.categoryId())
+//                .orElseThrow(() -> new IllegalArgumentException("카테고리 없음"));
+//
+//        Store store = storeRepository.findById(storeId)
+//                .orElseThrow(() -> new IllegalArgumentException("가게 없음"));
+//
+//        String description = request.description();
+//
+//        if (request.aiDescription()) {
+//            description = aiService
+//                    .generateProductDescription(request.name() + " 상품 설명을 추천해줘", userId)
+//                    .description();
+//        }
+//
+//        Menu menu = Menu.builder()
+//                .name(request.name())
+//                .price(request.price())
+//                .description(description)
+//                .imageUrl(request.imageUrl())
+//                .category(category)
+//                .store(store)
+//                .isHidden(false)
+//                .soldOut(false)
+//                .build();
+//
+//        Menu savedMenu = menuRepository.save(menu);
+//
+//        return MenuResponse.from(savedMenu);
+//    }
+
     private Menu findMenu(UUID menuId) {
         return menuRepository.findById(menuId)
                 .orElseThrow(() -> new IllegalArgumentException("메뉴 없음"));
@@ -137,6 +192,12 @@ public class MenuService {
     private void validateNotDeleted(Menu menu) {
         if (menu.isDeleted()) {
             throw new IllegalArgumentException("삭제된 메뉴입니다.");
+        }
+    }
+
+    private void validateStoreOwner(Store store, UUID userId) {
+        if (!store.getOwner().getUserId().equals(userId)) {
+            throw new IllegalArgumentException("해당 가게의 사장님만 접근할 수 있습니다.");
         }
     }
 }
