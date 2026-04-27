@@ -22,17 +22,17 @@ public enum OrderStatus {
      * 허용된 상태 전이 규칙표
      * 각 상태에서 이동할 수 있는 다음 상태만 정의
      * 정의되지 않은 전이는 validateTransition()에서 차단
-     * PENDING    → ACCEPTED, CANCELED, REJECTED 만 가능
+     * PENDING    → ACCEPTED 만 가능
      * ACCEPTED   → COOKING 만 가능
      * COOKING    → DELIVERING 만 가능
      * DELIVERING → DELIVERED 만 가능
      * DELIVERED  → COMPLETED 만 가능
      * COMPLETED  → 종료 상태 (이동 불가)
-     * CANCELED   → 종료 상태 (이동 불가)
-     * REJECTED   → 종료 상태 (이동 불가)
+     * CANCELED   → 종료 상태 (이동 불가) CANCELED는 전용 엔드포인트
+     * REJECTED   → 종료 상태 (이동 불가) REJECTED는 전용 엔드포인트
      */
     private static final Map<OrderStatus, List<OrderStatus>> ALLOWED_TRANSITIONS = Map.of(
-            PENDING,    List.of(ACCEPTED, CANCELED, REJECTED),
+            PENDING,    List.of(ACCEPTED),
             ACCEPTED,   List.of(COOKING),
             COOKING,    List.of(DELIVERING),
             DELIVERING, List.of(DELIVERED),
@@ -45,7 +45,8 @@ public enum OrderStatus {
      * 허용되지 않은 전이면 BaseException(INVALID_ORDER_STATUS) 발생
      * 예시)
      * PENDING → ACCEPTED  ✅ 허용
-     * PENDING → REJECTED  ✅ 허용
+     * PENDING → CANCELED  ❌ 차단 (전용 엔드포인트 사용)
+     * PENDING → REJECTED  ❌ 차단 (전용 엔드포인트 사용)
      * PENDING → COMPLETED ❌ 차단
      * COMPLETED → PENDING ❌ 차단 (역방향 불가)
      */

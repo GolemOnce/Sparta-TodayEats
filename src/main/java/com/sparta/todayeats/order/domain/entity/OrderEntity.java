@@ -131,7 +131,7 @@ public class OrderEntity extends BaseEntity {
      * - OWNER: 본인 가게 주문만 변경 가능
      * - MANAGER/MASTER: 전체 변경 가능
      */
-    public void changeStatus(OrderStatus nextStatus) {
+    public void validateStatusTransition(OrderStatus nextStatus) {
         this.status.validateTransition(nextStatus);
 
         // TODO: JWT 완성 후 주석 해제
