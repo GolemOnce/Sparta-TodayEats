@@ -7,6 +7,7 @@ import com.sparta.todayeats.order.entity.OrderType;
 import com.sparta.todayeats.order.repository.OrderRepository;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
 import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
+import com.sparta.todayeats.payment.dto.response.PaymentPageResponse;
 import com.sparta.todayeats.payment.entity.Payment;
 import com.sparta.todayeats.payment.entity.PaymentStatus;
 import com.sparta.todayeats.payment.repository.PaymentRepository;
@@ -17,8 +18,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -138,6 +144,50 @@ class PaymentServiceTest {
 
             // then
             verify(paymentRepository).save(any(Payment.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("결제 목록 조회")
+    class getPagedPayments {
+        @Test
+        void 결제_목록_조회_성공() {
+            // given
+            UUID userId = UUID.randomUUID();
+            Pageable pageable = PageRequest.of(0, 10);
+
+            Order order = buildOrder(userId, 15000L);
+            Payment payment = Payment.builder()
+                    .order(order)
+                    .amount(15000L)
+                    .build();
+
+            Page<Payment> paymentPage = new PageImpl<>(List.of(payment), pageable, 1);
+            given(paymentRepository.findByOrder_userId(userId, pageable)).willReturn(paymentPage);
+
+            // when
+            PaymentPageResponse response = paymentService.getPagedPayments(userId, pageable);
+
+            // then
+            assertThat(response).isNotNull();
+            assertThat(response.getPayments()).hasSize(1);
+            assertThat(response.getPayments().get(0).getAmount()).isEqualTo(15000L);
+        }
+
+        @Test
+        void 결제_내역_없으면_빈_페이지_반환() {
+            // given
+            UUID userId = UUID.randomUUID();
+            Pageable pageable = PageRequest.of(0, 10);
+
+            given(paymentRepository.findByOrder_userId(userId, pageable))
+                    .willReturn(Page.empty(pageable));
+
+            // when
+            PaymentPageResponse response = paymentService.getPagedPayments(userId, pageable);
+
+            // then
+            assertThat(response.getPayments()).isEmpty();
         }
     }
 }
