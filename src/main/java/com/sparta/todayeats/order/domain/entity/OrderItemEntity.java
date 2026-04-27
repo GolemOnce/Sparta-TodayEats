@@ -47,11 +47,4 @@ public class OrderItemEntity extends BaseEntity {
         this.unitPrice = unitPrice;
         this.quantity = quantity;
     }
-
-    /**
-     * 주문 항목 소계 (단가 * 수량)
-     */
-    public long getSubtotal() {
-        return (long) unitPrice * quantity;
-    }
 }
