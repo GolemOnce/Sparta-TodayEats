@@ -135,17 +135,17 @@ public class OrderController {
     /**
      * 주문 취소
      * PATCH /api/v1/orders/{orderId}/cancel
-     * PENDING 상태에서 5분 이내, CUSTOMER 본인 또는 MASTER만 가능 - JWT 완성 후 활성화
+     * PENDING 상태에서 5분 이내, CUSTOMER 본인 또는 MASTER만 가능
      */
     @PatchMapping("/{orderId}/cancel")
     public ResponseEntity<ApiResponse<CancelOrderResponse>> cancelOrder(
             @PathVariable UUID orderId,
-            @RequestBody(required = false) @Valid CancelOrderRequest request
-            //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
+            @RequestBody(required = false) @Valid CancelOrderRequest request,
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
     ) {
-        // TODO: JWT 완성 후 아래로 교체
-        // CancelOrderResponse data = orderService.cancelOrder(orderId, request, userDetails.getUserId(), userDetails.getRole());
-        CancelOrderResponse data = orderService.cancelOrder(orderId, request);
+        UserRoleEnum role = extractRole(authentication);
+        CancelOrderResponse data = orderService.cancelOrder(orderId, request, userId, role);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
