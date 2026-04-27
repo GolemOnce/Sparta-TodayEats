@@ -14,7 +14,7 @@ public interface MenuRepository extends JpaRepository<Menu, UUID> {
 
     // 사장님 메뉴 조회 (숨김 메뉴 포함, 삭제 메뉴 제외, 검색 + 페이징)
     @Query("""
-        SELECT m FROM MenuEntity m
+        SELECT m FROM Menu m
         WHERE m.store.id = :storeId
         AND m.deletedAt IS NULL
         AND (:keyword IS NULL OR m.name LIKE CONCAT('%', :keyword, '%'))
@@ -27,7 +27,7 @@ public interface MenuRepository extends JpaRepository<Menu, UUID> {
 
     // 고객 메뉴 조회 (숨김 메뉴 제외, 삭제 메뉴 제외, 검색 + 페이징)
     @Query("""
-        SELECT m FROM MenuEntity m
+        SELECT m FROM Menu m
         WHERE m.store.id = :storeId
         AND m.isHidden = false
         AND m.deletedAt IS NULL
@@ -41,7 +41,7 @@ public interface MenuRepository extends JpaRepository<Menu, UUID> {
 
     // 주문 가능한 메뉴 조회 (숨김 메뉴 제외, 삭제 메뉴 제외, 품절 메뉴 제외, 검색 + 페이징)
     @Query("""
-        SELECT m FROM MenuEntity m
+        SELECT m FROM Menu m
         WHERE m.store.id = :storeId
         AND m.isHidden = false
         AND m.deletedAt IS NULL
@@ -56,7 +56,7 @@ public interface MenuRepository extends JpaRepository<Menu, UUID> {
 
     // 카테고리별 조회 (삭제 메뉴 제외)
     @Query("""
-        SELECT m FROM MenuEntity m
+        SELECT m FROM Menu m
         WHERE m.category.id = :categoryId
         AND m.deletedAt IS NULL
     """)
@@ -64,7 +64,7 @@ public interface MenuRepository extends JpaRepository<Menu, UUID> {
 
     // 가게 + 카테고리 + 노출된 메뉴 (고객용, 검색 + 페이징)
     @Query("""
-        SELECT m FROM MenuEntity m
+        SELECT m FROM Menu m
         WHERE m.store.id = :storeId
         AND m.category.id = :categoryId
         AND m.isHidden = false

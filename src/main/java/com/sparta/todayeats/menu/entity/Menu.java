@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import com.sparta.todayeats.category.domain.entity.Category;
-import com.sparta.todayeats.store.domain.entity.StoreEntity;
+import com.sparta.todayeats.store.entity.Store;
 
 import java.util.UUID;
 
@@ -55,14 +55,14 @@ public class Menu extends BaseEntity {
     // 스토어
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
-    private StoreEntity store;
+    private Store store;
 
     // 메서드
     public void assignCategory(Category category) {
         this.category = category;
     }
 
-    public void assignStore(StoreEntity store) {
+    public void assignStore(Store store) {
         this.store = store;
     }
 

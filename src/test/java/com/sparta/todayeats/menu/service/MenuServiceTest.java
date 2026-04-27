@@ -7,8 +7,8 @@ import com.sparta.todayeats.menu.repository.MenuRepository;
 import com.sparta.todayeats.menu.dto.request.MenuCreateRequest;
 import com.sparta.todayeats.menu.dto.request.MenuStatusUpdateRequest;
 import com.sparta.todayeats.menu.dto.request.MenuUpdateRequest;
-import com.sparta.todayeats.store.domain.entity.StoreEntity;
-import com.sparta.todayeats.store.domain.repository.StoreRepository;
+import com.sparta.todayeats.store.entity.Store;
+import com.sparta.todayeats.store.repository.StoreRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -64,7 +64,7 @@ class MenuServiceTest {
             );
 
             Category category = mock(Category.class);
-            StoreEntity store = mock(StoreEntity.class);
+            Store store = mock(Store.class);
 
             given(categoryRepository.findById(categoryId)).willReturn(Optional.of(category));
             given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
