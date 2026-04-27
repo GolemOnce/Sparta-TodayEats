@@ -16,7 +16,11 @@ import java.util.UUID;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, UUID> {
-    Page<Payment> findByOrder_userId(UUID userId, Pageable pageable);
+    @Query(
+            value = "SELECT p FROM Payment p JOIN FETCH p.order o WHERE o.customerId = :userId",
+            countQuery = "SELECT COUNT(p) FROM Payment p JOIN p.order o WHERE o.customerId = :userId"
+    )
+    Page<Payment> findByUserId(@Param("userId") UUID userId, Pageable pageable);
 
     Optional<Payment> findByIdAndOrder_CustomerId(UUID paymentId, UUID customerId);
 }

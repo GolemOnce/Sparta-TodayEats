@@ -102,7 +102,7 @@ public class PaymentService {
             queryId = targetUserId;
         }
 
-        Page<Payment> payments = paymentRepository.findByOrder_userId(queryId, pageable);
+        Page<Payment> payments = paymentRepository.findByUserId(queryId, pageable);
         return PaymentPageResponse.from(payments);
     }
 
