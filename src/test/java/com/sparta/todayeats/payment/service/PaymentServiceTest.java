@@ -8,9 +8,11 @@ import com.sparta.todayeats.order.entity.OrderStatus;
 import com.sparta.todayeats.order.entity.OrderType;
 import com.sparta.todayeats.order.repository.OrderRepository;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
+import com.sparta.todayeats.payment.dto.request.PaymentUpdateRequest;
 import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
 import com.sparta.todayeats.payment.dto.response.PaymentDetailResponse;
 import com.sparta.todayeats.payment.dto.response.PaymentPageResponse;
+import com.sparta.todayeats.payment.dto.response.PaymentUpdateResponse;
 import com.sparta.todayeats.payment.entity.Payment;
 import com.sparta.todayeats.payment.entity.PaymentStatus;
 import com.sparta.todayeats.payment.repository.PaymentRepository;
@@ -37,8 +39,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceTest {
@@ -155,6 +156,7 @@ class PaymentServiceTest {
     @Nested
     @DisplayName("결제 목록 조회")
     class getPagedPayments {
+
         @Test
         void 결제_목록_조회_성공() {
             // given
@@ -168,7 +170,7 @@ class PaymentServiceTest {
                     .build();
 
             Page<Payment> paymentPage = new PageImpl<>(List.of(payment), pageable, 1);
-            given(paymentRepository.findByOrder_userId(userId, pageable)).willReturn(paymentPage);
+            given(paymentRepository.findByUserId(userId, pageable)).willReturn(paymentPage);
 
             // when
             PaymentPageResponse response = paymentService.getPagedPayments(userId, null, pageable);
@@ -185,11 +187,11 @@ class PaymentServiceTest {
             UUID userId = UUID.randomUUID();
             Pageable pageable = PageRequest.of(0, 10);
 
-            given(paymentRepository.findByOrder_userId(userId, pageable))
+            given(paymentRepository.findByUserId(userId, pageable))
                     .willReturn(Page.empty(pageable));
 
             // when
-            PaymentPageResponse response = paymentService.getPagedPayments(userId,null, pageable);
+            PaymentPageResponse response = paymentService.getPagedPayments(userId, null, pageable);
 
             // then
             assertThat(response.getPayments()).isEmpty();
@@ -294,4 +296,74 @@ class PaymentServiceTest {
                     .isInstanceOf(BaseException.class);
         }
     }
+
+    @Nested
+    @DisplayName("결제 상태 변경")
+    class changePaymentStatus {
+
+        @Test
+        void 관리자_결제_상태_변경_성공() {
+            // given
+            UUID adminId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+
+            User admin = User.builder().role(UserRoleEnum.MASTER).build();
+            Order order = buildOrder(UUID.randomUUID(), 15000L);
+            Payment payment = Payment.builder()
+                    .order(order)
+                    .amount(15000L)
+                    .build();
+
+            PaymentUpdateRequest request = new PaymentUpdateRequest(PaymentStatus.COMPLETED);
+
+            given(userAuthorizationService.getUserById(adminId)).willReturn(admin);
+            given(paymentRepository.findById(paymentId)).willReturn(Optional.of(payment));
+
+            // when
+            PaymentUpdateResponse response = paymentService.changePaymentStatus(paymentId, adminId, request);
+
+            // then
+            assertThat(response.getStatus()).isEqualTo(PaymentStatus.COMPLETED);
+            verify(userAuthorizationService).validateAdmin(admin);
+        }
+
+        @Test
+        void 일반_유저가_상태_변경_시도시_예외() {
+            // given
+            UUID userId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+
+            User normalUser = User.builder().role(UserRoleEnum.CUSTOMER).build();
+            PaymentUpdateRequest request = new PaymentUpdateRequest(PaymentStatus.COMPLETED);
+
+            given(userAuthorizationService.getUserById(userId)).willReturn(normalUser);
+            doThrow(new BaseException(AuthErrorCode.FORBIDDEN))
+                    .when(userAuthorizationService).validateAdmin(normalUser);
+
+            // when & then
+            assertThatThrownBy(() -> paymentService.changePaymentStatus(paymentId, userId, request))
+                    .isInstanceOf(BaseException.class);
+
+            verify(paymentRepository, never()).findById(any()); // 권한 없으면 DB 조회 안 함
+        }
+
+        @Test
+        void 존재하지_않는_결제내역_상태_변경시_예외() {
+            // given
+            UUID adminId = UUID.randomUUID();
+            UUID paymentId = UUID.randomUUID();
+
+            User admin = User.builder().role(UserRoleEnum.MASTER).build();
+            PaymentUpdateRequest request = new PaymentUpdateRequest(PaymentStatus.COMPLETED);
+
+            given(userAuthorizationService.getUserById(adminId)).willReturn(admin);
+            given(paymentRepository.findById(paymentId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> paymentService.changePaymentStatus(paymentId, adminId, request))
+                    .isInstanceOf(BaseException.class);
+        }
+    }
+
+
 }
