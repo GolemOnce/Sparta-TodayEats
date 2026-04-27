@@ -1,8 +1,7 @@
-package com.sparta.todayeats.menu;
+package com.sparta.todayeats.menu.application.service;
 
 import com.sparta.todayeats.category.domain.entity.Category;
 import com.sparta.todayeats.category.domain.repository.CategoryRepository;
-import com.sparta.todayeats.menu.application.service.MenuServiceV1;
 import com.sparta.todayeats.menu.domain.entity.MenuEntity;
 import com.sparta.todayeats.menu.domain.repository.MenuRepository;
 import com.sparta.todayeats.menu.presentation.dto.request.MenuCreateRequest;
