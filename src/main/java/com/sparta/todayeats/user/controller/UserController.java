@@ -2,8 +2,11 @@ package com.sparta.todayeats.user.controller;
 
 import com.sparta.todayeats.global.annotation.LoginUser;
 import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
+import com.sparta.todayeats.user.dto.request.UpdateUserRequest;
+import com.sparta.todayeats.user.dto.response.UpdateUserResponse;
 import com.sparta.todayeats.user.dto.response.UserResponse;
 import com.sparta.todayeats.user.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,5 +39,12 @@ public class UserController {
     @GetMapping("/{targetUserId}")
     public ResponseEntity<UserResponse> findUser(@PathVariable UUID targetUserId, @LoginUser UUID currentUserId) {
         return ResponseEntity.ok(userService.findUser(targetUserId, currentUserId));
+    }
+
+    @PutMapping
+    public ResponseEntity<UpdateUserResponse> updateUser(
+            @Valid @RequestBody UpdateUserRequest request, @LoginUser UUID userId
+    ) {
+        return ResponseEntity.ok(userService.updateUser(request, userId));
     }
 }

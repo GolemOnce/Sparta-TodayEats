@@ -42,6 +42,11 @@ public class User extends BaseEntity {
         this.role = role;
     }
 
+    public void update(String nickname, boolean visible) {
+        this.nickname = nickname;
+        this.isPublic = visible;
+    }
+
     public void updatePassword(String password) {
         this.password = password;
     }
