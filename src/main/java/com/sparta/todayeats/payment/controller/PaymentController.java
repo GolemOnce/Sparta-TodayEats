@@ -3,10 +3,8 @@ package com.sparta.todayeats.payment.controller;
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
 import com.sparta.todayeats.payment.dto.request.PaymentUpdateRequest;
-import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
-import com.sparta.todayeats.payment.dto.response.PaymentDetailResponse;
-import com.sparta.todayeats.payment.dto.response.PaymentPageResponse;
-import com.sparta.todayeats.payment.dto.response.PaymentUpdateResponse;
+import com.sparta.todayeats.payment.dto.response.*;
+import com.sparta.todayeats.payment.entity.Payment;
 import com.sparta.todayeats.payment.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -63,11 +61,14 @@ public class PaymentController {
         PaymentUpdateResponse response = paymentService.changePaymentStatus(paymentId, userId, request);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
-//
-//    // 결제 삭제
-//    @DeleteMapping("/payments/{paymentId}")
-//    public ResponseEntity<Payment> deletePayment(@PathVariable("paymentId") UUID paymentId) {
-//
-//    }
+
+    // 결제 삭제
+    @DeleteMapping("/payments/{paymentId}")
+    public ResponseEntity<Void> deletePayment(
+            @PathVariable("paymentId") UUID paymentId,
+            @AuthenticationPrincipal UUID userId) {
+        paymentService.deletePayment(paymentId, userId);
+        return ResponseEntity.noContent().build();
+    }
 
 }

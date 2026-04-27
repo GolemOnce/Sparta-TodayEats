@@ -135,5 +135,16 @@ public class PaymentService {
     }
 
     // 결제 삭제 (soft delete)
+    @Transactional
+    public void deletePayment(UUID paymentId, UUID userId) {
+        // 1. 유저 권한 확인
+        User user = userAuthorizationService.getUserById(userId);
+        userAuthorizationService.validateMaster(user); // 권한 없으면 예외
 
+        // 2. 권한 통과 후 soft delete
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new BaseException(PaymentErrorCode.PAYMENT_NOT_FOUND));
+
+        payment.softDelete(userId);
+    }
 }
