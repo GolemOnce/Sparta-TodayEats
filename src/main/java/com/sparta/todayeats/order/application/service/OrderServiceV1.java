@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+/** 주문 서비스 */
 @Slf4j
 @Service
 @Transactional(readOnly = true)

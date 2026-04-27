@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+/** 주문 컨트롤러 */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/orders")
