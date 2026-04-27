@@ -313,25 +313,23 @@ public class OrderService {
     /**
      * 주문 삭제 (Soft delete)
      * - MASTER만 가능
-     * TODO: JWT 완성 후 주석 해제
      */
     @Transactional
-    public void deleteOrder(UUID orderId
-                            //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
+    public void deleteOrder(UUID orderId,
+                            UUID userId,
+                            UserRoleEnum role
     ) {
         Order order = findActiveOrder(orderId);
 
-        // TODO: JWT 완성 후 주석 해제
-        // if (role != UserRole.MASTER) {
-        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
-        // }
+        if (role != UserRoleEnum.MASTER) {
+            throw new BaseException(CommonErrorCode.FORBIDDEN);
+        }
 
         // TODO: Payment 코드 완성 후 주석 해제
         // 결제 완료 상태면 환불 처리
         // paymentService.refundIfPaid(orderId);
 
-
-        order.delete(null);  // TODO: JWT 완성 후 userId로 교체
+        order.delete(userId);
 
         log.info("주문 삭제: orderId={}", orderId);
     }

@@ -146,16 +146,8 @@ public class Order extends BaseEntity {
 
     /**
      * Soft delete (MASTER만 가능)
-     * BaseEntity.softDelete(UUID) 사용
-     * TODO: JWT 완성 후 주석 해제
-     * - MASTER만 삭제 가능
      */
     public void delete(UUID userId) {
         this.softDelete(userId);
-
-        // TODO: JWT 완성 후 주석 해제
-        // if (role != UserRole.MASTER) {
-        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
-        // }
     }
 }
