@@ -101,17 +101,17 @@ public class OrderController {
     /**
      * 주문 요청사항 수정
      * PUT /api/v1/orders/{orderId}
-     * PENDING 상태에서 CUSTOMER 본인만 수정 가능 - JWT 완성 후 활성화
+     * PENDING 상태에서 CUSTOMER 본인만 수정 가능
      */
     @PutMapping("/{orderId}")
     public ResponseEntity<ApiResponse<UpdateOrderResponse>> updateOrder(
             @PathVariable UUID orderId,
-            @Valid @RequestBody UpdateOrderRequest request
-            //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
+            @Valid @RequestBody UpdateOrderRequest request,
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
     ) {
-        // TODO: JWT 완성 후 아래로 교체
-        // UpdateOrderResponse data = orderService.updateOrder(orderId, request, userDetails.getUserId(), userDetails.getRole());
-        UpdateOrderResponse data = orderService.updateOrder(orderId, request);
+        UserRoleEnum role = extractRole(authentication);
+        UpdateOrderResponse data = orderService.updateOrder(orderId, request, userId, role);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 

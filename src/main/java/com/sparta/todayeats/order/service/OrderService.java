@@ -169,22 +169,22 @@ public class OrderService {
     /**
      * 주문 요청사항 수정
      * - PENDING 상태만 수정 가능
-     * TODO: JWT 완성 후 주석 해제
      * - CUSTOMER 본인만 수정 가능
      */
     @Transactional
-    public UpdateOrderResponse updateOrder(UUID orderId, UpdateOrderRequest request
-                                           //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
+    public UpdateOrderResponse updateOrder(UUID orderId,
+                                           UpdateOrderRequest request,
+                                           UUID userId,
+                                           UserRoleEnum role
     ) {
         Order order = findActiveOrder(orderId);
 
-        // TODO: JWT 완성 후 주석 해제
-        // if (role != UserRole.CUSTOMER && role != UserRole.MASTER) {
-        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
-        // }
-        // if (role == UserRole.CUSTOMER && !order.getCustomerId().equals(userId)) {
-        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
-        // }
+        if (role != UserRoleEnum.CUSTOMER) {
+            throw new BaseException(CommonErrorCode.FORBIDDEN);
+        }
+        if (!order.getCustomerId().equals(userId)) {
+            throw new BaseException(CommonErrorCode.FORBIDDEN);
+        }
 
         order.updateNote(request.note());  // 권한 체크 후 수정
 
