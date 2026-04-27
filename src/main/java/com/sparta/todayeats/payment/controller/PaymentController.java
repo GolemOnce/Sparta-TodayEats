@@ -45,20 +45,23 @@ public class PaymentController {
 
     // 결제 상세 조회
     @GetMapping("/payments/{paymentId}")
-    public ResponseEntity<Payment> getPayment(@PathVariable("paymentId") UUID paymentId) {
-
+    public ResponseEntity<ApiResponse<PaymentDetailResponse>> getPayment(
+            @PathVariable("paymentId") UUID paymentId,
+            @AuthenticationPrincipal UUID userId) {
+        PaymentDetailResponse response = paymentService.getPaymentDetails(userId, paymentId);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
-
-    // 결제 상태 변경
-    @PutMapping("/payments/{paymentId}")
-    public ResponseEntity<Payment> updatePayment(@PathVariable("paymentId") UUID paymentId, @RequestBody Payment payment) {
-
-    }
-
-    // 결제 삭제
-    @DeleteMapping("/payments/{paymentId}")
-    public ResponseEntity<Payment> deletePayment(@PathVariable("paymentId") UUID paymentId) {
-
-    }
+//
+//    // 결제 상태 변경
+//    @PutMapping("/payments/{paymentId}")
+//    public ResponseEntity<Payment> updatePayment(@PathVariable("paymentId") UUID paymentId, @RequestBody Payment payment) {
+//
+//    }
+//
+//    // 결제 삭제
+//    @DeleteMapping("/payments/{paymentId}")
+//    public ResponseEntity<Payment> deletePayment(@PathVariable("paymentId") UUID paymentId) {
+//
+//    }
 
 }
