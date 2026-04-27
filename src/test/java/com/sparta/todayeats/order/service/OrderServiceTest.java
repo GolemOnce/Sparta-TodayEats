@@ -1181,6 +1181,7 @@ class OrderServiceTest {
             // then
             assertThat(order.isDeleted()).isTrue();
             assertThat(order.getDeletedAt()).isNotNull();
+            assertThat(order.getDeletedBy()).isEqualTo(userId);
         }
 
         @Test
