@@ -6,10 +6,12 @@ import com.sparta.todayeats.global.exception.CommonErrorCode;
 import com.sparta.todayeats.global.exception.ErrorCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.validation.FieldError;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -26,6 +28,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<?> handleAccessDeniedException(AuthorizationDeniedException e) {
         return buildResponse(AuthErrorCode.FORBIDDEN);
+    }
+
+    // 지원하지 않는 HTTP 메서드 요청 (405)
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<?> handleMethodNotSupported(HttpRequestMethodNotSupportedException e) {
+        return buildResponse(CommonErrorCode.METHOD_NOT_ALLOWED);
+    }
+
+    // 경로를 찾을 수 없음 (404)
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<?> handleNoResourceFound(NoResourceFoundException e) {
+        return buildResponse(CommonErrorCode.NOT_FOUND);
     }
 
     @ExceptionHandler(Exception.class)

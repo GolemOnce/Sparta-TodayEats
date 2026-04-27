@@ -26,7 +26,6 @@ public class CategoryService {
     // 카테고리 생성
     @Transactional
     public CategoryCreateResponse createCategory(CategoryCreateRequest request) {
-
         // 입력값 정규화
         String name = normalizeName(request.getName());
 
@@ -59,7 +58,6 @@ public class CategoryService {
 
     // 카테고리 목록 조회 && 검색
     public PageResponse<CategoryResponse> getCategories(String keyword, Pageable pageable) {
-
         // keyword가 없으면 전체 조회, 있으면 이름 기준 검색
         Page<Category> result = findCategories(keyword, pageable);
 
@@ -83,7 +81,6 @@ public class CategoryService {
 
     // 카테고리 상세 조회
     public CategoryResponse getCategory(UUID categoryId) {
-
         // ID로 카테고리 조회 후 DTO 변환
         Category category = getCategoryEntity(categoryId);
         return toResponse(category);
@@ -93,7 +90,6 @@ public class CategoryService {
     // 카테고리 수정
     @Transactional
     public CategoryResponse updateCategory(UUID categoryId, CategoryUpdateRequest request) {
-
         // 수정 대상 카테고리 조회
         Category category = getCategoryEntity(categoryId);
 
@@ -114,12 +110,11 @@ public class CategoryService {
 
     // 카테고리 삭제
     @Transactional
-    public void deleteCategory(UUID categoryId) {
-
+    public void deleteCategory(UUID categoryId, UUID deletedBy) {
         Category category = getCategoryEntity(categoryId);
 
         // 소프트 삭제 처리
-        category.softDelete(null);
+        category.softDelete(deletedBy);
     }
 
 
