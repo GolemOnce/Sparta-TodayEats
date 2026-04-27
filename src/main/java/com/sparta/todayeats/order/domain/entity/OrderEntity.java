@@ -3,7 +3,6 @@ package com.sparta.todayeats.order.domain.entity;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.OrderErrorCode;
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
-import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -34,10 +33,6 @@ public class OrderEntity extends BaseEntity {
 
     @Column(name = "store_id", nullable = false)
     private UUID storeId;                       // FK → p_store.store_id
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "store_id", insertable = false, updatable = false)
-    private StoreEntity store;                  // JPQL JOIN용 (컬럼 중복 방지를 위해 insertable/updatable = false)
 
     @Column(name = "address_id", nullable = false)
     private UUID addressId;                     // FK → p_address.address_id
