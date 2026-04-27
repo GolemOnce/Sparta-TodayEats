@@ -7,13 +7,15 @@ import com.sparta.todayeats.global.exception.PaymentErrorCode;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.order.entity.OrderStatus;
 import com.sparta.todayeats.order.repository.OrderRepository;
-import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
+import com.sparta.todayeats.payment.dto.response.*;
 import com.sparta.todayeats.payment.entity.Payment;
 import com.sparta.todayeats.payment.entity.PaymentStatus;
 import com.sparta.todayeats.payment.repository.PaymentRepository;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,10 +77,16 @@ public class PaymentService {
     }
 
     // 목록 조회
+    @Transactional(readOnly = true)
+    public PaymentPageResponse getPagedPayments(UUID userId, Pageable pageable) {
+        Page<Payment> payments = paymentRepository.findByOrder_userId(userId, pageable);
+        return PaymentPageResponse.from(payments);
+    }
 
     // 상세 조회
 
     // 상태 수정
+
 
     // 결제 삭제 (soft delete)
 
