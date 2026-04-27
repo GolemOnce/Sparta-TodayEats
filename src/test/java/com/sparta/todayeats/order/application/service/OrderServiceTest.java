@@ -5,12 +5,13 @@ import com.sparta.todayeats.address.domain.repository.AddressRepository;
 import com.sparta.todayeats.global.exception.*;
 import com.sparta.todayeats.menu.domain.entity.MenuEntity;
 import com.sparta.todayeats.menu.domain.repository.MenuRepository;
-import com.sparta.todayeats.order.domain.entity.OrderEntity;
-import com.sparta.todayeats.order.domain.entity.OrderStatus;
-import com.sparta.todayeats.order.domain.entity.OrderType;
-import com.sparta.todayeats.order.domain.repository.OrderRepository;
-import com.sparta.todayeats.order.presentation.dto.request.*;
-import com.sparta.todayeats.order.presentation.dto.response.*;
+import com.sparta.todayeats.order.entity.Order;
+import com.sparta.todayeats.order.entity.OrderStatus;
+import com.sparta.todayeats.order.entity.OrderType;
+import com.sparta.todayeats.order.repository.OrderRepository;
+import com.sparta.todayeats.order.dto.request.*;
+import com.sparta.todayeats.order.dto.response.*;
+import com.sparta.todayeats.order.service.OrderService;
 import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import com.sparta.todayeats.store.domain.repository.StoreRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -38,10 +39,10 @@ import static org.mockito.BDDMockito.*;
 
 @DisplayName("OrderServiceV1 테스트")
 @ExtendWith(MockitoExtension.class)
-class OrderServiceV1Test {
+class OrderServiceTest {
 
     @InjectMocks
-    private OrderServiceV1 orderService;
+    private OrderService orderService;
 
     @Mock
     private OrderRepository orderRepository;
@@ -73,8 +74,8 @@ class OrderServiceV1Test {
         );
     }
 
-    private OrderEntity pendingOrder() {
-        return OrderEntity.builder()
+    private Order pendingOrder() {
+        return Order.builder()
                 .customerId(userId)
                 .storeId(storeId)
                 .addressId(addressId)
@@ -87,19 +88,19 @@ class OrderServiceV1Test {
                 .build();
     }
 
-    private void setCreatedAt(OrderEntity order, LocalDateTime time) throws Exception {
+    private void setCreatedAt(Order order, LocalDateTime time) throws Exception {
         Field field = order.getClass().getSuperclass().getDeclaredField("createdAt");
         field.setAccessible(true);
         field.set(order, time);
     }
 
-    private void setStatus(OrderEntity order, OrderStatus status) throws Exception {
+    private void setStatus(Order order, OrderStatus status) throws Exception {
         Field field = order.getClass().getDeclaredField("status");
         field.setAccessible(true);
         field.set(order, status);
     }
 
-    private void setRejectReason(OrderEntity order, String rejectReason) throws Exception {
+    private void setRejectReason(Order order, String rejectReason) throws Exception {
         Field field = order.getClass().getDeclaredField("rejectReason");
         field.setAccessible(true);
         field.set(order, rejectReason);
@@ -131,7 +132,7 @@ class OrderServiceV1Test {
                     .willReturn(Optional.of(mock(AddressEntity.class)));
             given(menuRepository.findActiveById(menuId))
                     .willReturn(Optional.of(mockMenu));
-            given(orderRepository.save(any(OrderEntity.class)))
+            given(orderRepository.save(any(Order.class)))
                     .willAnswer(inv -> inv.getArgument(0));
 
             // when
@@ -228,7 +229,7 @@ class OrderServiceV1Test {
         @DisplayName("성공 - 전체 주문 목록 조회 (검색 조건 없음)")
         void 전체_주문_목록_조회_성공() {
             // given
-            Page<OrderEntity> page = new PageImpl<>(List.of(pendingOrder()));
+            Page<Order> page = new PageImpl<>(List.of(pendingOrder()));
             given(orderRepository.searchOrders(eq(userId), isNull(), isNull(), any(Pageable.class)))
                     .willReturn(page);
 
@@ -247,7 +248,7 @@ class OrderServiceV1Test {
         @DisplayName("성공 - 상태 조건으로 검색")
         void 상태_조건으로_검색_성공() {
             // given
-            Page<OrderEntity> page = new PageImpl<>(List.of(pendingOrder()));
+            Page<Order> page = new PageImpl<>(List.of(pendingOrder()));
             given(orderRepository.searchOrders(eq(userId), eq(OrderStatus.PENDING), isNull(), any(Pageable.class)))
                     .willReturn(page);
 
@@ -264,7 +265,7 @@ class OrderServiceV1Test {
         @DisplayName("성공 - 가게명 조건으로 검색")
         void 가게명_조건으로_검색_성공() {
             // given
-            Page<OrderEntity> page = new PageImpl<>(List.of(pendingOrder()));
+            Page<Order> page = new PageImpl<>(List.of(pendingOrder()));
             given(orderRepository.searchOrders(eq(userId), isNull(), eq("BBQ"), any(Pageable.class)))
                     .willReturn(page);
 
@@ -281,7 +282,7 @@ class OrderServiceV1Test {
         @DisplayName("성공 - 상태 + 가게명 동시 검색")
         void 상태_가게명_동시_검색_성공() {
             // given
-            Page<OrderEntity> page = new PageImpl<>(List.of(pendingOrder()));
+            Page<Order> page = new PageImpl<>(List.of(pendingOrder()));
             given(orderRepository.searchOrders(eq(userId), eq(OrderStatus.PENDING), eq("BBQ"), any(Pageable.class)))
                     .willReturn(page);
 
@@ -299,7 +300,7 @@ class OrderServiceV1Test {
         @DisplayName("성공 - 주문 없을 때 빈 목록 반환")
         void 주문_없을때_빈_목록_반환() {
             // given
-            Page<OrderEntity> emptyPage = new PageImpl<>(List.of());
+            Page<Order> emptyPage = new PageImpl<>(List.of());
             given(orderRepository.searchOrders(eq(userId), isNull(), isNull(), any(Pageable.class)))
                     .willReturn(emptyPage);
 
@@ -316,7 +317,7 @@ class OrderServiceV1Test {
         void soft_delete된_주문_목록_미포함() {
             // given
             // soft delete된 주문은 Repository 쿼리에서 deletedAt IS NULL 조건으로 제외됨
-            Page<OrderEntity> emptyPage = new PageImpl<>(List.of());
+            Page<Order> emptyPage = new PageImpl<>(List.of());
             given(orderRepository.searchOrders(eq(userId), isNull(), isNull(), any(Pageable.class)))
                     .willReturn(emptyPage);
 
@@ -334,7 +335,7 @@ class OrderServiceV1Test {
         void 다른_사용자_주문_조회_불가() {
             // given
             UUID otherUserId = UUID.randomUUID();
-            Page<OrderEntity> emptyPage = new PageImpl<>(List.of());
+            Page<Order> emptyPage = new PageImpl<>(List.of());
             given(orderRepository.searchOrders(eq(otherUserId), isNull(), isNull(), any(Pageable.class)))
                     .willReturn(emptyPage);
 
@@ -433,7 +434,7 @@ class OrderServiceV1Test {
         @DisplayName("실패 - PENDING이 아닌 상태에서 수정 시도")
         void PENDING_아닌_상태에서_수정_예외발생() throws Exception {
             // given
-            OrderEntity order = pendingOrder();
+            Order order = pendingOrder();
             setStatus(order, OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
@@ -459,7 +460,7 @@ class OrderServiceV1Test {
         @DisplayName("성공 - PENDING → ACCEPTED 상태 전이")
         void PENDING에서_ACCEPTED_상태전이_성공() throws Exception {
             // given
-            OrderEntity acceptedOrder = pendingOrder();
+            Order acceptedOrder = pendingOrder();
             setStatus(acceptedOrder, OrderStatus.ACCEPTED);  // DB 업데이트 후 재조회 결과 시뮬레이션
 
             given(orderRepository.findActiveById(orderId))
@@ -480,9 +481,9 @@ class OrderServiceV1Test {
         @DisplayName("성공 - ACCEPTED → COOKING 상태 전이")
         void ACCEPTED에서_COOKING_상태전이_성공() throws Exception {
             // given
-            OrderEntity acceptedOrder = pendingOrder();
+            Order acceptedOrder = pendingOrder();
             setStatus(acceptedOrder, OrderStatus.ACCEPTED);
-            OrderEntity cookingOrder = pendingOrder();
+            Order cookingOrder = pendingOrder();
             setStatus(cookingOrder, OrderStatus.COOKING);
 
             given(orderRepository.findActiveById(orderId))
@@ -533,7 +534,7 @@ class OrderServiceV1Test {
         @DisplayName("실패 - 역방향 상태 전이 (ACCEPTED → PENDING)")
         void 역방향_상태전이_예외발생() throws Exception {
             // given
-            OrderEntity order = pendingOrder();
+            Order order = pendingOrder();
             setStatus(order, OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
@@ -576,9 +577,9 @@ class OrderServiceV1Test {
         @DisplayName("성공 - 5분 이내 취소 (사유 있음)")
         void 주문후_5분_이내_취소_사유있음_성공() throws Exception {
             // given
-            OrderEntity order = pendingOrder();
+            Order order = pendingOrder();
             setCreatedAt(order, LocalDateTime.now().minusMinutes(3));
-            OrderEntity canceledOrder = pendingOrder();
+            Order canceledOrder = pendingOrder();
             setStatus(canceledOrder, OrderStatus.CANCELED);
 
             given(orderRepository.findActiveById(orderId))
@@ -599,9 +600,9 @@ class OrderServiceV1Test {
         @DisplayName("성공 - 5분 이내 취소 (사유 없음)")
         void 주문후_5분_이내_취소_사유없음_성공() throws Exception {
             // given
-            OrderEntity order = pendingOrder();
+            Order order = pendingOrder();
             setCreatedAt(order, LocalDateTime.now().minusMinutes(3));
-            OrderEntity canceledOrder = pendingOrder();
+            Order canceledOrder = pendingOrder();
             setStatus(canceledOrder, OrderStatus.CANCELED);
 
             given(orderRepository.findActiveById(orderId))
@@ -621,7 +622,7 @@ class OrderServiceV1Test {
         @DisplayName("실패 - 5분 초과 취소")
         void 주문후_5분_초과_취소_예외발생() throws Exception {
             // given
-            OrderEntity order = pendingOrder();
+            Order order = pendingOrder();
             setCreatedAt(order, LocalDateTime.now().minusMinutes(6));
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
@@ -638,7 +639,7 @@ class OrderServiceV1Test {
         @DisplayName("실패 - PENDING이 아닌 상태에서 취소 시도")
         void PENDING_아닌_상태에서_취소_예외발생() throws Exception {
             // given
-            OrderEntity order = pendingOrder();
+            Order order = pendingOrder();
             setCreatedAt(order, LocalDateTime.now().minusMinutes(1));
             setStatus(order, OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
@@ -656,7 +657,7 @@ class OrderServiceV1Test {
         @DisplayName("실패 - 5분 이내지만 PENDING이 아닌 상태")
         void 주문후_5분_이내지만_PENDING_아닌_상태_예외발생() throws Exception {
             // given
-            OrderEntity order = pendingOrder();
+            Order order = pendingOrder();
             setCreatedAt(order, LocalDateTime.now().minusMinutes(3));
             setStatus(order, OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
@@ -689,7 +690,7 @@ class OrderServiceV1Test {
         @DisplayName("실패 - 동시 요청으로 인한 충돌 (다른 요청이 먼저 상태 변경)")
         void 동시_요청_충돌_예외발생() throws Exception {
             // given
-            OrderEntity order = pendingOrder();
+            Order order = pendingOrder();
             setCreatedAt(order, LocalDateTime.now().minusMinutes(3));
 
             given(orderRepository.findActiveById(orderId))
@@ -718,7 +719,7 @@ class OrderServiceV1Test {
         @DisplayName("성공 - 주문 거절 (사유 있음)")
         void 주문_거절_사유있음_성공() throws Exception {
             // given
-            OrderEntity rejectedOrder = pendingOrder();
+            Order rejectedOrder = pendingOrder();
             setStatus(rejectedOrder, OrderStatus.REJECTED);
             setRejectReason(rejectedOrder, "재료 소진");
 
@@ -741,7 +742,7 @@ class OrderServiceV1Test {
         @DisplayName("성공 - 주문 거절 (사유 없음)")
         void 주문_거절_사유없음_성공() throws Exception {
             // given
-            OrderEntity rejectedOrder = pendingOrder();
+            Order rejectedOrder = pendingOrder();
             setStatus(rejectedOrder, OrderStatus.REJECTED);
 
             given(orderRepository.findActiveById(orderId))
@@ -777,7 +778,7 @@ class OrderServiceV1Test {
         @DisplayName("실패 - PENDING이 아닌 상태에서 거절 시도")
         void PENDING_아닌_상태에서_거절_예외발생() throws Exception {
             // given
-            OrderEntity order = pendingOrder();
+            Order order = pendingOrder();
             setStatus(order, OrderStatus.ACCEPTED);
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
@@ -820,7 +821,7 @@ class OrderServiceV1Test {
         @DisplayName("성공 - 주문 soft delete")
         void 주문_soft_delete_성공() {
             // given
-            OrderEntity order = pendingOrder();
+            Order order = pendingOrder();
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
 

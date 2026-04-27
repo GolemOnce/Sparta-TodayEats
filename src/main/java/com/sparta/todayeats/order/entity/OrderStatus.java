@@ -1,4 +1,4 @@
-package com.sparta.todayeats.order.domain.entity;
+package com.sparta.todayeats.order.entity;
 
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.OrderErrorCode;
