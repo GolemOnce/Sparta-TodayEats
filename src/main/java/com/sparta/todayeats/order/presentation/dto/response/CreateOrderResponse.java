@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+/** 주문 생성 응답 DTO */
 public record CreateOrderResponse(
         UUID orderId,           // 주문 고유 ID
         OrderStatus status,     // 주문 상태 (최초 생성 시 PENDING)

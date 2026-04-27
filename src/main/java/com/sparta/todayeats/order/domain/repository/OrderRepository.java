@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
+/** 주문 레포지토리 */
 public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
 
     /**
