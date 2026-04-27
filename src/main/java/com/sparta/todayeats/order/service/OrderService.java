@@ -242,15 +242,15 @@ public class OrderService {
                                            CancelOrderRequest request,
                                            UUID userId,
                                            UserRoleEnum role
-    ){
+    ) {
         Order order = findActiveOrder(orderId);
 
-         if (role != UserRoleEnum.CUSTOMER && role != UserRoleEnum.MASTER) {
-             throw new BaseException(CommonErrorCode.FORBIDDEN);
-         }
-         if (role == UserRoleEnum.CUSTOMER && !order.getCustomerId().equals(userId)) {
-             throw new BaseException(CommonErrorCode.FORBIDDEN);
-         }
+        if (role != UserRoleEnum.CUSTOMER && role != UserRoleEnum.MASTER) {
+            throw new BaseException(CommonErrorCode.FORBIDDEN);
+        }
+        if (role == UserRoleEnum.CUSTOMER && !order.getCustomerId().equals(userId)) {
+            throw new BaseException(CommonErrorCode.FORBIDDEN);
+        }
 
         order.cancelByCustomer();  // 검증만
 
@@ -272,27 +272,27 @@ public class OrderService {
      * 주문 거절
      * - PENDING 상태만 거절 가능
      * - status = REJECTED 로 변경
-     * TODO: JWT 완성 후 주석 해제
+     * - CUSTOMER: 거절 불가
      * - OWNER: 본인 가게 주문만 거절 가능
      * - MANAGER/MASTER: 전체 거절 가능
-     * - CUSTOMER: 거절 불가
      */
     @Transactional
-    public RejectOrderResponse rejectOrder(UUID orderId, RejectOrderRequest request
-                                           //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
+    public RejectOrderResponse rejectOrder(UUID orderId,
+                                           RejectOrderRequest request,
+                                           UUID userId,
+                                           UserRoleEnum role
     ) {
         Order order = findActiveOrder(orderId);
 
-        // TODO: JWT 완성 후 주석 해제
-        // if (role == UserRole.CUSTOMER) {
-        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
-        // } else if (role == UserRole.OWNER) {
-        //     StoreEntity store = storeRepository.findActiveById(order.getStoreId())
-        //             .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
-        //     if (!store.getOwnerId().equals(userId)) {
-        //         throw new BaseException(CommonErrorCode.FORBIDDEN);
-        //     }
-        // }
+        if (role == UserRoleEnum.CUSTOMER) {
+            throw new BaseException(CommonErrorCode.FORBIDDEN);
+        } else if (role == UserRoleEnum.OWNER) {
+            Store store = storeRepository.findById(order.getStoreId())
+                    .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
+            if (!store.getOwner().getUserId().equals(userId)) {
+                throw new BaseException(CommonErrorCode.FORBIDDEN);
+            }
+        }
 
         order.rejectByOwner();  // 검증만
 
