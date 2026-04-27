@@ -6,6 +6,7 @@ import com.sparta.todayeats.order.domain.entity.OrderStatus;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/** 주문 상태 변경 응답 DTO */
 public record UpdateOrderStatusResponse(
         UUID orderId,               // 주문 고유 ID
         OrderStatus status,         // 변경된 주문 상태

@@ -6,6 +6,7 @@ import com.sparta.todayeats.global.exception.OrderErrorCode;
 import java.util.List;
 import java.util.Map;
 
+/** 주문 상태 */
 public enum OrderStatus {
 
     PENDING,    // 주문요청 (CUSTOMER)

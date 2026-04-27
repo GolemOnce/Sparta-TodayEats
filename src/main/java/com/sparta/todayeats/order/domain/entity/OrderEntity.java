@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/** 주문 엔티티 */
 @Entity
 @Table(name = "p_order")
 @Getter

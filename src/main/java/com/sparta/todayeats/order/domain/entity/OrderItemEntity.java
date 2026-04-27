@@ -9,6 +9,10 @@ import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
+/**
+ * 주문 항목 엔티티
+ * 주문 시점의 메뉴명·단가를 스냅샷으로 저장한다.
+ */
 @Entity
 @Table(name = "p_order_items")
 @Getter

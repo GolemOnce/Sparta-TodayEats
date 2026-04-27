@@ -9,6 +9,9 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * 주문 생성 요청 DTO
+ */
 public record CreateOrderRequest(
 
         @NotNull(message = "storeId는 필수입니다.")

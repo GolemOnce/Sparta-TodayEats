@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+/** 주문 상세 응답 DTO */
 public record OrderDetailResponse(
         UUID orderId,               // 주문 고유 ID
         OrderStatus status,         // 주문 상태
