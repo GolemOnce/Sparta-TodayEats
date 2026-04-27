@@ -23,7 +23,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-/** 주문 서비스 */
+/**
+ * 주문 서비스
+ */
 @Slf4j
 @Service
 @Transactional(readOnly = true)
@@ -124,7 +126,7 @@ public class OrderService {
                                                 OrderStatus status,
                                                 String storeName,
                                                 Pageable pageable
-                                                ,UserRoleEnum role
+            , UserRoleEnum role
     ) {
         if (role == UserRoleEnum.CUSTOMER) {
             return orderRepository.searchOrders(userId, status, storeName, pageable)
@@ -151,17 +153,17 @@ public class OrderService {
     public OrderDetailResponse getOrder(UUID orderId, UUID userId, UserRoleEnum role) {
         Order order = findActiveOrder(orderId);
 
-         if (role == UserRoleEnum.CUSTOMER) {
-             if (!order.getCustomerId().equals(userId)) {
-                 throw new BaseException(CommonErrorCode.FORBIDDEN);
-             }
-         } else if (role == UserRoleEnum.OWNER) {
-             Store store = storeRepository.findById(order.getStoreId())
-                     .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
-             if (!store.getOwner().getUserId().equals(userId)) {
-                 throw new BaseException(CommonErrorCode.FORBIDDEN);
-             }
-         }
+        if (role == UserRoleEnum.CUSTOMER) {
+            if (!order.getCustomerId().equals(userId)) {
+                throw new BaseException(CommonErrorCode.FORBIDDEN);
+            }
+        } else if (role == UserRoleEnum.OWNER) {
+            Store store = storeRepository.findById(order.getStoreId())
+                    .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
+            if (!store.getOwner().getUserId().equals(userId)) {
+                throw new BaseException(CommonErrorCode.FORBIDDEN);
+            }
+        }
 
         return OrderDetailResponse.from(order);
     }
@@ -195,28 +197,27 @@ public class OrderService {
     /**
      * 주문 상태 변경
      * - 허용된 상태 전이만 가능 (OrderStatus.validateTransition())
-     * TODO: JWT 완성 후 주석 해제
+     * - CUSTOMER: 상태 변경 불가
      * - OWNER: 본인 가게 주문만 변경 가능
      * - MANAGER/MASTER: 전체 변경 가능
-     * - CUSTOMER: 상태 변경 불가
      */
     @Transactional
     public UpdateOrderStatusResponse updateOrderStatus(UUID orderId,
-                                                       UpdateOrderStatusRequest request
-                                                       //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
+                                                       UpdateOrderStatusRequest request,
+                                                       UUID userId,
+                                                       UserRoleEnum role
     ) {
         Order order = findActiveOrder(orderId);
 
-        // TODO: JWT 완성 후 주석 해제
-        // if (role == UserRole.CUSTOMER) {
-        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
-        // } else if (role == UserRole.OWNER) {
-        //     StoreEntity store = storeRepository.findActiveById(order.getStoreId())
-        //             .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
-        //     if (!store.getOwnerId().equals(userId)) {
-        //         throw new BaseException(CommonErrorCode.FORBIDDEN);
-        //     }
-        // }
+        if (role == UserRoleEnum.CUSTOMER) {
+            throw new BaseException(CommonErrorCode.FORBIDDEN);
+        } else if (role == UserRoleEnum.OWNER) {
+            Store store = storeRepository.findById(order.getStoreId())
+                    .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
+            if (!store.getOwner().getUserId().equals(userId)) {
+                throw new BaseException(CommonErrorCode.FORBIDDEN);
+            }
+        }
 
         order.validateStatusTransition(request.status()); // 검증만 (validateTransition)
 

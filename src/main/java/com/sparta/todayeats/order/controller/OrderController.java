@@ -118,17 +118,17 @@ public class OrderController {
     /**
      * 주문 상태 변경
      * PATCH /api/v1/orders/{orderId}/status
-     * OWNER: 본인 가게 주문만, MANAGER/MASTER: 전체, CUSTOMER: 불가 - JWT 완성 후 활성화
+     * OWNER: 본인 가게 주문만, MANAGER/MASTER: 전체, CUSTOMER: 불가
      */
     @PatchMapping("/{orderId}/status")
     public ResponseEntity<ApiResponse<UpdateOrderStatusResponse>> updateOrderStatus(
             @PathVariable UUID orderId,
-            @Valid @RequestBody UpdateOrderStatusRequest request
-            //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
+            @Valid @RequestBody UpdateOrderStatusRequest request,
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
     ) {
-        // TODO: JWT 완성 후 아래로 교체
-        // UpdateOrderStatusResponse data = orderService.updateOrderStatus(orderId, request, userDetails.getUserId(), userDetails.getRole());
-        UpdateOrderStatusResponse data = orderService.updateOrderStatus(orderId, request);
+        UserRoleEnum role = extractRole(authentication);
+        UpdateOrderStatusResponse data = orderService.updateOrderStatus(orderId, request, userId, role);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
