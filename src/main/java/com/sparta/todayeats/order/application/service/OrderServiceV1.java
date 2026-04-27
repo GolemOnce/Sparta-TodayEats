@@ -224,7 +224,7 @@ public class OrderServiceV1 {
         //     }
         // }
 
-        order.changeStatus(request.status()); // 검증만 (validateTransition)
+        order.validateStatusTransition(request.status()); // 검증만 (validateTransition)
 
         int rows = orderRepository.updateStatusConditionally(orderId, order.getStatus(), request.status());
         if (rows == 0) {
