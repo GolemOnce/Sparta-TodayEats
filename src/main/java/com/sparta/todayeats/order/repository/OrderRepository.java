@@ -27,16 +27,25 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     Optional<Order> findActiveById(@Param("orderId") UUID orderId);
 
     /**
-     * OWNER 전용: 본인 가게 주문 목록 조회 (soft delete 제외)
+     * OWNER 전용: 본인 가게 주문 검색 (status, storeName 필터 포함)
      *
-     * @param ownerId  가게 소유자 ID
-     * @param pageable 페이지 정보
-     * @return 해당 소유자의 가게에 속한 주문 페이지
+     * @param ownerId   가게 소유자 ID
+     * @param status    주문 상태 필터 (null이면 전체)
+     * @param storeName 가게명 필터 (null이면 전체, 부분 일치)
+     * @param pageable  페이지 정보
+     * @return 조건에 맞는 해당 소유자 가게의 주문 페이지
      */
     @Query("SELECT o FROM Order o " +
             "JOIN Store s ON o.storeId = s.id " +
-            "WHERE s.owner.userId = :ownerId AND o.deletedAt IS NULL")
-    Page<Order> findAllByStoreOwnerId(@Param("ownerId") UUID ownerId, Pageable pageable);
+            "WHERE s.owner.userId = :ownerId " +
+            "AND (:status IS NULL OR o.status = :status) " +
+            "AND (:storeName IS NULL OR o.storeName LIKE %:storeName%) " +
+            "AND o.deletedAt IS NULL")
+    Page<Order> searchOrdersByStoreOwner(
+            @Param("ownerId") UUID ownerId,
+            @Param("status") OrderStatus status,
+            @Param("storeName") String storeName,
+            Pageable pageable);
 
     /**
      * 가게별 주문 목록 조회 (soft delete 제외, 페이지네이션)
