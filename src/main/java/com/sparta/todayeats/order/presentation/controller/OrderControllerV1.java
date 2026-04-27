@@ -140,7 +140,7 @@ public class OrderControllerV1 {
     @PatchMapping("/{orderId}/cancel")
     public ResponseEntity<ApiResponse<CancelOrderResponse>> cancelOrder(
             @PathVariable UUID orderId,
-            @RequestBody(required = false) CancelOrderRequest request
+            @RequestBody(required = false) @Valid CancelOrderRequest request
             //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
     ) {
         // TODO: JWT 완성 후 아래로 교체
@@ -157,7 +157,7 @@ public class OrderControllerV1 {
     @PatchMapping("/{orderId}/reject")
     public ResponseEntity<ApiResponse<RejectOrderResponse>> rejectOrder(
             @PathVariable UUID orderId,
-            @RequestBody(required = false) RejectOrderRequest request
+            @RequestBody(required = false) @Valid RejectOrderRequest request
             //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
     ) {
         // TODO: JWT 완성 후 아래로 교체
