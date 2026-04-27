@@ -1,19 +1,20 @@
-package com.sparta.todayeats.order.application.service;
+package com.sparta.todayeats.order.service;
 
 import com.sparta.todayeats.address.domain.entity.AddressEntity;
 import com.sparta.todayeats.address.domain.repository.AddressRepository;
 import com.sparta.todayeats.global.exception.*;
 import com.sparta.todayeats.menu.domain.entity.MenuEntity;
 import com.sparta.todayeats.menu.domain.repository.MenuRepository;
+import com.sparta.todayeats.order.dto.request.*;
+import com.sparta.todayeats.order.dto.response.*;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.order.entity.OrderStatus;
 import com.sparta.todayeats.order.entity.OrderType;
 import com.sparta.todayeats.order.repository.OrderRepository;
-import com.sparta.todayeats.order.dto.request.*;
-import com.sparta.todayeats.order.dto.response.*;
-import com.sparta.todayeats.order.service.OrderService;
-import com.sparta.todayeats.store.domain.entity.StoreEntity;
-import com.sparta.todayeats.store.domain.repository.StoreRepository;
+import com.sparta.todayeats.store.entity.Store;
+import com.sparta.todayeats.store.repository.StoreRepository;
+import com.sparta.todayeats.user.domain.entity.User;
+import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -32,7 +33,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.*;
@@ -41,28 +43,23 @@ import static org.mockito.BDDMockito.*;
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
 
-    @InjectMocks
-    private OrderService orderService;
-
-    @Mock
-    private OrderRepository orderRepository;
-
-    @Mock
-    private MenuRepository menuRepository;
-
-    @Mock
-    private StoreRepository storeRepository;
-
-    @Mock
-    private AddressRepository addressRepository;
+    private final UUID userId = UUID.randomUUID();
+    private final UUID storeId = UUID.randomUUID();
+    private final UUID addressId = UUID.randomUUID();
+    private final UUID menuId = UUID.randomUUID();
+    private final UUID orderId = UUID.randomUUID();
 
     // ─── 테스트 픽스처 ────────────────────────────────────────────────────
-
-    private final UUID userId    = UUID.randomUUID();
-    private final UUID storeId   = UUID.randomUUID();
-    private final UUID addressId = UUID.randomUUID();
-    private final UUID menuId    = UUID.randomUUID();
-    private final UUID orderId   = UUID.randomUUID();
+    @InjectMocks
+    private OrderService orderService;
+    @Mock
+    private OrderRepository orderRepository;
+    @Mock
+    private MenuRepository menuRepository;
+    @Mock
+    private StoreRepository storeRepository;
+    @Mock
+    private AddressRepository addressRepository;
 
     private CreateOrderRequest createOrderRequest() {
         return new CreateOrderRequest(
@@ -107,7 +104,7 @@ class OrderServiceTest {
     }
 
     // ========================================================
-    // 🎥 test(#9): 주문 생성 단위 테스트
+    // 🎥 test(#38): 주문 생성 단위 테스트
     // ========================================================
 
     @Nested
@@ -123,20 +120,22 @@ class OrderServiceTest {
             given(mockMenu.getName()).willReturn("황금올리브 치킨");
             given(mockMenu.getStoreId()).willReturn(storeId);
 
-            StoreEntity mockStore = mock(StoreEntity.class);
-            given(mockStore.getStoreId()).willReturn(storeId);
-
-            given(storeRepository.findActiveById(storeId))
+            Store mockStore = mock(Store.class);
+            given(mockStore.getId()).willReturn(storeId);
+            given(storeRepository.findById(storeId))
                     .willReturn(Optional.of(mockStore));
-            given(addressRepository.findActiveById(addressId))
-                    .willReturn(Optional.of(mock(AddressEntity.class)));
+
+            AddressEntity mockAddress = mock(AddressEntity.class);
+            given(mockAddress.getUserId()).willReturn(userId);
+            given(addressRepository.findActiveById(addressId)).willReturn(Optional.of(mockAddress));
+
             given(menuRepository.findActiveById(menuId))
                     .willReturn(Optional.of(mockMenu));
             given(orderRepository.save(any(Order.class)))
                     .willAnswer(inv -> inv.getArgument(0));
 
             // when
-            CreateOrderResponse result = orderService.createOrder(createOrderRequest(), userId);
+            CreateOrderResponse result = orderService.createOrder(createOrderRequest(), userId, UserRoleEnum.CUSTOMER);
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.PENDING);
@@ -148,11 +147,11 @@ class OrderServiceTest {
         @DisplayName("실패 - 존재하지 않는 가게")
         void 존재하지_않는_가게_예외발생() {
             // given
-            given(storeRepository.findActiveById(storeId))
+            given(storeRepository.findById(storeId))
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> orderService.createOrder(createOrderRequest(), userId))
+            assertThatThrownBy(() -> orderService.createOrder(createOrderRequest(), userId, UserRoleEnum.CUSTOMER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(StoreErrorCode.STORE_NOT_FOUND));
@@ -162,13 +161,13 @@ class OrderServiceTest {
         @DisplayName("실패 - 존재하지 않는 배송지")
         void 존재하지_않는_배송지_예외발생() {
             // given
-            given(storeRepository.findActiveById(storeId))
-                    .willReturn(Optional.of(mock(StoreEntity.class)));
+            given(storeRepository.findById(storeId))
+                    .willReturn(Optional.of(mock(Store.class)));
             given(addressRepository.findActiveById(addressId))
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> orderService.createOrder(createOrderRequest(), userId))
+            assertThatThrownBy(() -> orderService.createOrder(createOrderRequest(), userId, UserRoleEnum.CUSTOMER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(AddressErrorCode.ADDRESS_NOT_FOUND));
@@ -178,15 +177,19 @@ class OrderServiceTest {
         @DisplayName("실패 - 존재하지 않는 메뉴 (삭제 또는 숨김 처리된 메뉴 포함)")
         void 존재하지_않는_메뉴_예외발생() {
             // given
-            given(storeRepository.findActiveById(storeId))
-                    .willReturn(Optional.of(mock(StoreEntity.class)));
+            given(storeRepository.findById(storeId))
+                    .willReturn(Optional.of(mock(Store.class)));
+
+            AddressEntity mockAddress = mock(AddressEntity.class);
+            given(mockAddress.getUserId()).willReturn(userId);
             given(addressRepository.findActiveById(addressId))
-                    .willReturn(Optional.of(mock(AddressEntity.class)));
+                    .willReturn(Optional.of(mockAddress));
+
             given(menuRepository.findActiveById(menuId))
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> orderService.createOrder(createOrderRequest(), userId))
+            assertThatThrownBy(() -> orderService.createOrder(createOrderRequest(), userId, UserRoleEnum.CUSTOMER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(MenuErrorCode.MENU_NOT_FOUND));
@@ -199,26 +202,56 @@ class OrderServiceTest {
             MenuEntity mockMenu = mock(MenuEntity.class);
             given(mockMenu.getStoreId()).willReturn(UUID.randomUUID()); // 다른 가게 ID
 
-            StoreEntity mockStore = mock(StoreEntity.class);
-            given(mockStore.getStoreId()).willReturn(storeId);
+            Store mockStore = mock(Store.class);
+            given(mockStore.getId()).willReturn(storeId);
 
-            given(storeRepository.findActiveById(storeId))
+            given(storeRepository.findById(storeId))
                     .willReturn(Optional.of(mockStore));
+
+            AddressEntity mockAddress = mock(AddressEntity.class);
+            given(mockAddress.getUserId()).willReturn(userId);
             given(addressRepository.findActiveById(addressId))
-                    .willReturn(Optional.of(mock(AddressEntity.class)));
+                    .willReturn(Optional.of(mockAddress));
+
             given(menuRepository.findActiveById(menuId))
                     .willReturn(Optional.of(mockMenu));
 
             // when & then
-            assertThatThrownBy(() -> orderService.createOrder(createOrderRequest(), userId))
+            assertThatThrownBy(() -> orderService.createOrder(createOrderRequest(), userId, UserRoleEnum.CUSTOMER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(MenuErrorCode.MENU_NOT_IN_STORE));
         }
+
+        @Test
+        @DisplayName("실패 - CUSTOMER가 아닌 역할로 주문 생성 시도")
+        void CUSTOMER_아닌_역할_주문생성_예외발생() {
+            assertThatThrownBy(() -> orderService.createOrder(
+                    createOrderRequest(), userId, UserRoleEnum.OWNER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(CommonErrorCode.FORBIDDEN));
+        }
+
+        @Test
+        @DisplayName("실패 - 타인 배송지로 주문 생성 시도")
+        void 타인_배송지_주문생성_예외발생() {
+            Store mockStore = mock(Store.class);
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
+            AddressEntity mockAddress = mock(AddressEntity.class);
+            given(mockAddress.getUserId()).willReturn(UUID.randomUUID()); // 다른 유저 ID
+            given(addressRepository.findActiveById(addressId)).willReturn(Optional.of(mockAddress));
+
+            assertThatThrownBy(() -> orderService.createOrder(
+                    createOrderRequest(), userId, UserRoleEnum.CUSTOMER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(CommonErrorCode.FORBIDDEN));
+        }
     }
 
     // ========================================================
-    // 🎥 test(#9): 주문 목록 조회 단위 테스트
+    // 🎥 test(#38): 주문 목록 조회 단위 테스트
     // ========================================================
 
     @Nested
@@ -235,7 +268,7 @@ class OrderServiceTest {
 
             // when
             Page<OrderSummaryResponse> result = orderService.getOrders(
-                    userId, null, null, PageRequest.of(0, 10));
+                    userId, null, null, PageRequest.of(0, 10), UserRoleEnum.CUSTOMER);
 
             // then
             assertThat(result.getContent()).hasSize(1);
@@ -254,7 +287,7 @@ class OrderServiceTest {
 
             // when
             Page<OrderSummaryResponse> result = orderService.getOrders(
-                    userId, OrderStatus.PENDING, null, PageRequest.of(0, 10));
+                    userId, OrderStatus.PENDING, null, PageRequest.of(0, 10), UserRoleEnum.CUSTOMER);
 
             // then
             assertThat(result.getContent()).hasSize(1);
@@ -271,7 +304,7 @@ class OrderServiceTest {
 
             // when
             Page<OrderSummaryResponse> result = orderService.getOrders(
-                    userId, null, "BBQ", PageRequest.of(0, 10));
+                    userId, null, "BBQ", PageRequest.of(0, 10), UserRoleEnum.CUSTOMER);
 
             // then
             assertThat(result.getContent()).hasSize(1);
@@ -288,7 +321,7 @@ class OrderServiceTest {
 
             // when
             Page<OrderSummaryResponse> result = orderService.getOrders(
-                    userId, OrderStatus.PENDING, "BBQ", PageRequest.of(0, 10));
+                    userId, OrderStatus.PENDING, "BBQ", PageRequest.of(0, 10), UserRoleEnum.CUSTOMER);
 
             // then
             assertThat(result.getContent()).hasSize(1);
@@ -306,7 +339,7 @@ class OrderServiceTest {
 
             // when
             Page<OrderSummaryResponse> result = orderService.getOrders(
-                    userId, null, null, PageRequest.of(0, 10));
+                    userId, null, null, PageRequest.of(0, 10), UserRoleEnum.CUSTOMER);
 
             // then
             assertThat(result.getContent()).isEmpty();
@@ -323,7 +356,7 @@ class OrderServiceTest {
 
             // when
             Page<OrderSummaryResponse> result = orderService.getOrders(
-                    userId, null, null, PageRequest.of(0, 10));
+                    userId, null, null, PageRequest.of(0, 10), UserRoleEnum.CUSTOMER);
 
             // then
             assertThat(result.getContent()).isEmpty();
@@ -341,16 +374,67 @@ class OrderServiceTest {
 
             // when
             Page<OrderSummaryResponse> result = orderService.getOrders(
-                    otherUserId, null, null, PageRequest.of(0, 10));
+                    otherUserId, null, null, PageRequest.of(0, 10), UserRoleEnum.CUSTOMER);
 
             // then
             assertThat(result.getContent()).isEmpty();
             verify(orderRepository, never()).searchOrders(eq(userId), isNull(), isNull(), any(Pageable.class));
         }
+
+        @Test
+        @DisplayName("성공 - OWNER는 본인 가게 주문만 조회")
+        void OWNER_본인_가게_주문_조회_성공() {
+            // given
+            Page<Order> page = new PageImpl<>(List.of(pendingOrder()));
+            given(orderRepository.findAllByStoreOwnerId(eq(userId), any(Pageable.class)))
+                    .willReturn(page);
+
+            // when
+            Page<OrderSummaryResponse> result = orderService.getOrders(
+                    userId, null, null, PageRequest.of(0, 10), UserRoleEnum.OWNER);
+
+            // then
+            assertThat(result.getContent()).hasSize(1);
+            verify(orderRepository).findAllByStoreOwnerId(eq(userId), any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("성공 - MANAGER는 전체 주문 조회 (soft delete 제외)")
+        void MANAGER_전체_주문_조회_성공() {
+            // given
+            Page<Order> page = new PageImpl<>(List.of(pendingOrder()));
+            given(orderRepository.searchAllOrders(isNull(), isNull(), any(Pageable.class)))
+                    .willReturn(page);
+
+            // when
+            Page<OrderSummaryResponse> result = orderService.getOrders(
+                    userId, null, null, PageRequest.of(0, 10), UserRoleEnum.MANAGER);
+
+            // then
+            assertThat(result.getContent()).hasSize(1);
+            verify(orderRepository).searchAllOrders(isNull(), isNull(), any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("성공 - MASTER는 삭제된 주문 포함 전체 조회")
+        void MASTER_삭제포함_전체_주문_조회_성공() {
+            // given
+            Page<Order> page = new PageImpl<>(List.of(pendingOrder()));
+            given(orderRepository.searchAllOrdersIncludeDeleted(isNull(), isNull(), any(Pageable.class)))
+                    .willReturn(page);
+
+            // when
+            Page<OrderSummaryResponse> result = orderService.getOrders(
+                    userId, null, null, PageRequest.of(0, 10), UserRoleEnum.MASTER);
+
+            // then
+            assertThat(result.getContent()).hasSize(1);
+            verify(orderRepository).searchAllOrdersIncludeDeleted(isNull(), isNull(), any(Pageable.class));
+        }
     }
 
     // ========================================================
-    // 🎥 test(#9): 주문 단건 조회 단위 테스트
+    // 🎥 test(#38): 주문 단건 조회 단위 테스트
     // ========================================================
 
     @Nested
@@ -358,20 +442,67 @@ class OrderServiceTest {
     class GetOrder {
 
         @Test
-        @DisplayName("성공 - 주문 단건 조회")
-        void 주문_단건_조회_성공() {
+        @DisplayName("성공 - CUSTOMER 본인 주문 조회")
+        void CUSTOMER_본인_주문_조회_성공() {
             // given
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(pendingOrder()));
 
             // when
-            OrderDetailResponse result = orderService.getOrder(orderId);
+            OrderDetailResponse result = orderService.getOrder(orderId, userId, UserRoleEnum.CUSTOMER);
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.PENDING);
             assertThat(result.store().storeName()).isEqualTo("BBQ 광화문점");
             assertThat(result.totalPrice()).isEqualTo(38000L);
-            assertThat(result.delivery().address()).isEqualTo("서울 광화문 100번지");
+        }
+
+        @Test
+        @DisplayName("성공 - OWNER 본인 가게 주문 조회")
+        void OWNER_본인_가게_주문_조회_성공() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder()));
+
+            User mockOwner = mock(User.class);
+            given(mockOwner.getUserId()).willReturn(userId);
+            Store mockStore = mock(Store.class);
+            given(mockStore.getOwner()).willReturn(mockOwner);
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
+
+            // when
+            OrderDetailResponse result = orderService.getOrder(orderId, userId, UserRoleEnum.OWNER);
+
+            // then
+            assertThat(result.status()).isEqualTo(OrderStatus.PENDING);
+        }
+
+        @Test
+        @DisplayName("성공 - MANAGER 전체 주문 조회")
+        void MANAGER_주문_조회_성공() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder()));
+
+            // when
+            OrderDetailResponse result = orderService.getOrder(orderId, userId, UserRoleEnum.MANAGER);
+
+            // then
+            assertThat(result.status()).isEqualTo(OrderStatus.PENDING);
+        }
+
+        @Test
+        @DisplayName("성공 - MASTER 전체 주문 조회")
+        void MASTER_주문_조회_성공() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder()));
+
+            // when
+            OrderDetailResponse result = orderService.getOrder(orderId, userId, UserRoleEnum.MASTER);
+
+            // then
+            assertThat(result.status()).isEqualTo(OrderStatus.PENDING);
         }
 
         @Test
@@ -384,15 +515,51 @@ class OrderServiceTest {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> orderService.getOrder(orderId))
+            assertThatThrownBy(() -> orderService.getOrder(orderId, userId, UserRoleEnum.MANAGER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
         }
+
+        @Test
+        @DisplayName("실패 - CUSTOMER가 타인 주문 조회 시도")
+        void CUSTOMER_타인_주문_조회_예외발생() {
+            // given
+            Order order = pendingOrder(); // customerId = userId
+            UUID otherUserId = UUID.randomUUID();
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.getOrder(orderId, otherUserId, UserRoleEnum.CUSTOMER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(CommonErrorCode.FORBIDDEN));
+        }
+
+        @Test
+        @DisplayName("실패 - OWNER가 타인 가게 주문 조회 시도")
+        void OWNER_타인_가게_주문_조회_예외발생() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder()));
+
+            User mockOwner = mock(User.class);
+            given(mockOwner.getUserId()).willReturn(UUID.randomUUID()); // 다른 owner
+            Store mockStore = mock(Store.class);
+            given(mockStore.getOwner()).willReturn(mockOwner);
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.getOrder(orderId, userId, UserRoleEnum.OWNER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(CommonErrorCode.FORBIDDEN));
+        }
     }
 
     // ========================================================
-    // 🎥 test(#9): 주문 수정 단위 테스트
+    // 🎥 test(#38): 주문 수정 단위 테스트
     // ========================================================
 
     @Nested
@@ -408,7 +575,7 @@ class OrderServiceTest {
 
             // when
             UpdateOrderResponse result = orderService.updateOrder(
-                    orderId, new UpdateOrderRequest("수정된 요청사항"));
+                    orderId, new UpdateOrderRequest("수정된 요청사항"), userId, UserRoleEnum.CUSTOMER);
 
             // then
             assertThat(result.note()).isEqualTo("수정된 요청사항");
@@ -424,7 +591,7 @@ class OrderServiceTest {
 
             // when & then
             assertThatThrownBy(() -> orderService.updateOrder(
-                    orderId, new UpdateOrderRequest("수정된 요청사항")))
+                    orderId, new UpdateOrderRequest("수정된 요청사항"), userId, UserRoleEnum.CUSTOMER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
@@ -441,15 +608,47 @@ class OrderServiceTest {
 
             // when & then
             assertThatThrownBy(() -> orderService.updateOrder(
-                    orderId, new UpdateOrderRequest("수정된 요청사항")))
+                    orderId, new UpdateOrderRequest("수정된 요청사항"), userId, UserRoleEnum.CUSTOMER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_UPDATE_NOT_ALLOWED));
         }
+
+        @Test
+        @DisplayName("실패 - CUSTOMER가 아닌 역할로 수정 시도")
+        void CUSTOMER_아닌_역할_수정_예외발생() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder()));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.updateOrder(
+                    orderId, new UpdateOrderRequest("수정된 요청사항"), userId, UserRoleEnum.OWNER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(CommonErrorCode.FORBIDDEN));
+        }
+
+        @Test
+        @DisplayName("실패 - CUSTOMER가 타인 주문 수정 시도")
+        void CUSTOMER_타인_주문_수정_예외발생() {
+            // given
+            UUID otherUserId = UUID.randomUUID();
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder())); // customerId = userId
+
+            // when & then
+            assertThatThrownBy(() -> orderService.updateOrder(
+                    orderId, new UpdateOrderRequest("수정된 요청사항"), otherUserId, UserRoleEnum.CUSTOMER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(CommonErrorCode.FORBIDDEN));
+        }
+
     }
 
     // ========================================================
-    // 🎥 test(#9): 주문 상태 변경 단위 테스트
+    // 🎥 test(#38): 주문 상태 변경 단위 테스트
     // ========================================================
 
     @Nested
@@ -466,12 +665,12 @@ class OrderServiceTest {
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(pendingOrder()))   // 첫 번째 조회 (검증용)
                     .willReturn(Optional.of(acceptedOrder));   // 두 번째 조회 (재조회용)
-            given(orderRepository.updateStatusConditionally(orderId, OrderStatus.PENDING, OrderStatus.ACCEPTED))
+            given(orderRepository.updateStatusConditionally(orderId, OrderStatus.PENDING, OrderStatus.ACCEPTED, userId))
                     .willReturn(1);
 
             // when
             UpdateOrderStatusResponse result = orderService.updateOrderStatus(
-                    orderId, new UpdateOrderStatusRequest(OrderStatus.ACCEPTED));
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.ACCEPTED), userId, UserRoleEnum.MANAGER);
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.ACCEPTED);
@@ -489,12 +688,12 @@ class OrderServiceTest {
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(acceptedOrder))   // 첫 번째 조회 (검증용)
                     .willReturn(Optional.of(cookingOrder));    // 두 번째 조회 (재조회용)
-            given(orderRepository.updateStatusConditionally(orderId, OrderStatus.ACCEPTED, OrderStatus.COOKING))
+            given(orderRepository.updateStatusConditionally(orderId, OrderStatus.ACCEPTED, OrderStatus.COOKING, userId))
                     .willReturn(1);
 
             // when
             UpdateOrderStatusResponse result = orderService.updateOrderStatus(
-                    orderId, new UpdateOrderStatusRequest(OrderStatus.COOKING));
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.COOKING), userId, UserRoleEnum.MANAGER);
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.COOKING);
@@ -509,7 +708,7 @@ class OrderServiceTest {
 
             // when & then
             assertThatThrownBy(() -> orderService.updateOrderStatus(
-                    orderId, new UpdateOrderStatusRequest(OrderStatus.ACCEPTED)))
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.ACCEPTED), userId, UserRoleEnum.MANAGER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
@@ -524,7 +723,7 @@ class OrderServiceTest {
 
             // when & then
             assertThatThrownBy(() -> orderService.updateOrderStatus(
-                    orderId, new UpdateOrderStatusRequest(OrderStatus.COMPLETED)))
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.COMPLETED), userId, UserRoleEnum.MANAGER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.INVALID_ORDER_STATUS));
@@ -541,7 +740,7 @@ class OrderServiceTest {
 
             // when & then
             assertThatThrownBy(() -> orderService.updateOrderStatus(
-                    orderId, new UpdateOrderStatusRequest(OrderStatus.PENDING)))
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.PENDING), userId, UserRoleEnum.MANAGER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.INVALID_ORDER_STATUS));
@@ -553,20 +752,83 @@ class OrderServiceTest {
             // given
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(pendingOrder()));
-            given(orderRepository.updateStatusConditionally(orderId, OrderStatus.PENDING, OrderStatus.ACCEPTED))
+            given(orderRepository.updateStatusConditionally(orderId, OrderStatus.PENDING, OrderStatus.ACCEPTED, userId))
                     .willReturn(0);  // 다른 요청이 이미 상태 변경 → 0건 업데이트
 
             // when & then
             assertThatThrownBy(() -> orderService.updateOrderStatus(
-                    orderId, new UpdateOrderStatusRequest(OrderStatus.ACCEPTED)))
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.ACCEPTED), userId, UserRoleEnum.MANAGER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_CONFLICT));
         }
+
+        @Test
+        @DisplayName("실패 - CUSTOMER가 상태 변경 시도")
+        void CUSTOMER_상태변경_예외발생() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder()));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.updateOrderStatus(
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.ACCEPTED), userId, UserRoleEnum.CUSTOMER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(CommonErrorCode.FORBIDDEN));
+        }
+
+        @Test
+        @DisplayName("실패 - OWNER가 타인 가게 주문 상태 변경 시도")
+        void OWNER_타인_가게_주문_상태변경_예외발생() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder()));
+
+            User mockOwner = mock(User.class);
+            given(mockOwner.getUserId()).willReturn(UUID.randomUUID()); // 다른 owner
+            Store mockStore = mock(Store.class);
+            given(mockStore.getOwner()).willReturn(mockOwner);
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.updateOrderStatus(
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.ACCEPTED), userId, UserRoleEnum.OWNER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(CommonErrorCode.FORBIDDEN));
+        }
+
+        @Test
+        @DisplayName("성공 - OWNER 본인 가게 주문 상태 변경")
+        void OWNER_본인_가게_주문_상태변경_성공() throws Exception {
+            // given
+            Order acceptedOrder = pendingOrder();
+            setStatus(acceptedOrder, OrderStatus.ACCEPTED);
+
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder()))
+                    .willReturn(Optional.of(acceptedOrder));
+
+            User mockOwner = mock(User.class);
+            given(mockOwner.getUserId()).willReturn(userId);
+            Store mockStore = mock(Store.class);
+            given(mockStore.getOwner()).willReturn(mockOwner);
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
+            given(orderRepository.updateStatusConditionally(orderId, OrderStatus.PENDING, OrderStatus.ACCEPTED, userId))
+                    .willReturn(1);
+
+            // when
+            UpdateOrderStatusResponse result = orderService.updateOrderStatus(
+                    orderId, new UpdateOrderStatusRequest(OrderStatus.ACCEPTED), userId, UserRoleEnum.OWNER);
+
+            // then
+            assertThat(result.status()).isEqualTo(OrderStatus.ACCEPTED);
+        }
     }
 
     // ========================================================
-    // 🎥 test(#9): 주문 취소 단위 테스트
+    // 🎥 test(#38): 주문 취소 단위 테스트
     // ========================================================
 
     @Nested
@@ -585,12 +847,12 @@ class OrderServiceTest {
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order))
                     .willReturn(Optional.of(canceledOrder));
-            given(orderRepository.cancelConditionally(eq(orderId), eq("단순 변심"), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name())))
+            given(orderRepository.cancelConditionally(eq(orderId), eq("단순 변심"), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name()), eq(userId)))
                     .willReturn(1);
 
             // when
             CancelOrderResponse result = orderService.cancelOrder(
-                    orderId, new CancelOrderRequest("단순 변심"));
+                    orderId, new CancelOrderRequest("단순 변심"), userId, UserRoleEnum.CUSTOMER);
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.CANCELED);
@@ -608,11 +870,11 @@ class OrderServiceTest {
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order))
                     .willReturn(Optional.of(canceledOrder));
-            given(orderRepository.cancelConditionally(eq(orderId), isNull(), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name())))
+            given(orderRepository.cancelConditionally(eq(orderId), isNull(), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name()), eq(userId)))
                     .willReturn(1);
 
             // when
-            CancelOrderResponse result = orderService.cancelOrder(orderId, null);
+            CancelOrderResponse result = orderService.cancelOrder(orderId, null, userId, UserRoleEnum.CUSTOMER);
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.CANCELED);
@@ -629,7 +891,7 @@ class OrderServiceTest {
 
             // when & then
             assertThatThrownBy(() -> orderService.cancelOrder(
-                    orderId, new CancelOrderRequest("단순 변심")))
+                    orderId, new CancelOrderRequest("단순 변심"), userId, UserRoleEnum.CUSTOMER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.CANCEL_TIME_EXCEEDED));
@@ -647,7 +909,7 @@ class OrderServiceTest {
 
             // when & then
             assertThatThrownBy(() -> orderService.cancelOrder(
-                    orderId, new CancelOrderRequest("단순 변심")))
+                    orderId, new CancelOrderRequest("단순 변심"), userId, UserRoleEnum.CUSTOMER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_CANCEL_NOT_ALLOWED));
@@ -665,7 +927,7 @@ class OrderServiceTest {
 
             // when & then
             assertThatThrownBy(() -> orderService.cancelOrder(
-                    orderId, new CancelOrderRequest("단순 변심")))
+                    orderId, new CancelOrderRequest("단순 변심"), userId, UserRoleEnum.CUSTOMER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_CANCEL_NOT_ALLOWED));
@@ -680,7 +942,7 @@ class OrderServiceTest {
 
             // when & then
             assertThatThrownBy(() -> orderService.cancelOrder(
-                    orderId, new CancelOrderRequest("단순 변심")))
+                    orderId, new CancelOrderRequest("단순 변심"), userId, UserRoleEnum.CUSTOMER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
@@ -695,20 +957,74 @@ class OrderServiceTest {
 
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));             // 첫 번째 조회 (검증용)
-            given(orderRepository.cancelConditionally(eq(orderId), any(), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name())))
+            given(orderRepository.cancelConditionally(eq(orderId), any(), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name()), eq(userId)))
                     .willReturn(0);
 
             // when & then
             assertThatThrownBy(() -> orderService.cancelOrder(
-                    orderId, new CancelOrderRequest("단순 변심")))
+                    orderId, new CancelOrderRequest("단순 변심"), userId, UserRoleEnum.CUSTOMER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_CONFLICT));
         }
+
+        @Test
+        @DisplayName("실패 - OWNER가 취소 시도")
+        void OWNER_취소_예외발생() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder()));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.cancelOrder(
+                    orderId, new CancelOrderRequest("단순 변심"), userId, UserRoleEnum.OWNER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(CommonErrorCode.FORBIDDEN));
+        }
+
+        @Test
+        @DisplayName("실패 - CUSTOMER가 타인 주문 취소 시도")
+        void CUSTOMER_타인_주문_취소_예외발생() {
+            // given
+            UUID otherUserId = UUID.randomUUID();
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder())); // customerId = userId
+
+            // when & then
+            assertThatThrownBy(() -> orderService.cancelOrder(
+                    orderId, new CancelOrderRequest("단순 변심"), otherUserId, UserRoleEnum.CUSTOMER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(CommonErrorCode.FORBIDDEN));
+        }
+
+        @Test
+        @DisplayName("성공 - MASTER가 취소")
+        void MASTER_취소_성공() throws Exception {
+            // given
+            Order order = pendingOrder();
+            setCreatedAt(order, LocalDateTime.now().minusMinutes(3));
+            Order canceledOrder = pendingOrder();
+            setStatus(canceledOrder, OrderStatus.CANCELED);
+
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order))
+                    .willReturn(Optional.of(canceledOrder));
+            given(orderRepository.cancelConditionally(eq(orderId), eq("단순 변심"), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name()), eq(userId)))
+                    .willReturn(1);
+
+            // when
+            CancelOrderResponse result = orderService.cancelOrder(
+                    orderId, new CancelOrderRequest("단순 변심"), userId, UserRoleEnum.MASTER);
+
+            // then
+            assertThat(result.status()).isEqualTo(OrderStatus.CANCELED);
+        }
     }
 
     // ========================================================
-    // 🎥 test(#9): 주문 거절 단위 테스트
+    // 🎥 test(#38): 주문 거절 단위 테스트
     // ========================================================
 
     @Nested
@@ -723,15 +1039,19 @@ class OrderServiceTest {
             setStatus(rejectedOrder, OrderStatus.REJECTED);
             setRejectReason(rejectedOrder, "재료 소진");
 
+            User mockOwner = mock(User.class);
+            given(mockOwner.getUserId()).willReturn(userId);
+            Store mockStore = mock(Store.class);
+            given(mockStore.getOwner()).willReturn(mockOwner);
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
+
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(pendingOrder()))
                     .willReturn(Optional.of(rejectedOrder));
-            given(orderRepository.rejectConditionally(eq(orderId), eq("재료 소진"), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED)))
-                    .willReturn(1);
+            given(orderRepository.rejectConditionally(eq(orderId), eq("재료 소진"), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED), eq(userId))).willReturn(1);
 
             // when
-            RejectOrderResponse result = orderService.rejectOrder(
-                    orderId, new RejectOrderRequest("재료 소진"));
+            RejectOrderResponse result = orderService.rejectOrder(orderId, new RejectOrderRequest("재료 소진"), userId, UserRoleEnum.OWNER);
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.REJECTED);
@@ -745,14 +1065,19 @@ class OrderServiceTest {
             Order rejectedOrder = pendingOrder();
             setStatus(rejectedOrder, OrderStatus.REJECTED);
 
+            User mockOwner = mock(User.class);
+            given(mockOwner.getUserId()).willReturn(userId);
+            Store mockStore = mock(Store.class);
+            given(mockStore.getOwner()).willReturn(mockOwner);
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
+
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(pendingOrder()))
                     .willReturn(Optional.of(rejectedOrder));
-            given(orderRepository.rejectConditionally(eq(orderId), isNull(), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED)))
-                    .willReturn(1);
+            given(orderRepository.rejectConditionally(eq(orderId), isNull(), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED), eq(userId))).willReturn(1);
 
             // when
-            RejectOrderResponse result = orderService.rejectOrder(orderId, null);
+            RejectOrderResponse result = orderService.rejectOrder(orderId, null, userId, UserRoleEnum.OWNER);
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.REJECTED);
@@ -767,8 +1092,7 @@ class OrderServiceTest {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> orderService.rejectOrder(
-                    orderId, new RejectOrderRequest("재료 소진")))
+            assertThatThrownBy(() -> orderService.rejectOrder(orderId, new RejectOrderRequest("재료 소진"), userId, UserRoleEnum.MANAGER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
@@ -784,8 +1108,7 @@ class OrderServiceTest {
                     .willReturn(Optional.of(order));
 
             // when & then
-            assertThatThrownBy(() -> orderService.rejectOrder(
-                    orderId, new RejectOrderRequest("재료 소진")))
+            assertThatThrownBy(() -> orderService.rejectOrder(orderId, new RejectOrderRequest("재료 소진"), userId, UserRoleEnum.MANAGER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_REJECT_NOT_ALLOWED));
@@ -797,20 +1120,47 @@ class OrderServiceTest {
             // given
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(pendingOrder()));
-            given(orderRepository.rejectConditionally(eq(orderId), any(), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED)))
-                    .willReturn(0);  // 다른 요청이 이미 상태 변경 → 0건 업데이트
+            given(orderRepository.rejectConditionally(eq(orderId), any(), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED), eq(userId)))
+                    .willReturn(0);
+            // 다른 요청이 이미 상태 변경 → 0건 업데이트
 
             // when & then
-            assertThatThrownBy(() -> orderService.rejectOrder(
-                    orderId, new RejectOrderRequest("재료 소진")))
+            assertThatThrownBy(() -> orderService.rejectOrder(orderId, new RejectOrderRequest("재료 소진"), userId, UserRoleEnum.MANAGER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_CONFLICT));
         }
+
+        @Test
+        @DisplayName("실패 - CUSTOMER가 거절 시도")
+        void CUSTOMER_거절_예외발생() {
+            given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(pendingOrder()));
+            assertThatThrownBy(() -> orderService.rejectOrder(
+                    orderId, new RejectOrderRequest("재료 소진"), userId, UserRoleEnum.CUSTOMER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(CommonErrorCode.FORBIDDEN));
+        }
+
+        @Test
+        @DisplayName("실패 - OWNER가 타인 가게 주문 거절 시도")
+        void OWNER_타인_가게_주문_거절_예외발생() {
+            given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(pendingOrder()));
+            User mockOwner = mock(User.class);
+            given(mockOwner.getUserId()).willReturn(UUID.randomUUID());
+            Store mockStore = mock(Store.class);
+            given(mockStore.getOwner()).willReturn(mockOwner);
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
+            assertThatThrownBy(() -> orderService.rejectOrder(
+                    orderId, new RejectOrderRequest("재료 소진"), userId, UserRoleEnum.OWNER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(CommonErrorCode.FORBIDDEN));
+        }
     }
 
     // ========================================================
-    // 🎥 test(#9): 주문 삭제 단위 테스트
+    // 🎥 test(#38): 주문 삭제 단위 테스트
     // ========================================================
 
     @Nested
@@ -826,7 +1176,7 @@ class OrderServiceTest {
                     .willReturn(Optional.of(order));
 
             // when
-            orderService.deleteOrder(orderId);
+            orderService.deleteOrder(orderId, userId, UserRoleEnum.MASTER);
 
             // then
             assertThat(order.isDeleted()).isTrue();
@@ -843,10 +1193,20 @@ class OrderServiceTest {
                     .willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> orderService.deleteOrder(orderId))
+            assertThatThrownBy(() -> orderService.deleteOrder(orderId, userId, UserRoleEnum.MASTER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
                             .isEqualTo(OrderErrorCode.ORDER_NOT_FOUND));
+        }
+
+        @Test
+        @DisplayName("실패 - MASTER가 아닌 역할로 삭제 시도")
+        void MASTER_아닌_역할_삭제_예외발생() {
+            given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(pendingOrder()));
+            assertThatThrownBy(() -> orderService.deleteOrder(orderId, userId, UserRoleEnum.MANAGER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(CommonErrorCode.FORBIDDEN));
         }
     }
 }
