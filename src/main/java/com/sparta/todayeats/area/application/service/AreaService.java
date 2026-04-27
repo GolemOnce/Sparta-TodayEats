@@ -121,9 +121,9 @@ public class AreaService {
 
     // 운영 지역 삭제
     @Transactional
-    public void deleteArea(UUID areaId) {
+    public void deleteArea(UUID areaId, UUID userId) {
         Area area = getAreaEntity(areaId);
-        area.softDelete(null);
+        area.softDelete(userId);
     }
 
 
