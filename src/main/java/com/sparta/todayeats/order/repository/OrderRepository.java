@@ -37,16 +37,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
     Page<Order> findAllByStoreOwnerId(@Param("ownerId") UUID ownerId, Pageable pageable);
 
     /**
-     * MANAGER/MASTER 전용: 전체 주문 목록 조회 (soft delete 제외)
-     * TODO: JWT 완성 후 사용
-     *
-     * @param pageable 페이지 정보
-     * @return 삭제되지 않은 전체 주문 페이지
-     */
-    @Query("SELECT o FROM Order o WHERE o.deletedAt IS NULL")
-    Page<Order> findAllActive(Pageable pageable);
-
-    /**
      * 가게별 주문 목록 조회 (soft delete 제외, 페이지네이션)
      *
      * @param storeId  조회할 가게 ID
@@ -77,7 +67,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             Pageable pageable);
 
     /**
-     * MANAGER/MASTER 전용: 전체 주문 검색 (soft delete 제외)
+     * MANAGER 전용: 전체 주문 검색 (soft delete 제외)
      *
      * @param status    주문 상태 필터 (null이면 전체)
      * @param storeName 가게명 필터 (null이면 전체, 부분 일치)
