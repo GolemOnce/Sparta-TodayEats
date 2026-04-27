@@ -1,4 +1,4 @@
-package com.sparta.todayeats.menu;
+package com.sparta.todayeats.menu.service;
 
 import com.sparta.todayeats.category.domain.entity.Category;
 import com.sparta.todayeats.category.domain.repository.CategoryRepository;
@@ -7,7 +7,6 @@ import com.sparta.todayeats.menu.repository.MenuRepository;
 import com.sparta.todayeats.menu.dto.request.MenuCreateRequest;
 import com.sparta.todayeats.menu.dto.request.MenuStatusUpdateRequest;
 import com.sparta.todayeats.menu.dto.request.MenuUpdateRequest;
-import com.sparta.todayeats.menu.service.MenuService;
 import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import com.sparta.todayeats.store.domain.repository.StoreRepository;
 import org.junit.jupiter.api.DisplayName;
