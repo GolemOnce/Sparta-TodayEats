@@ -131,7 +131,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
      * @return 업데이트된 행 수 (0이면 조건 불일치)
      */
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE OrderEntity o SET o.status = :nextStatus " +
+    @Query("UPDATE OrderEntity o SET o.status = :nextStatus, o.updatedAt = CURRENT_TIMESTAMP " +
             "WHERE o.orderId = :orderId AND o.status = :currentStatus AND o.deletedAt IS NULL")
     int updateStatusConditionally(@Param("orderId") UUID orderId,
                                   @Param("currentStatus") OrderStatus currentStatus,
@@ -150,7 +150,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
      * @return 업데이트된 행 수 (0이면 조건 불일치 또는 5분 초과)
      */
     @Modifying(clearAutomatically = true)
-    @Query(value = "UPDATE p_order SET status = :nextStatus, cancel_reason = :cancelReason " +
+    @Query(value = "UPDATE p_order SET status = :nextStatus, cancel_reason = :cancelReason, updated_at = NOW() " +
             "WHERE order_id = :orderId AND status = :currentStatus " +
             "AND created_at >= NOW() - INTERVAL '5 minutes' " +
             "AND deleted_at IS NULL", nativeQuery = true)
@@ -170,7 +170,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
      * @return 업데이트된 행 수 (0이면 조건 불일치)
      */
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE OrderEntity o SET o.status = :nextStatus, o.rejectReason = :rejectReason " +
+    @Query("UPDATE OrderEntity o SET o.status = :nextStatus, o.rejectReason = :rejectReason, o.updatedAt = CURRENT_TIMESTAMP " +
             "WHERE o.orderId = :orderId AND o.status = :currentStatus AND o.deletedAt IS NULL")
     int rejectConditionally(@Param("orderId") UUID orderId,
                             @Param("rejectReason") String rejectReason,
