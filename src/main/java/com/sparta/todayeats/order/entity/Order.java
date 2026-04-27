@@ -120,11 +120,9 @@ public class Order extends BaseEntity {
     }
 
     /**
-     * 주문 취소 (CUSTOMER 본인 / MASTER만 가능)
+     * 주문 취소
      * 조건 1: PENDING 상태여야 함
      * 조건 2: 주문 생성 후 5분 이내여야 함
-     * TODO: JWT 완성 후 주석 해제
-     * - CUSTOMER 본인 또는 MASTER만 가능
      */
     public void cancelByCustomer() {
         if (this.status != OrderStatus.PENDING) {
@@ -134,14 +132,6 @@ public class Order extends BaseEntity {
         if (LocalDateTime.now().isAfter(cancelDeadline)) {
             throw new BaseException(OrderErrorCode.CANCEL_TIME_EXCEEDED);
         }
-
-        // TODO: JWT 완성 후 주석 해제
-        // if (role != UserRole.CUSTOMER && role != UserRole.MASTER) {
-        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
-        // }
-        // if (role == UserRole.CUSTOMER && !this.customerId.equals(userId)) {
-        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
-        // }
     }
 
     /**

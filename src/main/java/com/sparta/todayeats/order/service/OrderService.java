@@ -235,22 +235,22 @@ public class OrderService {
      * 주문 취소
      * - PENDING 상태에서 5분 이내만 가능
      * - status = CANCELED 로 변경 (soft delete 안 함 → 목록에 보임)
-     * TODO: JWT 완성 후 주석 해제
      * - CUSTOMER 본인 또는 MASTER만 가능
      */
     @Transactional
-    public CancelOrderResponse cancelOrder(UUID orderId, CancelOrderRequest request
-                                           //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
-    ) {
+    public CancelOrderResponse cancelOrder(UUID orderId,
+                                           CancelOrderRequest request,
+                                           UUID userId,
+                                           UserRoleEnum role
+    ){
         Order order = findActiveOrder(orderId);
 
-        // TODO: JWT 완성 후 주석 해제
-        // if (role != UserRole.CUSTOMER && role != UserRole.MASTER) {
-        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
-        // }
-        // if (role == UserRole.CUSTOMER && !order.getCustomerId().equals(userId)) {
-        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
-        // }
+         if (role != UserRoleEnum.CUSTOMER && role != UserRoleEnum.MASTER) {
+             throw new BaseException(CommonErrorCode.FORBIDDEN);
+         }
+         if (role == UserRoleEnum.CUSTOMER && !order.getCustomerId().equals(userId)) {
+             throw new BaseException(CommonErrorCode.FORBIDDEN);
+         }
 
         order.cancelByCustomer();  // 검증만
 
