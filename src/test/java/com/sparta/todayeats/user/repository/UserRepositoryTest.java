@@ -1,9 +1,8 @@
 package com.sparta.todayeats.user.repository;
 
 import com.sparta.todayeats.global.infrastructure.config.JpaConfig;
-import com.sparta.todayeats.user.domain.entity.User;
-import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
-import com.sparta.todayeats.user.domain.repository.UserRepository;
+import com.sparta.todayeats.user.entity.User;
+import com.sparta.todayeats.user.entity.UserRoleEnum;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

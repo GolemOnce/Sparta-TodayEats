@@ -1,6 +1,6 @@
 package com.sparta.todayeats.user.dto.request;
 
-import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
+import com.sparta.todayeats.user.entity.UserRoleEnum;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 

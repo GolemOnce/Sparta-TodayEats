@@ -1,14 +1,16 @@
-package com.sparta.todayeats.auth.application.service;
+package com.sparta.todayeats.auth.service;
 
+import com.sparta.todayeats.auth.application.service.AuthMailService;
+import com.sparta.todayeats.auth.application.service.AuthServiceV1;
 import com.sparta.todayeats.auth.presentation.dto.request.SignupRequest;
 import com.sparta.todayeats.auth.presentation.dto.response.*;
 import com.sparta.todayeats.global.exception.AuthErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.UserErrorCode;
 import com.sparta.todayeats.global.infrastructure.config.security.JwtTokenProvider;
-import com.sparta.todayeats.user.domain.entity.User;
-import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
-import com.sparta.todayeats.user.domain.repository.UserRepository;
+import com.sparta.todayeats.user.entity.User;
+import com.sparta.todayeats.user.entity.UserRoleEnum;
+import com.sparta.todayeats.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -83,7 +85,7 @@ class AuthServiceV1Test {
 
             given(redisTemplate.hasKey(VERIFIED_PREFIX + EMAIL)).willReturn(true);
             given(userRepository.save(any())).willAnswer(i -> i.getArgument(0));
-            given(passwordEncoder.encode(any())).willReturn(ENCODED_PASSWORD);
+            given(passwordEncoder.encode(PASSWORD)).willReturn(ENCODED_PASSWORD);
 
             // when
             SignupResponse response = authServiceV1.signup(request);
@@ -169,9 +171,9 @@ class AuthServiceV1Test {
         @Test
         void 인증번호_전송_실패() {
             // given
-            User activeUser = User.builder().email(EMAIL).build();
+            User user = User.builder().email(EMAIL).build();
 
-            given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(activeUser));
+            given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(user));
 
             // when & then
             assertThatThrownBy(() -> authServiceV1.sendSignupCode(EMAIL))

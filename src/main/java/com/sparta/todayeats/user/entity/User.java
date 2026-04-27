@@ -1,4 +1,4 @@
-package com.sparta.todayeats.user.domain.entity;
+package com.sparta.todayeats.user.entity;
 
 import com.sparta.todayeats.auth.presentation.dto.request.SignupRequest;
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
