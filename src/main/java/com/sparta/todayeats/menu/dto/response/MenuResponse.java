@@ -1,6 +1,6 @@
-package com.sparta.todayeats.menu.presentation.dto.response;
+package com.sparta.todayeats.menu.dto.response;
 
-import com.sparta.todayeats.menu.domain.entity.MenuEntity;
+import com.sparta.todayeats.menu.entity.Menu;
 
 import java.util.UUID;
 
@@ -16,7 +16,7 @@ public record MenuResponse(
         UUID storeId
 ) {
 
-    public static MenuResponse from(MenuEntity menu) {
+    public static MenuResponse from(Menu menu) {
         return new MenuResponse(
                 menu.getId(),
                 menu.getName(),

@@ -1,10 +1,10 @@
-package com.sparta.todayeats.menu.presentation.controller;
+package com.sparta.todayeats.menu.controller;
 
-import com.sparta.todayeats.menu.application.service.MenuServiceV1;
-import com.sparta.todayeats.menu.domain.entity.MenuEntity;
-import com.sparta.todayeats.menu.presentation.dto.request.MenuCreateRequest;
-import com.sparta.todayeats.menu.presentation.dto.request.MenuUpdateRequest;
-import com.sparta.todayeats.menu.presentation.dto.response.MenuResponse;
+import com.sparta.todayeats.menu.service.MenuService;
+import com.sparta.todayeats.menu.entity.Menu;
+import com.sparta.todayeats.menu.dto.request.MenuCreateRequest;
+import com.sparta.todayeats.menu.dto.request.MenuUpdateRequest;
+import com.sparta.todayeats.menu.dto.response.MenuResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -13,15 +13,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import java.util.List;
+
 import java.util.UUID;
 import jakarta.validation.Valid;
 
 @RestController
 @RequiredArgsConstructor
-public class MenuControllerV1 {
+public class MenuController {
 
-    private final MenuServiceV1 menuService;
+    private final MenuService menuService;
 
     // 메뉴 등록
     // POST /api/v1/stores/{storeId}/menus
@@ -30,7 +30,7 @@ public class MenuControllerV1 {
             @PathVariable UUID storeId,
             @Valid @RequestBody MenuCreateRequest request
     ) {
-        MenuEntity menu = menuService.createMenu(storeId, request);
+        Menu menu = menuService.createMenu(storeId, request);
         return MenuResponse.from(menu);
     }
 

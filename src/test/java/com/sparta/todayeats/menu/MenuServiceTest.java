@@ -1,12 +1,13 @@
-package com.sparta.todayeats.menu.application.service;
+package com.sparta.todayeats.menu;
 
 import com.sparta.todayeats.category.domain.entity.Category;
 import com.sparta.todayeats.category.domain.repository.CategoryRepository;
-import com.sparta.todayeats.menu.domain.entity.MenuEntity;
-import com.sparta.todayeats.menu.domain.repository.MenuRepository;
-import com.sparta.todayeats.menu.presentation.dto.request.MenuCreateRequest;
-import com.sparta.todayeats.menu.presentation.dto.request.MenuStatusUpdateRequest;
-import com.sparta.todayeats.menu.presentation.dto.request.MenuUpdateRequest;
+import com.sparta.todayeats.menu.entity.Menu;
+import com.sparta.todayeats.menu.repository.MenuRepository;
+import com.sparta.todayeats.menu.dto.request.MenuCreateRequest;
+import com.sparta.todayeats.menu.dto.request.MenuStatusUpdateRequest;
+import com.sparta.todayeats.menu.dto.request.MenuUpdateRequest;
+import com.sparta.todayeats.menu.service.MenuService;
 import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import com.sparta.todayeats.store.domain.repository.StoreRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -31,9 +32,9 @@ import static org.mockito.BDDMockito.*;
 
 @DisplayName("MenuService 테스트")
 @ExtendWith(MockitoExtension.class)
-class MenuServiceV1Test {
+class MenuServiceTest {
     @InjectMocks
-    private MenuServiceV1 menuService;
+    private MenuService menuService;
 
     @Mock
     private MenuRepository menuRepository;
@@ -68,11 +69,11 @@ class MenuServiceV1Test {
 
             given(categoryRepository.findById(categoryId)).willReturn(Optional.of(category));
             given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
-            given(menuRepository.save(any(MenuEntity.class)))
+            given(menuRepository.save(any(Menu.class)))
                     .willAnswer(invocation -> invocation.getArgument(0));
 
             // when
-            MenuEntity result = menuService.createMenu(storeId, request);
+            Menu result = menuService.createMenu(storeId, request);
 
             // then
             assertThat(result.getName()).isEqualTo("김치찌개");
@@ -83,7 +84,7 @@ class MenuServiceV1Test {
             assertThat(result.isSoldOut()).isFalse();
             assertThat(result.isDeleted()).isFalse();
 
-            then(menuRepository).should().save(any(MenuEntity.class));
+            then(menuRepository).should().save(any(Menu.class));
         }
 
         @Test
@@ -146,7 +147,7 @@ class MenuServiceV1Test {
             // given
             UUID storeId = UUID.randomUUID();
 
-            MenuEntity menu = MenuEntity.builder()
+            Menu menu = Menu.builder()
                     .name("김치찌개")
                     .price(9000)
                     .build();
@@ -158,7 +159,7 @@ class MenuServiceV1Test {
                     .willReturn(new PageImpl<>(List.of(menu)));
 
             // when
-            Page<MenuEntity> result = menuService.getMenusByStore(storeId, keyword, pageable);
+            Page<Menu> result = menuService.getMenusByStore(storeId, keyword, pageable);
 
             // then
             assertThat(result.getContent()).hasSize(1);
@@ -176,7 +177,7 @@ class MenuServiceV1Test {
             // given
             UUID storeId = UUID.randomUUID();
 
-            MenuEntity hiddenMenu = MenuEntity.builder()
+            Menu hiddenMenu = Menu.builder()
                     .name("숨김 메뉴")
                     .price(10000)
                     .isHidden(true)
@@ -189,7 +190,7 @@ class MenuServiceV1Test {
                     .willReturn(new PageImpl<>(List.of(hiddenMenu)));
 
             // when
-            Page<MenuEntity> result = menuService.getOwnerMenusByStore(storeId, keyword, pageable);
+            Page<Menu> result = menuService.getOwnerMenusByStore(storeId, keyword, pageable);
 
             // then
             assertThat(result.getContent()).hasSize(1);
@@ -209,7 +210,7 @@ class MenuServiceV1Test {
             UUID storeId = UUID.randomUUID();
             UUID categoryId = UUID.randomUUID();
 
-            MenuEntity menu = MenuEntity.builder()
+            Menu menu = Menu.builder()
                     .name("콜라")
                     .price(2000)
                     .build();
@@ -225,7 +226,7 @@ class MenuServiceV1Test {
             )).willReturn(new PageImpl<>(List.of(menu)));
 
             // when
-            Page<MenuEntity> result = menuService.getMenusByCategory(
+            Page<Menu> result = menuService.getMenusByCategory(
                     storeId,
                     categoryId,
                     keyword,
@@ -248,7 +249,7 @@ class MenuServiceV1Test {
             // given
             UUID menuId = UUID.randomUUID();
 
-            MenuEntity menu = MenuEntity.builder()
+            Menu menu = Menu.builder()
                     .name("김치찌개")
                     .price(9000)
                     .description("기존 설명")
@@ -301,7 +302,7 @@ class MenuServiceV1Test {
             // given
             UUID menuId = UUID.randomUUID();
 
-            MenuEntity menu = MenuEntity.builder()
+            Menu menu = Menu.builder()
                     .name("삭제된 메뉴")
                     .price(9000)
                     .build();
@@ -333,7 +334,7 @@ class MenuServiceV1Test {
             // given
             UUID menuId = UUID.randomUUID();
 
-            MenuEntity menu = MenuEntity.builder()
+            Menu menu = Menu.builder()
                     .name("김치찌개")
                     .price(9000)
                     .isHidden(false)
@@ -374,7 +375,7 @@ class MenuServiceV1Test {
         // given
         UUID menuId = UUID.randomUUID();
 
-        MenuEntity menu = MenuEntity.builder()
+        Menu menu = Menu.builder()
                 .name("삭제된 메뉴")
                 .price(9000)
                 .build();
@@ -402,7 +403,7 @@ class MenuServiceV1Test {
             UUID menuId = UUID.randomUUID();
             UUID userId = UUID.randomUUID();
 
-            MenuEntity menu = MenuEntity.builder()
+            Menu menu = Menu.builder()
                     .name("김치찌개")
                     .price(9000)
                     .build();

@@ -1,4 +1,4 @@
-package com.sparta.todayeats.menu.presentation.dto.request;
+package com.sparta.todayeats.menu.dto.request;
 
 public record MenuStatusUpdateRequest(
         boolean isHidden,
