@@ -2,13 +2,15 @@ name: Deploy to EC2
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
 
   pull_request:
-    branches: [ main, develop ]
+    branches: [ develop ]
 
 jobs:
   ci:
+    if: github.event_name == 'pull_request'
+
     runs-on: ubuntu-latest
 
     services:
@@ -52,8 +54,7 @@ jobs:
         run: ./gradlew test --info
 
   deploy:
-    needs: ci
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
