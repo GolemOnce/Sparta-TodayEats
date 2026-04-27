@@ -11,8 +11,8 @@ import com.sparta.todayeats.order.entity.OrderStatus;
 import com.sparta.todayeats.order.repository.OrderRepository;
 import com.sparta.todayeats.order.dto.request.*;
 import com.sparta.todayeats.order.dto.response.*;
-import com.sparta.todayeats.store.domain.entity.StoreEntity;
-import com.sparta.todayeats.store.domain.repository.StoreRepository;
+import com.sparta.todayeats.store.entity.Store;
+import com.sparta.todayeats.store.repository.StoreRepository;
 import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,8 +49,11 @@ public class OrderService {
         }
 
         // 가게 조회 및 검증
-        StoreEntity store = storeRepository.findActiveById(request.storeId())
+        Store store = storeRepository.findById(request.storeId())
                 .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
+        if (store.getIsHidden()) {
+            throw new BaseException(StoreErrorCode.STORE_NOT_FOUND);
+        }
 
         // 배송지 조회 및 검증 (주소 스냅샷용)
         AddressEntity address = addressRepository.findActiveById(request.addressId())
@@ -62,7 +65,7 @@ public class OrderService {
         // 주문 엔티티 생성
         Order order = Order.builder()
                 .customerId(userId)
-                .storeId(store.getStoreId())
+                .storeId(store.getId())
                 .addressId(address.getAddressId())
                 .storeName(store.getName())             // 가게명 스냅샷
                 .deliveryAddress(address.getAddress())  // 도로명 주소 스냅샷
@@ -80,7 +83,7 @@ public class OrderService {
                     .orElseThrow(() -> new BaseException(MenuErrorCode.MENU_NOT_FOUND));
 
             // 메뉴가 해당 가게 소속인지 검증
-            if (!menu.getStoreId().equals(store.getStoreId())) {
+            if (!menu.getStoreId().equals(store.getId())) {
                 throw new BaseException(MenuErrorCode.MENU_NOT_IN_STORE);
             }
 
@@ -164,7 +167,7 @@ public class OrderService {
         // } else if (role == UserRole.OWNER) {
         //     StoreEntity store = storeRepository.findActiveById(order.getStoreId())
         //             .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
-        //     if (!store.getOwnerId().equals(userId)) {
+        //     if (!store.getOwner().getId().equals(userId)) {
         //         throw new BaseException(CommonErrorCode.FORBIDDEN);
         //     }
         // }
