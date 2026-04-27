@@ -89,12 +89,12 @@ public class OrderController {
      */
     @GetMapping("/{orderId}")
     public ResponseEntity<ApiResponse<OrderDetailResponse>> getOrder(
-            @PathVariable UUID orderId
-            //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
+            @PathVariable UUID orderId,
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
     ) {
-        // TODO: JWT 완성 후 아래로 교체
-        // OrderDetailResponse data = orderService.getOrder(orderId, userDetails.getUserId(), userDetails.getRole());
-        OrderDetailResponse data = orderService.getOrder(orderId);
+        UserRoleEnum role = extractRole(authentication);
+        OrderDetailResponse data = orderService.getOrder(orderId, userId, role);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 

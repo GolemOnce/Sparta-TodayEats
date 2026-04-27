@@ -144,28 +144,24 @@ public class OrderService {
     /**
      * 주문 단건 조회
      * - soft delete 제외
-     * TODO: JWT 완성 후 주석 해제
      * - CUSTOMER: 본인 주문만 조회 가능
      * - OWNER: 본인 가게 주문만 조회 가능
      * - MANAGER/MASTER: 전체 조회 가능
      */
-    public OrderDetailResponse getOrder(UUID orderId
-                                        //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
-    ) {
+    public OrderDetailResponse getOrder(UUID orderId, UUID userId, UserRoleEnum role) {
         Order order = findActiveOrder(orderId);
 
-        // TODO: JWT 완성 후 주석 해제
-        // if (role == UserRole.CUSTOMER) {
-        //     if (!order.getCustomerId().equals(userId)) {
-        //         throw new BaseException(CommonErrorCode.FORBIDDEN);
-        //     }
-        // } else if (role == UserRole.OWNER) {
-        //     StoreEntity store = storeRepository.findActiveById(order.getStoreId())
-        //             .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
-        //     if (!store.getOwner().getId().equals(userId)) {
-        //         throw new BaseException(CommonErrorCode.FORBIDDEN);
-        //     }
-        // }
+         if (role == UserRoleEnum.CUSTOMER) {
+             if (!order.getCustomerId().equals(userId)) {
+                 throw new BaseException(CommonErrorCode.FORBIDDEN);
+             }
+         } else if (role == UserRoleEnum.OWNER) {
+             Store store = storeRepository.findById(order.getStoreId())
+                     .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
+             if (!store.getOwner().getUserId().equals(userId)) {
+                 throw new BaseException(CommonErrorCode.FORBIDDEN);
+             }
+         }
 
         return OrderDetailResponse.from(order);
     }
