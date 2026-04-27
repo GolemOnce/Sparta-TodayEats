@@ -2,11 +2,13 @@ package com.sparta.todayeats.payment.controller;
 
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
+import com.sparta.todayeats.payment.dto.request.PaymentUpdateRequest;
 import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
 import com.sparta.todayeats.payment.dto.response.PaymentDetailResponse;
 import com.sparta.todayeats.payment.dto.response.PaymentPageResponse;
+import com.sparta.todayeats.payment.dto.response.PaymentUpdateResponse;
 import com.sparta.todayeats.payment.service.PaymentService;
-import com.sparta.todayeats.payment.entity.Payment;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -51,12 +53,16 @@ public class PaymentController {
         PaymentDetailResponse response = paymentService.getPaymentDetails(userId, paymentId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
-//
-//    // 결제 상태 변경
-//    @PutMapping("/payments/{paymentId}")
-//    public ResponseEntity<Payment> updatePayment(@PathVariable("paymentId") UUID paymentId, @RequestBody Payment payment) {
-//
-//    }
+
+    // 결제 상태 변경
+    @PutMapping("/payments/{paymentId}")
+    public ResponseEntity<ApiResponse<PaymentUpdateResponse>> updatePayment(
+            @PathVariable("paymentId") UUID paymentId,
+            @AuthenticationPrincipal UUID userId,
+            @Valid @RequestBody PaymentUpdateRequest request) {
+        PaymentUpdateResponse response = paymentService.changePaymentStatus(paymentId, userId, request);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 //
 //    // 결제 삭제
 //    @DeleteMapping("/payments/{paymentId}")
