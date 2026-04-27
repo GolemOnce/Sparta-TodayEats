@@ -133,14 +133,18 @@ public class StoreService {
 
     // 가게 삭제
     @Transactional
-    public void deleteStore(UUID storeId, UUID userId) {
+    public void deleteStore(UUID storeId, UUID userId, Authentication authentication) {
 
         // 삭제 대상 가게 조회
         Store store = getStoreEntity(storeId);
 
-        // TODO: 인증 구현 후 MASTER는 본인 가게 아니어도 삭제 가능하도록 분기
-        // 본인 가게인지 확인
-        validateStoreOwner(store, userId);
+        // MASTER는 모든 가게 삭제 가능 / OWNER는 본인 가게만 삭제 가능
+        boolean isMaster = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_MASTER"));
+
+        if (!isMaster) {
+            validateStoreOwner(store, userId);
+        }
 
         // 소프트 삭제
         store.softDelete(userId);

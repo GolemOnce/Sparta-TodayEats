@@ -78,12 +78,13 @@ public class StoreController {
     }
 
     // 가게 삭제
+    // OWNER는 본인 가게만 삭제 가능/ MASTER는 모든 가게 삭제 가능
     @DeleteMapping("/{storeId}")
     @PreAuthorize("hasAnyRole('OWNER','MASTER')")
     public ResponseEntity<ApiResponse<Void>> deleteStore(
-            @PathVariable UUID storeId,@AuthenticationPrincipal UUID userId) {
+            @PathVariable UUID storeId,@AuthenticationPrincipal UUID userId, Authentication authentication) {
 
-        storeService.deleteStore(storeId, userId);
+        storeService.deleteStore(storeId, userId, authentication);
 
         return ResponseEntity.noContent().build();
     }
