@@ -1,4 +1,4 @@
-package com.sparta.todayeats.order.presentation.dto.request;
+package com.sparta.todayeats.order.dto.request;
 
 import jakarta.validation.constraints.Size;
 

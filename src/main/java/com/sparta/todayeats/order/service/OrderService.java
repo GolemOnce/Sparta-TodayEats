@@ -1,16 +1,16 @@
-package com.sparta.todayeats.order.application.service;
+package com.sparta.todayeats.order.service;
 
 import com.sparta.todayeats.address.domain.entity.AddressEntity;
 import com.sparta.todayeats.address.domain.repository.AddressRepository;
 import com.sparta.todayeats.global.exception.*;
 import com.sparta.todayeats.menu.domain.entity.MenuEntity;
 import com.sparta.todayeats.menu.domain.repository.MenuRepository;
-import com.sparta.todayeats.order.domain.entity.OrderEntity;
-import com.sparta.todayeats.order.domain.entity.OrderItemEntity;
-import com.sparta.todayeats.order.domain.entity.OrderStatus;
-import com.sparta.todayeats.order.domain.repository.OrderRepository;
-import com.sparta.todayeats.order.presentation.dto.request.*;
-import com.sparta.todayeats.order.presentation.dto.response.*;
+import com.sparta.todayeats.order.entity.Order;
+import com.sparta.todayeats.order.entity.OrderItem;
+import com.sparta.todayeats.order.entity.OrderStatus;
+import com.sparta.todayeats.order.repository.OrderRepository;
+import com.sparta.todayeats.order.dto.request.*;
+import com.sparta.todayeats.order.dto.response.*;
 import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import com.sparta.todayeats.store.domain.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ import java.util.UUID;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
-public class OrderServiceV1 {
+public class OrderService {
 
     private final OrderRepository orderRepository;
     private final MenuRepository menuRepository;
@@ -60,7 +60,7 @@ public class OrderServiceV1 {
                 .orElseThrow(() -> new BaseException(AddressErrorCode.ADDRESS_NOT_FOUND));
 
         // 주문 엔티티 생성
-        OrderEntity order = OrderEntity.builder()
+        Order order = Order.builder()
                 .customerId(userId)
                 .storeId(store.getStoreId())
                 .addressId(address.getAddressId())
@@ -84,7 +84,7 @@ public class OrderServiceV1 {
                 throw new BaseException(MenuErrorCode.MENU_NOT_IN_STORE);
             }
 
-            OrderItemEntity orderItem = OrderItemEntity.builder()
+            OrderItem orderItem = OrderItem.builder()
                     .order(order)
                     .menuId(menu.getMenuId())
                     .menuName(menu.getName())       // 메뉴명 스냅샷
@@ -98,7 +98,7 @@ public class OrderServiceV1 {
 
         // 서버에서 계산한 총 금액 세팅
         order.updateTotalPrice(total);
-        OrderEntity saved = orderRepository.save(order);
+        Order saved = orderRepository.save(order);
 
         // TODO: Payment 담당자 코드 완성 후 주석 해제
         // 주문 생성 시 결제 생성 같이 처리 (트랜잭션 묶음)
@@ -154,7 +154,7 @@ public class OrderServiceV1 {
     public OrderDetailResponse getOrder(UUID orderId
                                         //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
     ) {
-        OrderEntity order = findActiveOrder(orderId);
+        Order order = findActiveOrder(orderId);
 
         // TODO: JWT 완성 후 주석 해제
         // if (role == UserRole.CUSTOMER) {
@@ -182,7 +182,7 @@ public class OrderServiceV1 {
     public UpdateOrderResponse updateOrder(UUID orderId, UpdateOrderRequest request
                                            //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
     ) {
-        OrderEntity order = findActiveOrder(orderId);
+        Order order = findActiveOrder(orderId);
 
         // TODO: JWT 완성 후 주석 해제
         // if (role != UserRole.CUSTOMER && role != UserRole.MASTER) {
@@ -211,7 +211,7 @@ public class OrderServiceV1 {
                                                        UpdateOrderStatusRequest request
                                                        //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
     ) {
-        OrderEntity order = findActiveOrder(orderId);
+        Order order = findActiveOrder(orderId);
 
         // TODO: JWT 완성 후 주석 해제
         // if (role == UserRole.CUSTOMER) {
@@ -231,7 +231,7 @@ public class OrderServiceV1 {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
 
-        OrderEntity updated = findActiveOrder(orderId);
+        Order updated = findActiveOrder(orderId);
         log.info("주문 상태 변경: orderId={}, status={}", orderId, request.status());
         return UpdateOrderStatusResponse.from(updated);
     }
@@ -247,7 +247,7 @@ public class OrderServiceV1 {
     public CancelOrderResponse cancelOrder(UUID orderId, CancelOrderRequest request
                                            //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
     ) {
-        OrderEntity order = findActiveOrder(orderId);
+        Order order = findActiveOrder(orderId);
 
         // TODO: JWT 완성 후 주석 해제
         // if (role != UserRole.CUSTOMER && role != UserRole.MASTER) {
@@ -268,7 +268,7 @@ public class OrderServiceV1 {
         // 주문 취소 시 환불 처리 같이 처리 (트랜잭션 묶음)
         // paymentService.refund(orderId);
 
-        OrderEntity updated = findActiveOrder(orderId);
+        Order updated = findActiveOrder(orderId);
         log.info("주문 취소: orderId={}", orderId);
         return CancelOrderResponse.from(updated);
     }
@@ -286,7 +286,7 @@ public class OrderServiceV1 {
     public RejectOrderResponse rejectOrder(UUID orderId, RejectOrderRequest request
                                            //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
     ) {
-        OrderEntity order = findActiveOrder(orderId);
+        Order order = findActiveOrder(orderId);
 
         // TODO: JWT 완성 후 주석 해제
         // if (role == UserRole.CUSTOMER) {
@@ -310,7 +310,7 @@ public class OrderServiceV1 {
         // 주문 거절 시 환불 처리 같이 처리 (트랜잭션 묶음)
         // paymentService.refund(orderId);
 
-        OrderEntity updated = findActiveOrder(orderId);
+        Order updated = findActiveOrder(orderId);
         log.info("주문 거절: orderId={}", orderId);
         return RejectOrderResponse.from(updated);
     }
@@ -324,7 +324,7 @@ public class OrderServiceV1 {
     public void deleteOrder(UUID orderId
                             //, UUID userId, UserRole role  // TODO: JWT 완성 후 주석 해제
     ) {
-        OrderEntity order = findActiveOrder(orderId);
+        Order order = findActiveOrder(orderId);
 
         // TODO: JWT 완성 후 주석 해제
         // if (role != UserRole.MASTER) {
@@ -345,7 +345,7 @@ public class OrderServiceV1 {
      * soft delete 제외 주문 단건 조회
      * 주문 없으면 BaseException(ORDER_NOT_FOUND) 발생
      */
-    private OrderEntity findActiveOrder(UUID orderId) {
+    private Order findActiveOrder(UUID orderId) {
         return orderRepository.findActiveById(orderId)
                 .orElseThrow(() -> new BaseException(OrderErrorCode.ORDER_NOT_FOUND));
     }

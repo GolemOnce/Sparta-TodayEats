@@ -1,8 +1,8 @@
-package com.sparta.todayeats.order.presentation.dto.response;
+package com.sparta.todayeats.order.dto.response;
 
-import com.sparta.todayeats.order.domain.entity.OrderEntity;
-import com.sparta.todayeats.order.domain.entity.OrderItemEntity;
-import com.sparta.todayeats.order.domain.entity.OrderStatus;
+import com.sparta.todayeats.order.entity.Order;
+import com.sparta.todayeats.order.entity.OrderItem;
+import com.sparta.todayeats.order.entity.OrderStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,7 +23,7 @@ public record OrderDetailResponse(
     /**
      * OrderEntity로부터 응답 DTO 생성
      */
-    public static OrderDetailResponse from(OrderEntity order) {
+    public static OrderDetailResponse from(Order order) {
         return new OrderDetailResponse(
                 order.getOrderId(),
                 order.getStatus(),
@@ -57,7 +57,7 @@ public record OrderDetailResponse(
             Integer quantity,   // 주문 수량
             Long unitPrice   // 단가 스냅샷
     ) {
-        public static OrderItemInfo from(OrderItemEntity item) {
+        public static OrderItemInfo from(OrderItem item) {
             return new OrderItemInfo(
                     item.getMenuId(),
                     item.getMenuName(),

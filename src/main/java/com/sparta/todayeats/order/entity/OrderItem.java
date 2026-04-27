@@ -1,4 +1,4 @@
-package com.sparta.todayeats.order.domain.entity;
+package com.sparta.todayeats.order.entity;
 
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -17,7 +17,7 @@ import java.util.UUID;
 @Table(name = "p_order_items")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class OrderItemEntity extends BaseEntity {
+public class OrderItem extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -26,7 +26,7 @@ public class OrderItemEntity extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
-    private OrderEntity order;
+    private Order order;
 
     // ─── 주문 시점 스냅샷 (메뉴 삭제/변경되어도 주문 내역 보존) ──────────
     @Column(name = "menu_id", nullable = false)
@@ -43,8 +43,8 @@ public class OrderItemEntity extends BaseEntity {
     private Integer quantity;
 
     @Builder
-    public OrderItemEntity(OrderEntity order, UUID menuId, String menuName,
-                           Long unitPrice, Integer quantity) {
+    public OrderItem(Order order, UUID menuId, String menuName,
+                     Long unitPrice, Integer quantity) {
         this.order = order;
         this.menuId = menuId;
         this.menuName = menuName;

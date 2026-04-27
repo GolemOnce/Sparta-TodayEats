@@ -1,7 +1,7 @@
-package com.sparta.todayeats.order.domain.repository;
+package com.sparta.todayeats.order.repository;
 
-import com.sparta.todayeats.order.domain.entity.OrderEntity;
-import com.sparta.todayeats.order.domain.entity.OrderStatus;
+import com.sparta.todayeats.order.entity.Order;
+import com.sparta.todayeats.order.entity.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,7 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /** 주문 레포지토리 */
-public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
+public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     /**
      * soft delete 제외 단건 조회
@@ -21,8 +21,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
      * @param orderId 조회할 주문 ID
      * @return 삭제되지 않은 주문 Optional
      */
-    @Query("SELECT o FROM OrderEntity o WHERE o.orderId = :orderId AND o.deletedAt IS NULL")
-    Optional<OrderEntity> findActiveById(@Param("orderId") UUID orderId);
+    @Query("SELECT o FROM Order o WHERE o.orderId = :orderId AND o.deletedAt IS NULL")
+    Optional<Order> findActiveById(@Param("orderId") UUID orderId);
 
     /**
      * 사용자별 주문 목록 조회 (soft delete 제외, 페이지네이션)
@@ -31,8 +31,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
      * @param pageable   페이지 정보
      * @return 삭제되지 않은 해당 고객의 주문 페이지
      */
-    @Query("SELECT o FROM OrderEntity o WHERE o.customerId = :customerId AND o.deletedAt IS NULL")
-    Page<OrderEntity> findAllByCustomerId(@Param("customerId") UUID customerId, Pageable pageable);
+    @Query("SELECT o FROM Order o WHERE o.customerId = :customerId AND o.deletedAt IS NULL")
+    Page<Order> findAllByCustomerId(@Param("customerId") UUID customerId, Pageable pageable);
 
     /**
      * OWNER 전용: 본인 가게 주문 목록 조회 (soft delete 제외)
@@ -42,10 +42,10 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
      * @param pageable 페이지 정보
      * @return 해당 소유자의 가게에 속한 주문 페이지
      */
-    @Query("SELECT o FROM OrderEntity o " +
+    @Query("SELECT o FROM Order o " +
             "JOIN StoreEntity s ON o.storeId = s.storeId " +
             "WHERE s.ownerId = :ownerId AND o.deletedAt IS NULL")
-    Page<OrderEntity> findAllByStoreOwnerId(@Param("ownerId") UUID ownerId, Pageable pageable);
+    Page<Order> findAllByStoreOwnerId(@Param("ownerId") UUID ownerId, Pageable pageable);
 
     /**
      * MANAGER/MASTER 전용: 전체 주문 목록 조회 (soft delete 제외)
@@ -54,8 +54,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
      * @param pageable 페이지 정보
      * @return 삭제되지 않은 전체 주문 페이지
      */
-    @Query("SELECT o FROM OrderEntity o WHERE o.deletedAt IS NULL")
-    Page<OrderEntity> findAllActive(Pageable pageable);
+    @Query("SELECT o FROM Order o WHERE o.deletedAt IS NULL")
+    Page<Order> findAllActive(Pageable pageable);
 
     /**
      * 가게별 주문 목록 조회 (soft delete 제외, 페이지네이션)
@@ -64,8 +64,8 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
      * @param pageable 페이지 정보
      * @return 해당 가게의 삭제되지 않은 주문 페이지
      */
-    @Query("SELECT o FROM OrderEntity o WHERE o.storeId = :storeId AND o.deletedAt IS NULL")
-    Page<OrderEntity> findAllByStoreId(@Param("storeId") UUID storeId, Pageable pageable);
+    @Query("SELECT o FROM Order o WHERE o.storeId = :storeId AND o.deletedAt IS NULL")
+    Page<Order> findAllByStoreId(@Param("storeId") UUID storeId, Pageable pageable);
 
     /**
      * CUSTOMER/OWNER 전용: 검색 조건 + 페이지네이션으로 주문 조회 (soft delete 제외)
@@ -76,12 +76,12 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
      * @param pageable   페이지 정보
      * @return 조건에 맞는 주문 페이지
      */
-    @Query("SELECT o FROM OrderEntity o " +
+    @Query("SELECT o FROM Order o " +
             "WHERE o.customerId = :customerId " +
             "AND (:status IS NULL OR o.status = :status) " +
             "AND (:storeName IS NULL OR o.storeName LIKE %:storeName%) " +
             "AND o.deletedAt IS NULL")
-    Page<OrderEntity> searchOrders(
+    Page<Order> searchOrders(
             @Param("customerId") UUID customerId,
             @Param("status") OrderStatus status,
             @Param("storeName") String storeName,
@@ -96,11 +96,11 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
      * @param pageable  페이지 정보
      * @return 조건에 맞는 전체 주문 페이지
      */
-    @Query("SELECT o FROM OrderEntity o " +
+    @Query("SELECT o FROM Order o " +
             "WHERE (:status IS NULL OR o.status = :status) " +
             "AND (:storeName IS NULL OR o.storeName LIKE %:storeName%) " +
             "AND o.deletedAt IS NULL")
-    Page<OrderEntity> searchAllOrders(
+    Page<Order> searchAllOrders(
             @Param("status") OrderStatus status,
             @Param("storeName") String storeName,
             Pageable pageable);
@@ -114,10 +114,10 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
      * @param pageable  페이지 정보
      * @return 삭제 여부 관계없이 조건에 맞는 전체 주문 페이지
      */
-    @Query("SELECT o FROM OrderEntity o " +
+    @Query("SELECT o FROM Order o " +
             "WHERE (:status IS NULL OR o.status = :status) " +
             "AND (:storeName IS NULL OR o.storeName LIKE %:storeName%)")
-    Page<OrderEntity> searchAllOrdersIncludeDeleted(
+    Page<Order> searchAllOrdersIncludeDeleted(
             @Param("status") OrderStatus status,
             @Param("storeName") String storeName,
             Pageable pageable);
@@ -132,7 +132,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
      * @return 업데이트된 행 수 (0이면 조건 불일치)
      */
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE OrderEntity o SET o.status = :nextStatus, o.updatedAt = CURRENT_TIMESTAMP " +
+    @Query("UPDATE Order o SET o.status = :nextStatus, o.updatedAt = CURRENT_TIMESTAMP " +
             "WHERE o.orderId = :orderId AND o.status = :currentStatus AND o.deletedAt IS NULL")
     int updateStatusConditionally(@Param("orderId") UUID orderId,
                                   @Param("currentStatus") OrderStatus currentStatus,
@@ -171,7 +171,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, UUID> {
      * @return 업데이트된 행 수 (0이면 조건 불일치)
      */
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE OrderEntity o SET o.status = :nextStatus, o.rejectReason = :rejectReason, o.updatedAt = CURRENT_TIMESTAMP " +
+    @Query("UPDATE Order o SET o.status = :nextStatus, o.rejectReason = :rejectReason, o.updatedAt = CURRENT_TIMESTAMP " +
             "WHERE o.orderId = :orderId AND o.status = :currentStatus AND o.deletedAt IS NULL")
     int rejectConditionally(@Param("orderId") UUID orderId,
                             @Param("rejectReason") String rejectReason,
