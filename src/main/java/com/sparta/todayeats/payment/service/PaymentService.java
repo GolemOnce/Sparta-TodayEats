@@ -1,27 +1,23 @@
 package com.sparta.todayeats.payment.service;
 
 import com.sparta.todayeats.auth.application.service.AuthServiceV1;
-import com.sparta.todayeats.category.presentation.dto.PageResponse;
 import com.sparta.todayeats.global.exception.*;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.order.entity.OrderStatus;
 import com.sparta.todayeats.order.repository.OrderRepository;
+import com.sparta.todayeats.payment.dto.request.PaymentUpdateRequest;
 import com.sparta.todayeats.payment.dto.response.*;
 import com.sparta.todayeats.payment.entity.Payment;
 import com.sparta.todayeats.payment.entity.PaymentStatus;
 import com.sparta.todayeats.payment.repository.PaymentRepository;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
 import com.sparta.todayeats.user.domain.entity.User;
-import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import com.sparta.todayeats.user.domain.repository.UserRepository;
 import jakarta.annotation.Nullable;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -124,7 +120,19 @@ public class PaymentService {
     }
 
     // 상태 수정
+    @Transactional
+    public PaymentUpdateResponse changePaymentStatus(UUID paymentId, UUID userId, PaymentUpdateRequest request) {
+        // 1. 유저 권한 확인
+        User user = userAuthorizationService.getUserById(userId);
+        userAuthorizationService.validateAdmin(user); // 권한 없으면 예외
 
+        // 2. 권한 통과 후 결제내역 조회
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new BaseException(PaymentErrorCode.PAYMENT_NOT_FOUND));
+
+        payment.updatePaymentStatus(request.getStatus());
+        return PaymentUpdateResponse.from(payment);
+    }
 
     // 결제 삭제 (soft delete)
 
