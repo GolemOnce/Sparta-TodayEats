@@ -115,35 +115,30 @@ public class OrderService {
      * 주문 목록 조회
      * - soft delete 제외
      * - 페이지네이션 (기본 10개, createdAt DESC)
-     * TODO: JWT 완성 후 주석 해제
      * - CUSTOMER: 본인 주문만 조회
      * - OWNER: 본인 가게 주문만 조회
-     * - MANAGER/MASTER: 전체 조회
+     * - MANAGER: 전체 조회 (soft delete 제외)
+     * - MASTER: 전체 조회 (삭제 포함)
      */
     public Page<OrderSummaryResponse> getOrders(UUID userId,
                                                 OrderStatus status,
                                                 String storeName,
                                                 Pageable pageable
-                                                //, UserRole role  // TODO: JWT 완성 후 주석 해제
+                                                ,UserRoleEnum role
     ) {
-        // TODO: JWT 완성 후 주석 해제
-        // if (role == UserRole.CUSTOMER) {
-        //     return orderRepository.searchOrders(userId, status, storeName, pageable)
-        //             .map(OrderSummaryResponse::from);
-        // } else if (role == UserRole.OWNER) {
-        //     return orderRepository.findAllByStoreOwnerId(userId, pageable)
-        //             .map(OrderSummaryResponse::from);
-        // } else if (role == UserRole.MANAGER) {
-        //     return orderRepository.searchAllOrders(status, storeName, pageable)
-        //             .map(OrderSummaryResponse::from);
-        // } else if (role == UserRole.MASTER) {
-        //     return orderRepository.searchAllOrdersIncludeDeleted(status, storeName, pageable)
-        //             .map(OrderSummaryResponse::from);
-        // }
-
-        // 임시: JWT 완성 전까지 customerId로 조회
-        return orderRepository.searchOrders(userId, status, storeName, pageable)
-                .map(OrderSummaryResponse::from);
+        if (role == UserRoleEnum.CUSTOMER) {
+            return orderRepository.searchOrders(userId, status, storeName, pageable)
+                    .map(OrderSummaryResponse::from);
+        } else if (role == UserRoleEnum.OWNER) {
+            return orderRepository.findAllByStoreOwnerId(userId, pageable)
+                    .map(OrderSummaryResponse::from);
+        } else if (role == UserRoleEnum.MANAGER) {
+            return orderRepository.searchAllOrders(status, storeName, pageable)
+                    .map(OrderSummaryResponse::from);
+        } else {
+            return orderRepository.searchAllOrdersIncludeDeleted(status, storeName, pageable)
+                    .map(OrderSummaryResponse::from);
+        }
     }
 
     /**

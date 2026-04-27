@@ -54,11 +54,12 @@ public class OrderController {
      * 주문 목록 조회
      * GET /api/v1/orders
      * CUSTOMER: 본인 주문만 조회, OWNER: 본인 가게 주문만 조회
-     * MANAGER: 전체 조회(soft delete 제외), MASTER: 전체 조회(삭제 포함) - JWT 완성 후 활성화
+     * MANAGER: 전체 조회(soft delete 제외), MASTER: 전체 조회(삭제 포함)
      */
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<OrderSummaryResponse>>> getOrders(
-            //@AuthenticationPrincipal UserDetailsImpl userDetails,  // TODO: JWT 완성 후 주석 해제
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication,
             @RequestParam(required = false) OrderStatus status,
             @RequestParam(required = false) String storeName,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
@@ -66,12 +67,9 @@ public class OrderController {
 
         // 페이지 사이즈 10/30/50 제한
         validatePageSize(pageable.getPageSize());
+        UserRoleEnum role = extractRole(authentication);
+        Page<OrderSummaryResponse> page = orderService.getOrders(userId, status, storeName, pageable, role);
 
-        // TODO: JWT 완성 후 아래로 교체
-        // Page<OrderSummaryResponse> page = orderService.getOrders(
-        //         userDetails.getUserId(), status, storeName, pageable, userDetails.getRole());
-        UUID userId = null;  // TODO: JWT 완성 후 제거
-        Page<OrderSummaryResponse> page = orderService.getOrders(userId, status, storeName, pageable);
         return ResponseEntity.ok(ApiResponse.success(
                 PageResponse.<OrderSummaryResponse>builder()
                         .content(page.getContent())
