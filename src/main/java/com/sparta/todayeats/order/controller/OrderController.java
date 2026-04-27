@@ -6,8 +6,8 @@ import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.order.dto.request.*;
 import com.sparta.todayeats.order.dto.response.*;
-import com.sparta.todayeats.order.service.OrderService;
 import com.sparta.todayeats.order.entity.OrderStatus;
+import com.sparta.todayeats.order.service.OrderService;
 import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-/** 주문 컨트롤러 */
+/**
+ * 주문 컨트롤러
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -152,17 +154,17 @@ public class OrderController {
     /**
      * 주문 거절
      * PATCH /api/v1/orders/{orderId}/reject
-     * PENDING 상태에서 OWNER: 본인 가게만, MANAGER/MASTER: 전체, CUSTOMER: 불가 - JWT 완성 후 활성화
+     * PENDING 상태에서 OWNER: 본인 가게만, MANAGER/MASTER: 전체, CUSTOMER: 불가
      */
     @PatchMapping("/{orderId}/reject")
     public ResponseEntity<ApiResponse<RejectOrderResponse>> rejectOrder(
             @PathVariable UUID orderId,
-            @RequestBody(required = false) @Valid RejectOrderRequest request
-            //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
+            @RequestBody(required = false) @Valid RejectOrderRequest request,
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
     ) {
-        // TODO: JWT 완성 후 아래로 교체
-        // RejectOrderResponse data = orderService.rejectOrder(orderId, request, userDetails.getUserId(), userDetails.getRole());
-        RejectOrderResponse data = orderService.rejectOrder(orderId, request);
+        UserRoleEnum role = extractRole(authentication);
+        RejectOrderResponse data = orderService.rejectOrder(orderId, request, userId, role);
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 

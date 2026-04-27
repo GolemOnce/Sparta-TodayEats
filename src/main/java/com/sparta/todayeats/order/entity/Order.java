@@ -135,27 +135,13 @@ public class Order extends BaseEntity {
     }
 
     /**
-     * 주문 거절 (OWNER 본인 가게 / MANAGER / MASTER만 가능)
+     * 주문 거절 도메인 검증
      * 조건: PENDING 상태여야 함
-     * TODO: JWT 완성 후 주석 해제
-     * - OWNER: 본인 가게 주문만 거절 가능
-     * - MANAGER/MASTER: 전체 거절 가능
      */
     public void rejectByOwner() {
         if (this.status != OrderStatus.PENDING) {
             throw new BaseException(OrderErrorCode.ORDER_REJECT_NOT_ALLOWED);
         }
-
-        // TODO: JWT 완성 후 주석 해제
-        // if (role == UserRole.CUSTOMER) {
-        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
-        // } else if (role == UserRole.OWNER) {
-        //     StoreEntity store = storeRepository.findActiveById(this.storeId)
-        //             .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
-        //     if (!store.getOwnerId().equals(userId)) {
-        //         throw new BaseException(CommonErrorCode.FORBIDDEN);
-        //     }
-        // }
     }
 
     /**
