@@ -171,16 +171,16 @@ public class OrderController {
     /**
      * 주문 삭제 (soft delete)
      * DELETE /api/v1/orders/{orderId}
-     * MASTER만 가능 - JWT 완성 후 활성화
+     * MASTER만 가능
      */
     @DeleteMapping("/{orderId}")
     public ResponseEntity<Void> deleteOrder(
-            @PathVariable UUID orderId
-            //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
+            @PathVariable UUID orderId,
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
     ) {
-        // TODO: JWT 완성 후 아래로 교체
-        // orderService.deleteOrder(orderId, userDetails.getUserId(), userDetails.getRole());
-        orderService.deleteOrder(orderId);
+        UserRoleEnum role = extractRole(authentication);
+        orderService.deleteOrder(orderId, userId, role);
         return ResponseEntity.noContent().build();
     }
 
