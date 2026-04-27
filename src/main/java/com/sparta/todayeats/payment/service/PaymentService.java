@@ -107,6 +107,21 @@ public class PaymentService {
     }
 
     // 상세 조회
+    @Transactional(readOnly = true)
+    public PaymentDetailResponse getPaymentDetails(UUID userId, UUID paymentId) {
+
+        // 1. 본인 결제내역으로 먼저 조회 시도
+        Payment payment = paymentRepository.findByIdAndOrder_CustomerId(paymentId, userId)
+                .orElseGet(() -> {
+                    // 2. 없으면 관리자 권한 확인 후 paymentId로만 재조회
+                    User user = userAuthorizationService.getUserById(userId);
+                    userAuthorizationService.validateAdmin(user); // 권한 없으면 여기서 예외
+                    return paymentRepository.findById(paymentId)
+                            .orElseThrow(() -> new BaseException(PaymentErrorCode.PAYMENT_NOT_FOUND));
+                });
+
+        return PaymentDetailResponse.from(payment);
+    }
 
     // 상태 수정
 

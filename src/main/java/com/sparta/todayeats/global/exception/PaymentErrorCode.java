@@ -8,7 +8,8 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum PaymentErrorCode implements ErrorCode {
     PAYMENT_FAILED(HttpStatus.BAD_REQUEST, "PAY-001", "결제에 실패했습니다."),
-    PAYMENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "PAY-002", "이미 결제된 주문입니다.");
+    PAYMENT_ALREADY_EXISTS(HttpStatus.CONFLICT, "PAY-002", "이미 결제된 주문입니다."),
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAY-003", "결제 내역을 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;
