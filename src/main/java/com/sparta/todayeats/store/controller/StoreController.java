@@ -90,13 +90,14 @@ public class StoreController {
     }
 
     // 가게 숨김 처리
+    // OWNER는 본인 가게만 가능/ MANAGER, MASTER는 모든 가게 숨김 처리 가능
     @PatchMapping("/{storeId}/hide")
     @PreAuthorize("hasAnyRole('OWNER','MANAGER','MASTER')")
     public ResponseEntity<ApiResponse<StoreHiddenResponse>> updateHidden(
             @PathVariable UUID storeId,
-            @Valid @RequestBody StoreHiddenRequest request,@AuthenticationPrincipal UUID userId) {
+            @Valid @RequestBody StoreHiddenRequest request,@AuthenticationPrincipal UUID userId,  Authentication authentication) {
 
-        StoreHiddenResponse response = storeService.updateHidden(storeId, request, userId);
+        StoreHiddenResponse response = storeService.updateHidden(storeId, request, userId, authentication);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
