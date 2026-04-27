@@ -14,6 +14,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -25,9 +27,9 @@ public class AreaController {
 
     private final AreaService areaService;
 
-    // TODO: 권한 처리(MANAGER, MASTER), Auditing
     // 운영 지역 생성
     @PostMapping
+    @PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
     public ResponseEntity<ApiResponse<AreaCreateResponse>> createArea(@Valid @RequestBody AreaCreateRequest request) {
         AreaCreateResponse response = areaService.createArea(request);
 
@@ -36,7 +38,6 @@ public class AreaController {
                 .body(ApiResponse.created(response));
     }
 
-    // TODO: Auditing
     // 운영 지역 목록 조회 + 검색
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AreaResponse>>> getAreas(
@@ -49,7 +50,6 @@ public class AreaController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    // TODO: Auditing
     // 운영 지역 상세 조회
     @GetMapping("/{areaId}")
     public ResponseEntity<ApiResponse<AreaResponse>> getArea(@PathVariable UUID areaId) {
@@ -59,8 +59,8 @@ public class AreaController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    // TODO: 권한 처리(MANAGER, MASTER), Auditing
     // 운영 지역 수정
+    @PreAuthorize("hasAnyRole('MANAGER', 'MASTER')")
     @PutMapping("/{areaId}")
     public ResponseEntity<ApiResponse<AreaResponse>> updateArea(@PathVariable UUID areaId, @Valid @RequestBody AreaUpdateRequest request) {
 
@@ -69,12 +69,12 @@ public class AreaController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    // TODO: 권한 처리(MASTER), Auditing (+ softDelete)
     // 운영 지역 삭제
+    @PreAuthorize("hasAnyRole('MASTER')")
     @DeleteMapping("/{areaId}")
-    public ResponseEntity<ApiResponse<Void>> deleteArea(@PathVariable UUID areaId) {
+    public ResponseEntity<ApiResponse<Void>> deleteArea(@PathVariable UUID areaId,@AuthenticationPrincipal UUID userId) {
 
-        areaService.deleteArea(areaId);
+        areaService.deleteArea(areaId,userId);
 
         return ResponseEntity.noContent().build();
     }
