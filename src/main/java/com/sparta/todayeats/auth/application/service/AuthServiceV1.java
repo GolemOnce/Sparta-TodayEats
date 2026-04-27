@@ -11,7 +11,6 @@ import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import com.sparta.todayeats.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,12 +53,18 @@ public class AuthServiceV1 {
         }
 
         // 사용자 생성 및 저장
-        User user = User.builder()
-                .email(email)
-                .password(passwordEncoder.encode(password))
-                .nickname(request.getNickname())
-                .role(request.getRole())
-                .build();
+        request.encodePassword(passwordEncoder.encode(password));
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user != null) {
+            user.restore(request);
+        } else {
+            user = User.builder()
+                    .email(email)
+                    .password(request.getPassword())
+                    .nickname(request.getNickname())
+                    .role(request.getRole())
+                    .build();
+        }
         userRepository.save(user);
 
         // Redis에 이메일 인증 여부 삭제
@@ -70,12 +75,16 @@ public class AuthServiceV1 {
 
     public SendCodeResponse sendSignupCode(String email) {
         // 이메일 중복 확인
-        if (userRepository.existsByEmail(email)) {
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user != null && !user.isDeleted()) {
             throw new BaseException(UserErrorCode.DUPLICATE_EMAIL);
         }
 
         // 인증번호 생성
         String code = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
+
+        // 메일 전송
+        authMailService.sendSignupCode(email, code);
 
         // Redis에 인증번호 저장
         redisTemplate.opsForValue().set(
@@ -83,9 +92,6 @@ public class AuthServiceV1 {
                 code,
                 Duration.ofMinutes(CODE_VALID_MINUTES)
         );
-
-        // 메일 전송
-        authMailService.sendSignupCode(email, code);
 
         return new SendCodeResponse(email, LocalDateTime.now().plusMinutes(CODE_VALID_MINUTES));
     }
@@ -113,8 +119,10 @@ public class AuthServiceV1 {
 
     public LoginResponse login(String email, String password) {
         // 사용자 조회
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BaseException(UserErrorCode.USER_NOT_FOUND));
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null || user.isDeleted()) {
+            throw new BaseException(UserErrorCode.USER_NOT_FOUND);
+        }
 
         // 비밀번호 일치 확인
         if (!passwordEncoder.matches(password, user.getPassword())) {
@@ -127,10 +135,10 @@ public class AuthServiceV1 {
         String accessToken = jwtTokenProvider.createAccessToken(userId, role);
         String refreshToken = jwtTokenProvider.createRefreshToken(userId);
 
-        // Redis에 Refresh Token 저장
+        // Redis에 순수 Refresh Token 저장
         redisTemplate.opsForValue().set(
                 RT_PREFIX + userId,
-                refreshToken,
+                jwtTokenProvider.substringToken(refreshToken),
                 jwtTokenProvider.getRefreshTokenValidityDuration()
         );
 
@@ -145,17 +153,18 @@ public class AuthServiceV1 {
 
     public TokenResponse reissue(String refreshToken) {
         // 토큰 유효성 검사
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
+        String pureToken = jwtTokenProvider.substringToken(refreshToken);
+        if (pureToken == null || !jwtTokenProvider.validateToken(pureToken)) {
             throw new BaseException(AuthErrorCode.INVALID_TOKEN);
         }
 
         // userId 추출
-        UUID userId = jwtTokenProvider.getUserId(refreshToken);
+        UUID userId = jwtTokenProvider.getUserId(pureToken);
 
         // Refresh Token 조회
         String rtKey = RT_PREFIX + userId;
         String savedRefreshToken = redisTemplate.opsForValue().get(rtKey);
-        if (savedRefreshToken == null || !savedRefreshToken.equals(refreshToken)) {
+        if (savedRefreshToken == null || !savedRefreshToken.equals(pureToken)) {
             throw new BaseException(AuthErrorCode.INVALID_TOKEN);
         }
 
@@ -165,24 +174,25 @@ public class AuthServiceV1 {
         String newAccessToken = jwtTokenProvider.createAccessToken(userId, user.getRole());
         String newRefreshToken = jwtTokenProvider.createRefreshToken(userId);
 
-        // Redis에 Refresh Token 저장
+        // Redis에 순수 Refresh Token 저장
         redisTemplate.opsForValue().set(
                 rtKey,
-                newRefreshToken,
+                jwtTokenProvider.substringToken(newRefreshToken),
                 jwtTokenProvider.getRefreshTokenValidityDuration()
         );
 
         return new TokenResponse(newAccessToken, newRefreshToken);
     }
 
-    public void logout(Authentication authentication) {
-        // Redis에서 Refresh Token 삭제
-        redisTemplate.delete(RT_PREFIX + authentication.getPrincipal());
+    public void logout(String userId) {
+        // Redis에서 순수 Refresh Token 삭제
+        redisTemplate.delete(RT_PREFIX + userId);
     }
 
     public SendCodeResponse sendPasswordResetLink(String email) {
-        // 이메일 존재 시에만 수행
-        if (userRepository.existsByEmail(email)) {
+        // 삭제되지 않은 사용자만
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user != null && !user.isDeleted()) {
             // 인증번호 생성
             String code = UUID.randomUUID().toString();
 
@@ -194,7 +204,7 @@ public class AuthServiceV1 {
             );
 
             // 메일 전송
-            authMailService.sendResetPasswordLink(email, code);
+            authMailService.sendPasswordResetLink(email, code);
         }
 
         return new SendCodeResponse(email, LocalDateTime.now().plusMinutes(CODE_VALID_MINUTES));
@@ -206,7 +216,7 @@ public class AuthServiceV1 {
         return new ConfirmCodeResponse(getEmailByResetCode(code));
     }
 
-    public PasswordResetResponse passwordReset(String code, String newPassword, String confirmPassword) {
+    public ResetPasswordResponse resetPassword(String code, String newPassword, String confirmPassword) {
         // 인증번호 조회
         String email = getEmailByResetCode(code);
 
@@ -216,14 +226,17 @@ public class AuthServiceV1 {
         }
 
         // 사용자 조회 및 비밀번호 변경
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new BaseException(UserErrorCode.USER_NOT_FOUND));
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null || user.isDeleted()) {
+            throw new BaseException(UserErrorCode.USER_NOT_FOUND);
+        }
         user.updatePassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
 
         // Redis에 인증번호 삭제
         redisTemplate.delete(RESET_PASSWORD_PREFIX + code);
 
-        return new PasswordResetResponse(user.getEmail(), user.getUpdatedAt());
+        return new ResetPasswordResponse(user.getEmail(), user.getUpdatedAt());
     }
 
     private String getEmailByResetCode(String code) {

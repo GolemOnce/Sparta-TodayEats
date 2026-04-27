@@ -1,0 +1,515 @@
+package com.sparta.todayeats.store.service;
+
+import com.sparta.todayeats.area.domain.entity.Area;
+import com.sparta.todayeats.area.domain.repository.AreaRepository;
+import com.sparta.todayeats.category.domain.entity.Category;
+import com.sparta.todayeats.category.domain.repository.CategoryRepository;
+import com.sparta.todayeats.global.exception.BaseException;
+import com.sparta.todayeats.global.response.PageResponse;
+import com.sparta.todayeats.store.dto.request.StoreCreateRequest;
+import com.sparta.todayeats.store.dto.request.StoreHiddenRequest;
+import com.sparta.todayeats.store.dto.request.StoreUpdateRequest;
+import com.sparta.todayeats.store.dto.response.StoreCreateResponse;
+import com.sparta.todayeats.store.dto.response.StoreHiddenResponse;
+import com.sparta.todayeats.store.dto.response.StoreResponse;
+import com.sparta.todayeats.store.entity.Store;
+import com.sparta.todayeats.store.repository.StoreRepository;
+import com.sparta.todayeats.user.domain.entity.User;
+import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
+import com.sparta.todayeats.user.domain.repository.UserRepository;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+
+@ExtendWith(MockitoExtension.class)
+class StoreServiceTest {
+
+    @InjectMocks
+    private StoreService storeService;
+
+    @Mock
+    private StoreRepository storeRepository;
+
+    @Mock
+    private AreaRepository areaRepository;
+
+    @Mock
+    private CategoryRepository categoryRepository;
+
+    @Mock
+    private UserRepository userRepository;
+
+    // 공통 픽스처
+    private User createUser(UUID userId) {
+        User user = User.builder()
+                .email("owner@test.com")
+                .password("Test1234!")
+                .nickname("테스트사장")
+                .role(UserRoleEnum.OWNER)
+                .build();
+
+        try {
+            java.lang.reflect.Field field = User.class.getDeclaredField("userId");
+            field.setAccessible(true);
+            field.set(user, userId);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return user;
+    }
+
+    private Area createArea() {
+        return Area.builder()
+                .id(UUID.randomUUID())
+                .name("이태원")
+                .city("서울특별시")
+                .district("용산구")
+                .isActive(true)
+                .build();
+    }
+
+    private Category createCategory() {
+        return Category.builder()
+                .id(UUID.randomUUID())
+                .name("한식")
+                .build();
+    }
+
+    private Store createStore(User owner, Area area, Category category) {
+        return Store.builder()
+                .owner(owner)
+                .area(area)
+                .category(category)
+                .name("맛있는 치킨")
+                .address("서울특별시 용산구 이태원로 123")
+                .phone("02-1234-5678")
+                .build();
+    }
+
+
+    // 가게 생성
+    @Nested
+    @DisplayName("가게 생성")
+    class CreateStore {
+
+        @Test
+        void 가게_생성_성공() {
+            // given
+            UUID userId = UUID.randomUUID();
+            User owner = createUser(userId);
+            Area area = createArea();
+            Category category = createCategory();
+
+            StoreCreateRequest request = new StoreCreateRequest(
+                    "맛있는 치킨",
+                    "서울특별시 용산구 이태원로 123",
+                    "02-1234-5678",
+                    area.getId(),
+                    category.getId()
+            );
+
+            given(storeRepository.existsByNameIgnoreCase("맛있는 치킨")).willReturn(false);
+            given(userRepository.findById(userId)).willReturn(Optional.of(owner));
+            given(areaRepository.findById(area.getId())).willReturn(Optional.of(area));
+            given(categoryRepository.findById(category.getId())).willReturn(Optional.of(category));
+            given(storeRepository.save(any(Store.class))).willAnswer(invocation -> {
+                Store s = invocation.getArgument(0);
+                return Store.builder()
+                        .owner(s.getOwner())
+                        .area(s.getArea())
+                        .category(s.getCategory())
+                        .name(s.getName())
+                        .address(s.getAddress())
+                        .phone(s.getPhone())
+                        .build();
+            });
+
+            // when
+            StoreCreateResponse result = storeService.createStore(request, userId);
+
+            // then
+            assertThat(result.getName()).isEqualTo("맛있는 치킨");
+            assertThat(result.getOwnerNickname()).isEqualTo("테스트사장");
+            assertThat(result.getAreaName()).isEqualTo("이태원");
+            assertThat(result.getCategoryName()).isEqualTo("한식");
+        }
+
+        @Test
+        void 가게_이름이_중복이면_예외발생() {
+            // given
+            UUID userId = UUID.randomUUID();
+
+            StoreCreateRequest request = new StoreCreateRequest(
+                    "맛있는 치킨",
+                    "서울특별시 용산구 이태원로 123",
+                    "02-1234-5678",
+                    UUID.randomUUID(),
+                    UUID.randomUUID()
+            );
+
+            given(storeRepository.existsByNameIgnoreCase("맛있는 치킨")).willReturn(true);
+
+            // when & then
+            assertThatThrownBy(() ->
+                    storeService.createStore(request, userId)
+            ).isInstanceOf(BaseException.class);
+        }
+
+        @Test
+        void 소유자가_존재하지_않으면_예외발생() {
+            // given
+            UUID userId = UUID.randomUUID();
+
+            StoreCreateRequest request = new StoreCreateRequest(
+                    "맛있는 치킨",
+                    "서울특별시 용산구 이태원로 123",
+                    "02-1234-5678",
+                    UUID.randomUUID(),
+                    UUID.randomUUID()
+            );
+
+            given(storeRepository.existsByNameIgnoreCase("맛있는 치킨")).willReturn(false);
+            given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() ->
+                    storeService.createStore(request, userId)
+            ).isInstanceOf(BaseException.class);
+        }
+    }
+
+
+    // 가게 목록 조회
+    @Nested
+    @DisplayName("가게 목록 조회")
+    class GetStores {
+
+        @Test
+        void 가게_전체조회_성공() {
+            // given
+            Pageable pageable = PageRequest.of(0, 10);
+            User owner = createUser(UUID.randomUUID());
+            Area area = createArea();
+            Category category = createCategory();
+            Store store = createStore(owner, area, category);
+
+            Page<Store> pageResult = new PageImpl<>(List.of(store), pageable, 1);
+
+            given(storeRepository.searchStores(null, null, pageable)).willReturn(pageResult);
+
+            // when
+            PageResponse<StoreResponse> result = storeService.getStores(null, null, pageable);
+
+            // then
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).getName()).isEqualTo("맛있는 치킨");
+        }
+
+        @Test
+        void 카테고리_이름으로_검색조회_성공() {
+            // given
+            Pageable pageable = PageRequest.of(0, 10);
+            User owner = createUser(UUID.randomUUID());
+            Area area = createArea();
+            Category category = createCategory();
+            Store store = createStore(owner, area, category);
+
+            Page<Store> pageResult = new PageImpl<>(List.of(store), pageable, 1);
+
+            given(storeRepository.searchStores("한식", null, pageable)).willReturn(pageResult);
+
+            // when
+            PageResponse<StoreResponse> result = storeService.getStores("한식", null, pageable);
+
+            // then
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).getCategoryName()).isEqualTo("한식");
+        }
+
+        @Test
+        void 가게이름으로_검색조회_성공() {
+            // given
+            Pageable pageable = PageRequest.of(0, 10);
+            User owner = createUser(UUID.randomUUID());
+            Area area = createArea();
+            Category category = createCategory();
+            Store store = createStore(owner, area, category);
+
+            Page<Store> pageResult = new PageImpl<>(List.of(store), pageable, 1);
+
+            given(storeRepository.searchStores(null, "치킨", pageable)).willReturn(pageResult);
+
+            // when
+            PageResponse<StoreResponse> result = storeService.getStores(null, "치킨", pageable);
+
+            // then
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).getName()).isEqualTo("맛있는 치킨");
+        }
+
+        @Test
+        void 카테고리_이름_복합검색_성공() {
+            // given
+            Pageable pageable = PageRequest.of(0, 10);
+            User owner = createUser(UUID.randomUUID());
+            Area area = createArea();
+            Category category = createCategory();
+            Store store = createStore(owner, area, category);
+
+            Page<Store> pageResult = new PageImpl<>(List.of(store), pageable, 1);
+
+            given(storeRepository.searchStores("한식", "치킨", pageable)).willReturn(pageResult);
+
+            // when
+            PageResponse<StoreResponse> result = storeService.getStores("한식", "치킨", pageable);
+
+            // then
+            assertThat(result.getContent()).hasSize(1);
+            assertThat(result.getContent().get(0).getName()).isEqualTo("맛있는 치킨");
+        }
+    }
+
+
+    // 가게 단건 조회
+    @Nested
+    @DisplayName("가게 단건 조회")
+    class GetStore {
+
+        @Test
+        void 가게_단건조회_성공() {
+            // given
+            UUID storeId = UUID.randomUUID();
+            User owner = createUser(UUID.randomUUID());
+            Area area = createArea();
+            Category category = createCategory();
+            Store store = createStore(owner, area, category);
+
+            given(storeRepository.findByIdWithOwner(storeId)).willReturn(Optional.of(store));
+
+            // when
+            StoreResponse result = storeService.getStore(storeId);
+
+            // then
+            assertThat(result.getName()).isEqualTo("맛있는 치킨");
+            assertThat(result.getOwnerNickname()).isEqualTo("테스트사장");
+        }
+
+        @Test
+        void 가게가_존재하지_않으면_예외발생() {
+            // given
+            UUID storeId = UUID.randomUUID();
+
+            given(storeRepository.findByIdWithOwner(storeId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() ->
+                    storeService.getStore(storeId)
+            ).isInstanceOf(BaseException.class);
+        }
+    }
+
+
+    // 가게 수정
+    @Nested
+    @DisplayName("가게 수정")
+    class UpdateStore {
+
+        @Test
+        void 가게_수정_성공() {
+            // given
+            UUID userId = UUID.randomUUID();
+            User owner = createUser(userId);
+            Area area = createArea();
+            Category category = createCategory();
+            Store store = createStore(owner, area, category);
+
+            given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.of(store));
+
+            StoreUpdateRequest request = new StoreUpdateRequest(
+                    "수정된 치킨집",
+                    "서울특별시 용산구 이태원로 999",
+                    "02-9999-9999"
+            );
+
+            // when
+            StoreResponse result = storeService.updateStore(UUID.randomUUID(), request, userId);
+
+            // then
+            assertThat(result.getName()).isEqualTo("수정된 치킨집");
+            assertThat(result.getAddress()).isEqualTo("서울특별시 용산구 이태원로 999");
+        }
+
+        @Test
+        void 본인_가게가_아니면_예외발생() {
+            // given
+            UUID ownerId = UUID.randomUUID();
+            UUID otherUserId = UUID.randomUUID();  // 다른 사용자
+            User owner = createUser(ownerId);
+            Store store = createStore(owner, createArea(), createCategory());
+
+            given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.of(store));
+
+            StoreUpdateRequest request = new StoreUpdateRequest(
+                    "수정된 치킨집",
+                    "서울특별시 용산구 이태원로 999",
+                    null
+            );
+
+            // when & then
+            assertThatThrownBy(() ->
+                    storeService.updateStore(UUID.randomUUID(), request, otherUserId)
+            ).isInstanceOf(BaseException.class);
+        }
+
+        @Test
+        void 가게가_존재하지_않으면_예외발생() {
+            // given
+            UUID userId = UUID.randomUUID();
+
+            given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.empty());
+
+            StoreUpdateRequest request = new StoreUpdateRequest(
+                    "수정된 치킨집",
+                    "서울특별시 용산구 이태원로 999",
+                    null
+            );
+
+            // when & then
+            assertThatThrownBy(() ->
+                    storeService.updateStore(UUID.randomUUID(), request, userId)
+            ).isInstanceOf(BaseException.class);
+        }
+    }
+
+
+    // 가게 삭제
+    @Nested
+    @DisplayName("가게 삭제")
+    class DeleteStore {
+
+        @Test
+        void 가게_삭제_성공() {
+            // given
+            UUID userId = UUID.randomUUID();
+            User owner = createUser(userId);
+            Store store = createStore(owner, createArea(), createCategory());
+
+            given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.of(store));
+
+            // when
+            storeService.deleteStore(UUID.randomUUID(), userId);
+
+            // then
+            assertThat(store.isDeleted()).isTrue();
+        }
+
+        @Test
+        void 본인_가게가_아니면_예외발생() {
+            // given
+            UUID ownerId = UUID.randomUUID();
+            UUID otherUserId = UUID.randomUUID();
+            User owner = createUser(ownerId);
+            Store store = createStore(owner, createArea(), createCategory());
+
+            given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.of(store));
+
+            // when & then
+            assertThatThrownBy(() ->
+                    storeService.deleteStore(UUID.randomUUID(), otherUserId)
+            ).isInstanceOf(BaseException.class);
+        }
+
+        @Test
+        void 가게가_존재하지_않으면_예외발생() {
+            // given
+            UUID userId = UUID.randomUUID();
+
+            given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() ->
+                    storeService.deleteStore(UUID.randomUUID(), userId)
+            ).isInstanceOf(BaseException.class);
+        }
+    }
+
+
+    // 가게 숨김 처리
+    @Nested
+    @DisplayName("가게 숨김 처리")
+    class UpdateHidden {
+
+        @Test
+        void 가게_숨김처리_성공() {
+            // given
+            UUID userId = UUID.randomUUID();
+            User owner = createUser(userId);
+            Store store = createStore(owner, createArea(), createCategory());
+
+            given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.of(store));
+
+            StoreHiddenRequest request = new StoreHiddenRequest(true);
+
+            // when
+            StoreHiddenResponse result = storeService.updateHidden(UUID.randomUUID(), request, userId);
+
+            // then
+            assertThat(result.getIsHidden()).isTrue();
+        }
+
+        @Test
+        void 가게_숨김해제_성공() {
+            // given
+            UUID userId = UUID.randomUUID();
+            User owner = createUser(userId);
+            Store store = createStore(owner, createArea(), createCategory());
+            store.hide(); // 미리 숨김 처리
+
+            given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.of(store));
+
+            StoreHiddenRequest request = new StoreHiddenRequest(false);
+
+            // when
+            StoreHiddenResponse result = storeService.updateHidden(UUID.randomUUID(), request, userId);
+
+            // then
+            assertThat(result.getIsHidden()).isFalse();
+        }
+
+        @Test
+        void 본인_가게가_아니면_예외발생() {
+            // given
+            UUID ownerId = UUID.randomUUID();
+            UUID otherUserId = UUID.randomUUID();
+            User owner = createUser(ownerId);
+            Store store = createStore(owner, createArea(), createCategory());
+
+            given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.of(store));
+
+            StoreHiddenRequest request = new StoreHiddenRequest(true);
+
+            // when & then
+            assertThatThrownBy(() ->
+                    storeService.updateHidden(UUID.randomUUID(), request, otherUserId)
+            ).isInstanceOf(BaseException.class);
+        }
+    }
+}
