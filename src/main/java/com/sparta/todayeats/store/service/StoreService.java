@@ -153,14 +153,18 @@ public class StoreService {
 
     // 가게 숨김 처리
     @Transactional
-    public StoreHiddenResponse updateHidden(UUID storeId, StoreHiddenRequest request, UUID userId) {
+    public StoreHiddenResponse updateHidden(UUID storeId, StoreHiddenRequest request, UUID userId,  Authentication authentication) {
 
         // 숨김 처리 대상 가게 조회
         Store store = getStoreEntity(storeId);
 
-        // TODO: 인증 구현 후 MANAGER, MASTER는 본인 가게 아니어도 숨김 처리 가능하도록 분기
-        // 본인 가게인지 확인
-        validateStoreOwner(store, userId);
+        // MANAGER, MASTER는 모든 가게 숨김 처리 가능 / OWNER는 본인 가게만 가능
+        boolean isManagerOrMaster = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER") || a.getAuthority().equals("ROLE_MASTER"));
+
+        if (!isManagerOrMaster) {
+            validateStoreOwner(store, userId);
+        }
 
         // 숨김 처리
         if (request.getIsHidden()) {
