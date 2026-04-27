@@ -1,9 +1,9 @@
 package com.sparta.todayeats.payment.service;
 
+import com.sparta.todayeats.auth.application.service.AuthServiceV1;
 import com.sparta.todayeats.category.presentation.dto.PageResponse;
-import com.sparta.todayeats.global.exception.BaseException;
-import com.sparta.todayeats.global.exception.OrderErrorCode;
-import com.sparta.todayeats.global.exception.PaymentErrorCode;
+import com.sparta.todayeats.global.exception.*;
+import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.order.entity.OrderStatus;
 import com.sparta.todayeats.order.repository.OrderRepository;
@@ -12,10 +12,15 @@ import com.sparta.todayeats.payment.entity.Payment;
 import com.sparta.todayeats.payment.entity.PaymentStatus;
 import com.sparta.todayeats.payment.repository.PaymentRepository;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
+import com.sparta.todayeats.user.domain.entity.User;
+import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
+import com.sparta.todayeats.user.domain.repository.UserRepository;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +31,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaymentService {
     private final PaymentRepository paymentRepository;
+
+    //
     private final OrderRepository orderRepository;
+    private final AuthServiceV1 authService;
+    private final UserRepository userRepository;
+    private final UserAuthorizationService userAuthorizationService;
 
     // 결제처리
     @Transactional
@@ -78,8 +88,21 @@ public class PaymentService {
 
     // 목록 조회
     @Transactional(readOnly = true)
-    public PaymentPageResponse getPagedPayments(UUID userId, Pageable pageable) {
-        Page<Payment> payments = paymentRepository.findByOrder_userId(userId, pageable);
+    public PaymentPageResponse getPagedPayments(UUID userId, @Nullable UUID targetUserId, Pageable pageable) {
+
+        UUID queryId;
+
+        if (targetUserId == null || userId.equals(targetUserId)) {
+            // 본인 조회
+            queryId = userId;
+        } else {
+            // 타인 조회 → 관리자 권한 필요
+            User user = userAuthorizationService.getUserById(userId);
+            userAuthorizationService.validateAdmin(user);
+            queryId = targetUserId;
+        }
+
+        Page<Payment> payments = paymentRepository.findByOrder_userId(queryId, pageable);
         return PaymentPageResponse.from(payments);
     }
 
