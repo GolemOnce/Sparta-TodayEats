@@ -6,6 +6,7 @@ import com.sparta.todayeats.menu.presentation.dto.request.MenuCreateRequest;
 import com.sparta.todayeats.menu.presentation.dto.request.MenuUpdateRequest;
 import com.sparta.todayeats.menu.presentation.dto.response.MenuResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import org.springframework.data.domain.Page;
@@ -86,8 +87,11 @@ public class MenuControllerV1 {
     // 메뉴 삭제
     // DELETE /api/v1/menus/{menuId}
     @DeleteMapping("/api/v1/menus/{menuId}")
-    public void deleteMenu(@PathVariable UUID menuId) {
-        menuService.deleteMenu(menuId);
+    public void deleteMenu(
+            @PathVariable UUID menuId,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        menuService.deleteMenu(menuId, userId);
     }
 
     // 페이징
