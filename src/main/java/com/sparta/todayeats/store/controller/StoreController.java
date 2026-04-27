@@ -17,6 +17,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -40,19 +41,19 @@ public class StoreController {
                 .body(ApiResponse.created(response));
     }
 
-    // TODO: CUSTOMER → isHidden = false 인 것만 노출
-    // TODO: OWNER/MANAGER/MASTER → 숨김 포함 전체 노출
     // 가게 목록 조회 + 복합 검색 (카테고리, 이름)
+    // CUSTOMER,비로그인: 공개 가게만 노출 / OWNER,MANAGER,MASTER: 숨김 포함 전체 노출
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<StoreResponse>>> getStores(
             @RequestParam(required = false) String categoryName,
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
-            Pageable pageable) {
-        PageResponse<StoreResponse> response = storeService.getStores(categoryName, keyword, pageable);
+            Pageable pageable,
+            Authentication authentication) {
+        PageResponse<StoreResponse> response = storeService.getStores(categoryName, keyword, pageable, authentication);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
-    
+
     // 가게 단건 조회
     @GetMapping("/{storeId}")
     public ResponseEntity<ApiResponse<StoreResponse>> getStore(
