@@ -262,6 +262,7 @@ public class OrderService {
 
         int rows = orderRepository.cancelConditionally(orderId, request != null ? request.cancelReason() : null, OrderStatus.PENDING.name(), OrderStatus.CANCELED.name(), userId);
         if (rows == 0) {
+            order.cancelByCustomer(); // 시간 초과면 CANCEL_TIME_EXCEEDED, 아니면 통과
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
 
