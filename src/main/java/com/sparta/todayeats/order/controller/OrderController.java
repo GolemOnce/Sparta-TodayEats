@@ -8,6 +8,7 @@ import com.sparta.todayeats.order.dto.request.*;
 import com.sparta.todayeats.order.dto.response.*;
 import com.sparta.todayeats.order.service.OrderService;
 import com.sparta.todayeats.order.entity.OrderStatus;
+import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -37,13 +40,12 @@ public class OrderController {
      */
     @PostMapping
     public ResponseEntity<ApiResponse<CreateOrderResponse>> createOrder(
-            @Valid @RequestBody CreateOrderRequest request
-            //@AuthenticationPrincipal UserDetailsImpl userDetails  // TODO: JWT 완성 후 주석 해제
+            @Valid @RequestBody CreateOrderRequest request,
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication
     ) {
-        // TODO: JWT 완성 후 아래로 교체
-        // CreateOrderResponse data = orderService.createOrder(request, userDetails.getUserId(), userDetails.getRole());
-        UUID userId = null; // TODO: JWT 완성 후 제거
-        CreateOrderResponse data = orderService.createOrder(request, userId);
+        UserRoleEnum role = extractRole(authentication);
+        CreateOrderResponse data = orderService.createOrder(request, userId, role);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.created(data));
     }
@@ -189,5 +191,15 @@ public class OrderController {
         if (pageSize != 10 && pageSize != 30 && pageSize != 50) {
             throw new BaseException(CommonErrorCode.INVALID_PAGE_SIZE);
         }
+    }
+
+    /**
+     * Authentication에서 UserRoleEnum 추출
+     */
+    private UserRoleEnum extractRole(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .findFirst()
+                .map(a -> UserRoleEnum.valueOf(a.getAuthority().replace("ROLE_", "")))
+                .orElseThrow(() -> new BaseException(CommonErrorCode.FORBIDDEN));
     }
 }

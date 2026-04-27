@@ -13,6 +13,7 @@ import com.sparta.todayeats.order.dto.request.*;
 import com.sparta.todayeats.order.dto.response.*;
 import com.sparta.todayeats.store.domain.entity.StoreEntity;
 import com.sparta.todayeats.store.domain.repository.StoreRepository;
+import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -39,17 +40,13 @@ public class OrderService {
      * - 가게/배송지/메뉴 존재 검증
      * - 주문 시점 스냅샷 저장 (가게명, 배송지, 메뉴명, 단가)
      * - totalPrice 서버에서 계산 (클라이언트 값 신뢰 안 함)
-     * TODO: JWT 완성 후 주석 해제
      * - CUSTOMER만 주문 생성 가능
      */
     @Transactional
-    public CreateOrderResponse createOrder(CreateOrderRequest request, UUID userId
-                                           //, UserRole role  // TODO: JWT 완성 후 주석 해제
-    ) {
-        // TODO: JWT 완성 후 주석 해제
-        // if (role != UserRole.CUSTOMER) {
-        //     throw new BaseException(CommonErrorCode.FORBIDDEN);
-        // }
+    public CreateOrderResponse createOrder(CreateOrderRequest request, UUID userId, UserRoleEnum role) {
+        if (role != UserRoleEnum.CUSTOMER) {
+            throw new BaseException(CommonErrorCode.FORBIDDEN);
+        }
 
         // 가게 조회 및 검증
         StoreEntity store = storeRepository.findActiveById(request.storeId())
@@ -58,6 +55,9 @@ public class OrderService {
         // 배송지 조회 및 검증 (주소 스냅샷용)
         AddressEntity address = addressRepository.findActiveById(request.addressId())
                 .orElseThrow(() -> new BaseException(AddressErrorCode.ADDRESS_NOT_FOUND));
+        if (!address.getUserId().equals(userId)) {
+            throw new BaseException(CommonErrorCode.FORBIDDEN);
+        }
 
         // 주문 엔티티 생성
         Order order = Order.builder()
