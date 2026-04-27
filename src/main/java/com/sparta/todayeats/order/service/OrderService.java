@@ -137,9 +137,11 @@ public class OrderService {
         } else if (role == UserRoleEnum.MANAGER) {
             return orderRepository.searchAllOrders(status, storeName, pageable)
                     .map(OrderSummaryResponse::from);
-        } else {
+        } else if (role == UserRoleEnum.MASTER) {
             return orderRepository.searchAllOrdersIncludeDeleted(status, storeName, pageable)
                     .map(OrderSummaryResponse::from);
+        } else {
+            throw new BaseException(CommonErrorCode.FORBIDDEN);
         }
     }
 
@@ -163,6 +165,8 @@ public class OrderService {
             if (!store.getOwner().getUserId().equals(userId)) {
                 throw new BaseException(CommonErrorCode.FORBIDDEN);
             }
+        } else if (role != UserRoleEnum.MANAGER && role != UserRoleEnum.MASTER) {
+            throw new BaseException(CommonErrorCode.FORBIDDEN);
         }
 
         return OrderDetailResponse.from(order);
@@ -217,6 +221,8 @@ public class OrderService {
             if (!store.getOwner().getUserId().equals(userId)) {
                 throw new BaseException(CommonErrorCode.FORBIDDEN);
             }
+        } else if (role != UserRoleEnum.MANAGER && role != UserRoleEnum.MASTER) {
+            throw new BaseException(CommonErrorCode.FORBIDDEN);
         }
 
         order.validateStatusTransition(request.status()); // 검증만 (validateTransition)
@@ -292,6 +298,8 @@ public class OrderService {
             if (!store.getOwner().getUserId().equals(userId)) {
                 throw new BaseException(CommonErrorCode.FORBIDDEN);
             }
+        } else if (role != UserRoleEnum.MANAGER && role != UserRoleEnum.MASTER) {
+            throw new BaseException(CommonErrorCode.FORBIDDEN);
         }
 
         order.rejectByOwner();  // 검증만
