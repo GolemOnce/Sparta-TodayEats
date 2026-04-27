@@ -221,7 +221,7 @@ public class OrderService {
 
         order.validateStatusTransition(request.status()); // 검증만 (validateTransition)
 
-        int rows = orderRepository.updateStatusConditionally(orderId, order.getStatus(), request.status());
+        int rows = orderRepository.updateStatusConditionally(orderId, order.getStatus(), request.status(), userId);
         if (rows == 0) {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
@@ -254,7 +254,7 @@ public class OrderService {
 
         order.cancelByCustomer();  // 검증만
 
-        int rows = orderRepository.cancelConditionally(orderId, request != null ? request.cancelReason() : null, OrderStatus.PENDING.name(), OrderStatus.CANCELED.name());
+        int rows = orderRepository.cancelConditionally(orderId, request != null ? request.cancelReason() : null, OrderStatus.PENDING.name(), OrderStatus.CANCELED.name(), userId);
         if (rows == 0) {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
@@ -296,7 +296,7 @@ public class OrderService {
 
         order.rejectByOwner();  // 검증만
 
-        int rows = orderRepository.rejectConditionally(orderId, request != null ? request.rejectReason() : null, OrderStatus.PENDING, OrderStatus.REJECTED);
+        int rows = orderRepository.rejectConditionally(orderId, request != null ? request.rejectReason() : null, OrderStatus.PENDING, OrderStatus.REJECTED, userId);
         if (rows == 0) {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
