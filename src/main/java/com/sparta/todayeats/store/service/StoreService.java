@@ -42,15 +42,17 @@ public class StoreService {
     // 가게 생성
     @Transactional
     public StoreCreateResponse createStore(StoreCreateRequest request, UUID userId) {
+        // 운영 지역 조회
+        Area area = getAreaEntity(request.getAreaId());
+
+        // 운영 지역 활성화 여부 확인
+        validateAreaActive(area);
 
         // 가게 이름 중복 검증
         validateDuplicateStore(request.getName());
 
         // 소유자 조회
         User owner = getUserEntity(userId);
-
-        // 운영 지역 조회
-        Area area = getAreaEntity(request.getAreaId());
 
         // 카테고리 조회
         Category category = getCategoryEntity(request.getCategoryId());
@@ -200,6 +202,13 @@ public class StoreService {
     private Category getCategoryEntity(UUID categoryId) {
         return categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new BaseException(CategoryErrorCode.CATEGORY_NOT_FOUND));
+    }
+
+    // 운영 지역 활성화 여부 확인
+    private void validateAreaActive(Area area) {
+        if (!area.getIsActive()) {
+            throw new BaseException(AreaErrorCode.AREA_INACTIVE);
+        }
     }
 
     // 가게  이름 중복 여부 확인 (삭제 안 된 것만 중복 체크)
