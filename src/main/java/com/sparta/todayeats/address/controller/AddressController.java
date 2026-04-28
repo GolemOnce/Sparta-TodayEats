@@ -65,7 +65,7 @@ public class AddressController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
     // 기본 배송지 설정
-    @PatchMapping("/{addressId}")
+    @PatchMapping("/{addressId}/default")
     public ResponseEntity<ApiResponse<AddressDefaultResponse>> setDefaultAddress(
             @PathVariable UUID addressId,
             @AuthenticationPrincipal UUID userId
