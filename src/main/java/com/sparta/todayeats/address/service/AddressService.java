@@ -2,6 +2,7 @@ package com.sparta.todayeats.address.service;
 
 import com.sparta.todayeats.address.dto.reqeust.AddressCreateRequest;
 import com.sparta.todayeats.address.dto.response.AddressCreateResponse;
+import com.sparta.todayeats.address.dto.response.AddressPageResponse;
 import com.sparta.todayeats.address.entity.Address;
 import com.sparta.todayeats.address.repository.AddressRepository;
 import com.sparta.todayeats.global.exception.BaseException;
@@ -9,10 +10,11 @@ import com.sparta.todayeats.global.exception.UserErrorCode;
 import com.sparta.todayeats.user.domain.entity.User;
 import com.sparta.todayeats.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -55,6 +57,17 @@ public class AddressService {
     }
 
     // 배송지 조회
+    @Transactional(readOnly = true)
+    public AddressPageResponse getPagedAddresses(UUID userId, Pageable pageable) {
+        // userId 유효성 검증
+        if (!userRepository.existsById(userId)) {
+            throw new BaseException(UserErrorCode.USER_NOT_FOUND);
+        }
+
+        Page<Address> addresses = addressRepository.findByUserId(userId, pageable);
+
+        return AddressPageResponse.from(addresses);
+    }
 
     // 배송지 상세 조회
 
