@@ -24,11 +24,13 @@ public class Address extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "address")
     private String alias;
 
     @Column(nullable = false)
     private String address;
 
+    @Column(name = "detail")
     private String detail;
 
     private String zipCode;
