@@ -21,12 +21,12 @@ public class Address extends BaseEntity {
     private UUID id;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = true)
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     private String alias;
 
-    @Column(nullable = true)
+    @Column(nullable = false)
     private String address;
 
     private String detail;
