@@ -4,7 +4,6 @@ import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
 import com.sparta.todayeats.payment.dto.request.PaymentUpdateRequest;
 import com.sparta.todayeats.payment.dto.response.*;
-import com.sparta.todayeats.payment.entity.Payment;
 import com.sparta.todayeats.payment.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +27,7 @@ public class PaymentController {
     public ResponseEntity<ApiResponse<PaymentCreateResponse>> createPayment(
             @PathVariable("orderId") UUID orderId,
             @AuthenticationPrincipal UUID userId,
-            @RequestBody PaymentCreateRequest request) {
+            @Valid @RequestBody PaymentCreateRequest request) {
         PaymentCreateResponse response = paymentService.createPayment(orderId, userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
