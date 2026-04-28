@@ -1,14 +1,17 @@
 package com.sparta.todayeats.address.service;
 
 import com.sparta.todayeats.address.dto.reqeust.AddressCreateRequest;
+import com.sparta.todayeats.address.dto.reqeust.AddressUpdateRequest;
 import com.sparta.todayeats.address.dto.response.AddressCreateResponse;
 import com.sparta.todayeats.address.dto.response.AddressDetailResponse;
 import com.sparta.todayeats.address.dto.response.AddressPageResponse;
+import com.sparta.todayeats.address.dto.response.AddressUpdateResponse;
 import com.sparta.todayeats.address.entity.Address;
 import com.sparta.todayeats.address.repository.AddressRepository;
 import com.sparta.todayeats.global.exception.AddressErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.UserErrorCode;
+import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.user.domain.entity.User;
 import com.sparta.todayeats.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,7 @@ public class AddressService {
 
     //
     private final UserRepository userRepository;
+    private final UserAuthorizationService userAuthorizationService;
 
     // 배송지 등록
     @Transactional
@@ -74,18 +78,31 @@ public class AddressService {
     // 배송지 상세 조회
     @Transactional(readOnly = true)
     public AddressDetailResponse getDetailAddress(UUID userId, UUID addressId) {
+        // 1. 배송지 조회
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new BaseException(AddressErrorCode.ADDRESS_NOT_FOUND));
 
-        if (!address.getUser().getUserId().equals(userId)) {
-            throw new BaseException(AddressErrorCode.ADDRESS_ACCESS_DENIED);
-        }
+        // 2. 권한 확인
+        userAuthorizationService.validateSelf(userId, address.getUser().getUserId());
+
 
         return AddressDetailResponse.from(address);
     }
 
     // 배송지 수정
+    @Transactional
+    public AddressUpdateResponse updateAddress(UUID userId, UUID addressId, AddressUpdateRequest request) {
+        // 1. 배송지 조회
+        Address address =  addressRepository.findById(addressId)
+                .orElseThrow(() -> new BaseException(AddressErrorCode.ADDRESS_NOT_FOUND));
 
+        // 2. 권한 확인
+        userAuthorizationService.validateSelf(userId, address.getUser().getUserId());
+
+        address.updateAddress(request);
+
+        return AddressUpdateResponse.from(address);
+    }
     // 기본 배송지 설정
 
     // 배송지 삭제
