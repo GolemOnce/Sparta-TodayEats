@@ -224,6 +224,21 @@ class OrderServiceTest {
         }
 
         @Test
+        @DisplayName("실패 - 숨김 처리된 가게로 주문 생성 시도")
+        void 숨김_가게_주문생성_예외발생() {
+            // given
+            Store mockStore = mock(Store.class);
+            given(mockStore.getIsHidden()).willReturn(true);
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.createOrder(createOrderRequest(), userId, UserRoleEnum.CUSTOMER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(StoreErrorCode.STORE_NOT_FOUND));
+        }
+
+        @Test
         @DisplayName("실패 - CUSTOMER가 아닌 역할로 주문 생성 시도")
         void CUSTOMER_아닌_역할_주문생성_예외발생() {
             assertThatThrownBy(() -> orderService.createOrder(
@@ -984,6 +999,21 @@ class OrderServiceTest {
         }
 
         @Test
+        @DisplayName("실패 - MANAGER가 취소 시도")
+        void MANAGER_취소_예외발생() {
+            // given
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder()));
+
+            // when & then
+            assertThatThrownBy(() -> orderService.cancelOrder(
+                    orderId, new CancelOrderRequest("단순 변심"), userId, UserRoleEnum.MANAGER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(CommonErrorCode.FORBIDDEN));
+        }
+
+        @Test
         @DisplayName("실패 - CUSTOMER가 타인 주문 취소 시도")
         void CUSTOMER_타인_주문_취소_예외발생() {
             // given
@@ -1082,6 +1112,28 @@ class OrderServiceTest {
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.REJECTED);
             assertThat(result.rejectReason()).isNull();
+        }
+
+        @Test
+        @DisplayName("성공 - MASTER가 주문 거절")
+        void MASTER_주문_거절_성공() throws Exception {
+            // given
+            Order rejectedOrder = pendingOrder();
+            setStatus(rejectedOrder, OrderStatus.REJECTED);
+            setRejectReason(rejectedOrder, "운영자 거절");
+
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(pendingOrder()))
+                    .willReturn(Optional.of(rejectedOrder));
+            given(orderRepository.rejectConditionally(eq(orderId), eq("운영자 거절"), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED), eq(userId)))
+                    .willReturn(1);
+
+            // when
+            RejectOrderResponse result = orderService.rejectOrder(orderId, new RejectOrderRequest("운영자 거절"), userId, UserRoleEnum.MASTER);
+
+            // then
+            assertThat(result.status()).isEqualTo(OrderStatus.REJECTED);
+            assertThat(result.rejectReason()).isEqualTo("운영자 거절");
         }
 
         @Test
