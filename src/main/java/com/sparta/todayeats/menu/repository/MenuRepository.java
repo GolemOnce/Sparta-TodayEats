@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
 
 public interface MenuRepository extends JpaRepository<Menu, UUID> {
 
@@ -77,4 +78,12 @@ public interface MenuRepository extends JpaRepository<Menu, UUID> {
             @Param("keyword") String keyword,
             Pageable pageable
     );
+
+    // 주문 서비스용 - 삭제되지 않은 메뉴 단건 조회
+    @Query("""
+        SELECT m FROM Menu m
+        WHERE m.id = :menuId
+        AND m.deletedAt IS NULL
+    """)
+    Optional<Menu> findActiveById(@Param("menuId") UUID menuId);
 }

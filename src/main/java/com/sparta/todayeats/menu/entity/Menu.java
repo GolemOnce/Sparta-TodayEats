@@ -57,6 +57,15 @@ public class Menu extends BaseEntity {
     @JoinColumn(name = "store_id", nullable = false)
     private Store store;
 
+    // 주문 서비스 호환용 메서드
+    public UUID getMenuId() {
+        return this.id;
+    }
+
+    public UUID getStoreId() {
+        return this.store.getId();
+    }
+
     // 메서드
     public void assignCategory(Category category) {
         this.category = category;
