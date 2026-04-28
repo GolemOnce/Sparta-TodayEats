@@ -51,10 +51,9 @@ class MenuServiceTest {
         @Test
         @DisplayName("성공 - 메뉴 생성")
         void success() {
-            // given
-            UUID userId = UUID.randomUUID();
             UUID storeId = UUID.randomUUID();
             UUID categoryId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
 
             MenuCreateRequest request = new MenuCreateRequest(
                     "김치찌개",
@@ -68,17 +67,15 @@ class MenuServiceTest {
             Store store = mock(Store.class);
             User owner = mock(User.class);
 
-            given(store.getOwner()).willReturn(owner);
-            given(owner.getUserId()).willReturn(userId);
             given(categoryRepository.findById(categoryId)).willReturn(Optional.of(category));
             given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
+            given(store.getOwner()).willReturn(owner);
+            given(owner.getUserId()).willReturn(userId);
             given(menuRepository.save(any(Menu.class)))
                     .willAnswer(invocation -> invocation.getArgument(0));
 
-            // when
             Menu result = menuService.createMenu(storeId, request, userId);
 
-            // then
             assertThat(result.getName()).isEqualTo("김치찌개");
             assertThat(result.getPrice()).isEqualTo(9000);
             assertThat(result.getDescription()).isEqualTo("돼지고기 김치찌개");
@@ -117,10 +114,9 @@ class MenuServiceTest {
         @Test
         @DisplayName("실패 - 가게가 없을 경우")
         void fail_store_not_found() {
-            // given
-            UUID userId = UUID.randomUUID();
             UUID storeId = UUID.randomUUID();
             UUID categoryId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
 
             MenuCreateRequest request = new MenuCreateRequest(
                     "김치찌개",
@@ -135,7 +131,6 @@ class MenuServiceTest {
             given(categoryRepository.findById(categoryId)).willReturn(Optional.of(category));
             given(storeRepository.findById(storeId)).willReturn(Optional.empty());
 
-            // when & then
             assertThatThrownBy(() -> menuService.createMenu(storeId, request, userId))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("가게 없음");
@@ -179,16 +174,15 @@ class MenuServiceTest {
         @Test
         @DisplayName("성공 - 사장님 메뉴 조회")
         void success() {
-            // given
-            UUID userId = UUID.randomUUID();
             UUID storeId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
 
             Store store = mock(Store.class);
             User owner = mock(User.class);
 
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
             given(store.getOwner()).willReturn(owner);
             given(owner.getUserId()).willReturn(userId);
-            given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
 
             Menu hiddenMenu = Menu.builder()
                     .name("숨김 메뉴")
@@ -202,10 +196,8 @@ class MenuServiceTest {
             given(menuRepository.findOwnerMenusByStoreId(storeId, keyword, pageable))
                     .willReturn(new PageImpl<>(List.of(hiddenMenu)));
 
-            // when
             Page<Menu> result = menuService.getOwnerMenusByStore(storeId, userId, keyword, pageable);
 
-            // then
             assertThat(result.getContent()).hasSize(1);
             assertThat(result.getContent().get(0).isHidden()).isTrue();
             assertThat(result.getContent().get(0).isDeleted()).isFalse();
