@@ -13,7 +13,8 @@ public enum UserErrorCode implements ErrorCode {
     DUPLICATE_PASSWORD(HttpStatus.BAD_REQUEST, "USER-004", "기존과 동일한 비밀번호는 사용할 수 없습니다."),
     CANNOT_UPDATE_MASTER_ROLE(HttpStatus.BAD_REQUEST, "USER-005", "최상위 관리자의 권한은 변경할 수 없습니다."),
     CANNOT_GRANT_MASTER_ROLE(HttpStatus.BAD_REQUEST, "USER-006", "최상위 관리자 권한은 부여할 수 없습니다."),
-    CANNOT_DELETE_MASTER(HttpStatus.BAD_REQUEST, "USER-007", "최상위 관리자는 삭제할 수 없습니다.");
+    CANNOT_DELETE_MASTER(HttpStatus.BAD_REQUEST, "USER-007", "최상위 관리자는 삭제할 수 없습니다."),
+    ACTIVE_ORDER_EXISTS(HttpStatus.BAD_REQUEST, "USER-008", "진행 중인 주문이 존재하여 삭제할 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;

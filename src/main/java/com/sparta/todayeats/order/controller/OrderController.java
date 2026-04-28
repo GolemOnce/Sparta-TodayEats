@@ -8,7 +8,7 @@ import com.sparta.todayeats.order.dto.request.*;
 import com.sparta.todayeats.order.dto.response.*;
 import com.sparta.todayeats.order.entity.OrderStatus;
 import com.sparta.todayeats.order.service.OrderService;
-import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
+import com.sparta.todayeats.user.entity.UserRoleEnum;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

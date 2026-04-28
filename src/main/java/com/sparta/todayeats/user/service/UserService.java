@@ -5,6 +5,7 @@ import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.UserErrorCode;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.global.util.PageableUtils;
+import com.sparta.todayeats.order.service.OrderService;
 import com.sparta.todayeats.user.entity.User;
 import com.sparta.todayeats.user.entity.UserRoleEnum;
 import com.sparta.todayeats.user.repository.UserRepository;
@@ -27,6 +28,7 @@ import java.util.UUID;
 public class UserService {
     private final UserAuthorizationService userAuthorizationService;
     private final AuthService authService;
+    private final OrderService orderService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -136,8 +138,9 @@ public class UserService {
             throw new BaseException(UserErrorCode.CANNOT_DELETE_MASTER);
         }
 
-        if (!userAuthorizationService.isAdmin(targetUser)) {
-            // TODO: 일반 사용자는 진행 중인 주문 존재 시 삭제 불가
+        // 일반 사용자는 진행 중인 주문 존재 시 삭제 불가
+        if (!userAuthorizationService.isAdmin(targetUser) && orderService.hasActiveOrders(targetUserId)) {
+            throw new BaseException(UserErrorCode.ACTIVE_ORDER_EXISTS);
         }
 
         targetUser.softDelete(currentUserId);
@@ -146,7 +149,7 @@ public class UserService {
         // Redis에 Refresh Token 삭제
         authService.deleteRefreshToken(targetUserId.toString());
 
-        // 응답 정책
+        // 권한에 맞는 결과 반환
         if (userAuthorizationService.isMaster(currentUser)) {
             return new DeleteUserResponse(targetUser);
         }
