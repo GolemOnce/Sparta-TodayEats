@@ -1,25 +1,36 @@
 package com.sparta.todayeats.address.entity;
 
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
+import com.sparta.todayeats.user.entity.User;
 import jakarta.persistence.*;
-import lombok.Getter;
+
+import lombok.*;
+
 import java.util.UUID;
 
 @Entity
-@Table(name = "p_address")
 @Getter
+@Builder
+@Table(name = "p_address")
+@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Address extends BaseEntity {
-
     @Id
-    @Column(name = "address_id")
-    private UUID addressId;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID id;
 
-    @Column(name = "address")
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = true)
+    private User user;
+
+    private String alias;
+
+    @Column(nullable = true)
     private String address;
 
-    @Column(name = "detail")
     private String detail;
 
-    @Column(name = "user_id")
-    private UUID userId;
+    private String zipCode;
+
+    private boolean isDefault;
 }
