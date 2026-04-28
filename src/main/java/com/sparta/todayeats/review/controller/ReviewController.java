@@ -2,9 +2,11 @@ package com.sparta.todayeats.review.controller;
 
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.review.dto.request.ReviewCreateRequest;
+import com.sparta.todayeats.review.dto.request.ReviewUpdateRequest;
 import com.sparta.todayeats.review.dto.response.ReviewCreateResponse;
 import com.sparta.todayeats.review.dto.response.ReviewDetailResponse;
 import com.sparta.todayeats.review.dto.response.ReviewPageResponse;
+import com.sparta.todayeats.review.dto.response.ReviewUpdateResponse;
 import com.sparta.todayeats.review.service.ReviewService;
 import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import lombok.RequiredArgsConstructor;
@@ -78,6 +80,17 @@ public class ReviewController {
     }
 
     // 리뷰 수정 (PUT /reviews/{reviewId}) 본인
+    @PutMapping("/reviews/{reviewId}")
+    public ResponseEntity<ApiResponse<ReviewUpdateResponse>> updateReview(
+            @PathVariable("reviewId") UUID reviewId,
+            @AuthenticationPrincipal UUID userId,
+            @RequestBody ReviewUpdateRequest request
+    ) {
+        ReviewUpdateResponse response = reviewService.updateReview(reviewId, userId, request);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
 
     // 리뷰 삭제 (DELETE /reviews/{reviewId}) 본인 + 어드민
 }
