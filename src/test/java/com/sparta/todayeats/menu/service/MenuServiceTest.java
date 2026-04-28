@@ -60,7 +60,8 @@ class MenuServiceTest {
                         9000L,
                         "돼지고기 김치찌개",
                         "image-url",
-                        categoryId
+                        categoryId,
+                        false
                 );
 
                 Category category = mock(Category.class);
@@ -100,7 +101,8 @@ class MenuServiceTest {
                         9000L,
                         "돼지고기 김치찌개",
                         "image-url",
-                        categoryId
+                        categoryId,
+                        false
                 );
 
                 given(categoryRepository.findById(categoryId)).willReturn(Optional.empty());
@@ -123,7 +125,8 @@ class MenuServiceTest {
                     9000L,
                     "돼지고기 김치찌개",
                     "image-url",
-                    categoryId
+                    categoryId,
+                    false
             );
 
             Category category = mock(Category.class);
