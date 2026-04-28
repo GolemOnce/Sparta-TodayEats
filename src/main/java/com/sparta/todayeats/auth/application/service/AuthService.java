@@ -100,6 +100,9 @@ public class AuthService {
         request.encodePassword(passwordEncoder.encode(password));
         User user = userRepository.findByEmail(email).orElse(null);
         if (user != null) {
+            if (!user.isDeleted()) {
+                throw new BaseException(UserErrorCode.DUPLICATE_EMAIL);
+            }
             user.restore(request);
         } else {
             user = User.builder()
