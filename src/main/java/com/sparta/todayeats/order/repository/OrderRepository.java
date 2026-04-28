@@ -14,6 +14,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * 주문 레포지토리
+ */
 public interface OrderRepository extends JpaRepository<Order, UUID> {
 
     // 비관적 락 조회
@@ -103,4 +106,80 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             @Param("status") OrderStatus status,
             @Param("storeName") String storeName,
             Pageable pageable);
+
+    /**
+     * 상태 전이 조건부 UPDATE.
+     * currentStatus 일 때만 nextStatus 로 변경하며, soft delete된 주문은 제외합니다.
+     *
+     * @param orderId       상태를 변경할 주문 ID
+     * @param currentStatus 현재 주문 상태 (이 상태일 때만 변경)
+     * @param nextStatus    변경할 다음 주문 상태
+     * @param updatedBy     변경한 사용자 ID
+     * @return 업데이트된 행 수 (0이면 조건 불일치)
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Order o SET o.status = :nextStatus, o.updatedAt = CURRENT_TIMESTAMP, o.updatedBy = :updatedBy " +
+            "WHERE o.orderId = :orderId AND o.status = :currentStatus AND o.deletedAt IS NULL")
+    int updateStatusConditionally(@Param("orderId") UUID orderId,
+                                  @Param("currentStatus") OrderStatus currentStatus,
+                                  @Param("nextStatus") OrderStatus nextStatus,
+                                  @Param("updatedBy") UUID updatedBy);
+
+    /**
+     * 취소 조건부 UPDATE.
+     * PENDING 상태이며 생성 후 5분 이내인 주문만 취소 처리합니다.
+     * JPQL은 DB 함수 기반 날짜 연산을 표준으로 지원하지 않아 PostgreSQL native query를 사용합니다.
+     * 5분 제한을 상태 변경과 원자적으로 처리하기 위해 native query를 사용합니다.
+     *
+     * @param orderId       취소할 주문 ID
+     * @param cancelReason  취소 사유
+     * @param currentStatus 현재 주문 상태 문자열 (PENDING)
+     * @param nextStatus    변경할 상태 문자열 (CANCELLED)
+     * @param updatedBy     취소한 사용자 ID
+     * @return 업데이트된 행 수 (0이면 조건 불일치 또는 5분 초과)
+     */
+    @Modifying(clearAutomatically = true)
+    @Query(value = "UPDATE p_order SET status = :nextStatus, cancel_reason = :cancelReason, " +
+            "updated_at = NOW(), updated_by = :updatedBy " +
+            "WHERE order_id = :orderId AND status = :currentStatus " +
+            "AND created_at >= NOW() - INTERVAL '5 minutes' " +
+            "AND deleted_at IS NULL", nativeQuery = true)
+    int cancelConditionally(@Param("orderId") UUID orderId,
+                            @Param("cancelReason") String cancelReason,
+                            @Param("currentStatus") String currentStatus,
+                            @Param("nextStatus") String nextStatus,
+                            @Param("updatedBy") UUID updatedBy);
+
+    /**
+     * 거절 조건부 UPDATE.
+     * PENDING 상태일 때만 거절 처리하며, soft delete된 주문은 제외합니다.
+     *
+     * @param orderId       거절할 주문 ID
+     * @param rejectReason  거절 사유
+     * @param currentStatus 현재 주문 상태 (PENDING이어야 함)
+     * @param nextStatus    변경할 다음 상태 (REJECTED)
+     * @param updatedBy     거절한 사용자 ID
+     * @return 업데이트된 행 수 (0이면 조건 불일치)
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Order o SET o.status = :nextStatus, o.rejectReason = :rejectReason, o.updatedAt = CURRENT_TIMESTAMP, o.updatedBy = :updatedBy " +
+            "WHERE o.orderId = :orderId AND o.status = :currentStatus AND o.deletedAt IS NULL")
+    int rejectConditionally(@Param("orderId") UUID orderId,
+                            @Param("rejectReason") String rejectReason,
+                            @Param("currentStatus") OrderStatus currentStatus,
+                            @Param("nextStatus") OrderStatus nextStatus,
+                            @Param("updatedBy") UUID updatedBy);
+
+    /**
+     * 사용자의 진행 중인 주문 존재 여부 확인
+     * 종료 상태(COMPLETED, CANCELED, REJECTED) 제외
+     * 사용자 삭제 전 검증에 사용
+     */
+    @Query("SELECT COUNT(o) > 0 FROM Order o " +
+            "WHERE o.customerId = :customerId " +
+            "AND o.status NOT IN (com.sparta.todayeats.order.entity.OrderStatus.COMPLETED, " +
+            "                     com.sparta.todayeats.order.entity.OrderStatus.CANCELED, " +
+            "                     com.sparta.todayeats.order.entity.OrderStatus.REJECTED) " +
+            "AND o.deletedAt IS NULL")
+    boolean existsActiveOrderByCustomerId(@Param("customerId") UUID customerId);
 }
