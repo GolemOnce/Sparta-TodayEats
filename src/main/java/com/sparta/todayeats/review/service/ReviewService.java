@@ -5,6 +5,7 @@ import com.sparta.todayeats.order.Repository.OrderRepository;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.review.dto.request.ReviewCreateRequest;
 import com.sparta.todayeats.review.dto.response.ReviewCreateResponse;
+import com.sparta.todayeats.review.dto.response.ReviewDetailResponse;
 import com.sparta.todayeats.review.dto.response.ReviewPageResponse;
 import com.sparta.todayeats.review.entity.Review;
 import com.sparta.todayeats.review.repository.ReviewRepository;
@@ -114,5 +115,14 @@ public class ReviewService {
         Page<Review> reviews =  reviewRepository.findByStoreId(storeId, pageable);
 
         return ReviewPageResponse.from(reviews);
+    }
+
+    // 리뷰 상세 조회
+    @Transactional(readOnly = true)
+    public ReviewDetailResponse getDetailReview(UUID reviewId) {
+        Review review = reviewRepository.getReviewById(reviewId)
+                .orElseThrow(() -> new BaseException(ReviewErrorCode.REVIEW_NOT_FOUND));
+
+        return ReviewDetailResponse.from(review);
     }
 }

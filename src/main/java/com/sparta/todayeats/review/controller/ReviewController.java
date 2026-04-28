@@ -2,14 +2,12 @@ package com.sparta.todayeats.review.controller;
 
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.review.dto.request.ReviewCreateRequest;
-import com.sparta.todayeats.review.dto.request.ReviewPageRequest;
 import com.sparta.todayeats.review.dto.response.ReviewCreateResponse;
+import com.sparta.todayeats.review.dto.response.ReviewDetailResponse;
 import com.sparta.todayeats.review.dto.response.ReviewPageResponse;
-import com.sparta.todayeats.review.dto.response.ReviewResponse;
 import com.sparta.todayeats.review.service.ReviewService;
 import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -70,6 +68,14 @@ public class ReviewController {
     }
 
     // 리뷰 상세 조회 (GET /reviews/{reviewId}) 모두
+    @GetMapping("/reviews/{reviewId}")
+    public ResponseEntity<ApiResponse<ReviewDetailResponse>> getReview(
+            @PathVariable("reviewId") UUID reviewId
+    ) {
+        ReviewDetailResponse response = reviewService.getDetailReview(reviewId);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 
     // 리뷰 수정 (PUT /reviews/{reviewId}) 본인
 
