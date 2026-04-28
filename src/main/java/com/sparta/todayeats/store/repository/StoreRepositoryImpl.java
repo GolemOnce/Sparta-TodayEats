@@ -75,6 +75,7 @@ public class StoreRepositoryImpl implements StoreRepositoryCustom {
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
+                .orderBy(store.createdAt.desc())
                 .fetch();
 
         long total = queryFactory
