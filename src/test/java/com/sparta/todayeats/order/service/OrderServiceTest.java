@@ -983,6 +983,32 @@ class OrderServiceTest {
         }
 
         @Test
+        @DisplayName("실패 - SQL 실행 사이 시간 초과로 ORDER_CONFLICT 대신 CANCEL_TIME_EXCEEDED 반환")
+        void SQL_실행_사이_시간_초과_예외발생() throws Exception {
+            // given
+            Order recentOrder = pendingOrder();
+            setCreatedAt(recentOrder, LocalDateTime.now().minusMinutes(4)); // 첫 조회: 4분 → 통과
+
+            Order expiredOrder = pendingOrder();
+            setCreatedAt(expiredOrder, LocalDateTime.now().minusMinutes(6)); // 재조회: 6분 → 초과
+
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(recentOrder))   // 첫 번째 findActiveOrder
+                    .willReturn(Optional.of(expiredOrder)); // rows==0 후 재조회
+
+            given(orderRepository.cancelConditionally(
+                    eq(orderId), any(), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name()), eq(userId)))
+                    .willReturn(0);
+
+            // when & then
+            assertThatThrownBy(() -> orderService.cancelOrder(
+                    orderId, new CancelOrderRequest("단순 변심"), userId, UserRoleEnum.CUSTOMER))
+                    .isInstanceOf(BaseException.class)
+                    .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
+                            .isEqualTo(OrderErrorCode.CANCEL_TIME_EXCEEDED));
+        }
+
+        @Test
         @DisplayName("실패 - OWNER가 취소 시도")
         void OWNER_취소_예외발생() {
             // given
