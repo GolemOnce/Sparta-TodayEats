@@ -48,16 +48,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
             Pageable pageable);
 
     /**
-     * 가게별 주문 목록 조회 (soft delete 제외, 페이지네이션)
-     *
-     * @param storeId  조회할 가게 ID
-     * @param pageable 페이지 정보
-     * @return 해당 가게의 삭제되지 않은 주문 페이지
-     */
-    @Query("SELECT o FROM Order o WHERE o.storeId = :storeId AND o.deletedAt IS NULL")
-    Page<Order> findAllByStoreId(@Param("storeId") UUID storeId, Pageable pageable);
-
-    /**
      * CUSTOMER/OWNER 전용: 검색 조건 + 페이지네이션으로 주문 조회 (soft delete 제외)
      *
      * @param customerId 고객 ID
