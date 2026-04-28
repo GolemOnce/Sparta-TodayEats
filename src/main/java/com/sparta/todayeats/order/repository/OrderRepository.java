@@ -1,0 +1,178 @@
+package com.sparta.todayeats.order.repository;
+
+import com.sparta.todayeats.order.entity.Order;
+import com.sparta.todayeats.order.entity.OrderStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.Optional;
+import java.util.UUID;
+
+/**
+ * 주문 레포지토리
+ */
+public interface OrderRepository extends JpaRepository<Order, UUID> {
+
+    /**
+     * soft delete 제외 단건 조회
+     *
+     * @param orderId 조회할 주문 ID
+     * @return 삭제되지 않은 주문 Optional
+     */
+    @Query("SELECT o FROM Order o WHERE o.orderId = :orderId AND o.deletedAt IS NULL")
+    Optional<Order> findActiveById(@Param("orderId") UUID orderId);
+
+    /**
+     * OWNER 전용: 본인 가게 주문 검색 (status, storeName 필터 포함)
+     *
+     * @param ownerId   가게 소유자 ID
+     * @param status    주문 상태 필터 (null이면 전체)
+     * @param storeName 가게명 필터 (null이면 전체, 부분 일치)
+     * @param pageable  페이지 정보
+     * @return 조건에 맞는 해당 소유자 가게의 주문 페이지
+     */
+    @Query("SELECT o FROM Order o " +
+            "JOIN Store s ON o.storeId = s.id " +
+            "WHERE s.owner.userId = :ownerId " +
+            "AND (:status IS NULL OR o.status = :status) " +
+            "AND (:storeName IS NULL OR o.storeName LIKE %:storeName%) " +
+            "AND o.deletedAt IS NULL")
+    Page<Order> searchOrdersByStoreOwner(
+            @Param("ownerId") UUID ownerId,
+            @Param("status") OrderStatus status,
+            @Param("storeName") String storeName,
+            Pageable pageable);
+
+    /**
+     * CUSTOMER/OWNER 전용: 검색 조건 + 페이지네이션으로 주문 조회 (soft delete 제외)
+     *
+     * @param customerId 고객 ID
+     * @param status     주문 상태 필터 (null이면 전체)
+     * @param storeName  가게명 필터 (null이면 전체, 부분 일치)
+     * @param pageable   페이지 정보
+     * @return 조건에 맞는 주문 페이지
+     */
+    @Query("SELECT o FROM Order o " +
+            "WHERE o.customerId = :customerId " +
+            "AND (:status IS NULL OR o.status = :status) " +
+            "AND (:storeName IS NULL OR o.storeName LIKE %:storeName%) " +
+            "AND o.deletedAt IS NULL")
+    Page<Order> searchOrders(
+            @Param("customerId") UUID customerId,
+            @Param("status") OrderStatus status,
+            @Param("storeName") String storeName,
+            Pageable pageable);
+
+    /**
+     * MANAGER 전용: 전체 주문 검색 (soft delete 제외)
+     *
+     * @param status    주문 상태 필터 (null이면 전체)
+     * @param storeName 가게명 필터 (null이면 전체, 부분 일치)
+     * @param pageable  페이지 정보
+     * @return 조건에 맞는 전체 주문 페이지
+     */
+    @Query("SELECT o FROM Order o " +
+            "WHERE (:status IS NULL OR o.status = :status) " +
+            "AND (:storeName IS NULL OR o.storeName LIKE %:storeName%) " +
+            "AND o.deletedAt IS NULL")
+    Page<Order> searchAllOrders(
+            @Param("status") OrderStatus status,
+            @Param("storeName") String storeName,
+            Pageable pageable);
+
+    /**
+     * MASTER 전용: 삭제된 주문 포함 전체 검색
+     *
+     * @param status    주문 상태 필터 (null이면 전체)
+     * @param storeName 가게명 필터 (null이면 전체, 부분 일치)
+     * @param pageable  페이지 정보
+     * @return 삭제 여부 관계없이 조건에 맞는 전체 주문 페이지
+     */
+    @Query("SELECT o FROM Order o " +
+            "WHERE (:status IS NULL OR o.status = :status) " +
+            "AND (:storeName IS NULL OR o.storeName LIKE %:storeName%)")
+    Page<Order> searchAllOrdersIncludeDeleted(
+            @Param("status") OrderStatus status,
+            @Param("storeName") String storeName,
+            Pageable pageable);
+
+    /**
+     * 상태 전이 조건부 UPDATE.
+     * currentStatus 일 때만 nextStatus 로 변경하며, soft delete된 주문은 제외합니다.
+     *
+     * @param orderId       상태를 변경할 주문 ID
+     * @param currentStatus 현재 주문 상태 (이 상태일 때만 변경)
+     * @param nextStatus    변경할 다음 주문 상태
+     * @param updatedBy     변경한 사용자 ID
+     * @return 업데이트된 행 수 (0이면 조건 불일치)
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Order o SET o.status = :nextStatus, o.updatedAt = CURRENT_TIMESTAMP, o.updatedBy = :updatedBy " +
+            "WHERE o.orderId = :orderId AND o.status = :currentStatus AND o.deletedAt IS NULL")
+    int updateStatusConditionally(@Param("orderId") UUID orderId,
+                                  @Param("currentStatus") OrderStatus currentStatus,
+                                  @Param("nextStatus") OrderStatus nextStatus,
+                                  @Param("updatedBy") UUID updatedBy);
+
+    /**
+     * 취소 조건부 UPDATE.
+     * PENDING 상태이며 생성 후 5분 이내인 주문만 취소 처리합니다.
+     * JPQL은 DB 함수 기반 날짜 연산을 표준으로 지원하지 않아 PostgreSQL native query를 사용합니다.
+     * 5분 제한을 상태 변경과 원자적으로 처리하기 위해 native query를 사용합니다.
+     *
+     * @param orderId       취소할 주문 ID
+     * @param cancelReason  취소 사유
+     * @param currentStatus 현재 주문 상태 문자열 (PENDING)
+     * @param nextStatus    변경할 상태 문자열 (CANCELLED)
+     * @param updatedBy     취소한 사용자 ID
+     * @return 업데이트된 행 수 (0이면 조건 불일치 또는 5분 초과)
+     */
+    @Modifying(clearAutomatically = true)
+    @Query(value = "UPDATE p_order SET status = :nextStatus, cancel_reason = :cancelReason, " +
+            "updated_at = NOW(), updated_by = :updatedBy " +
+            "WHERE order_id = :orderId AND status = :currentStatus " +
+            "AND created_at >= NOW() - INTERVAL '5 minutes' " +
+            "AND deleted_at IS NULL", nativeQuery = true)
+    int cancelConditionally(@Param("orderId") UUID orderId,
+                            @Param("cancelReason") String cancelReason,
+                            @Param("currentStatus") String currentStatus,
+                            @Param("nextStatus") String nextStatus,
+                            @Param("updatedBy") UUID updatedBy);
+
+    /**
+     * 거절 조건부 UPDATE.
+     * PENDING 상태일 때만 거절 처리하며, soft delete된 주문은 제외합니다.
+     *
+     * @param orderId       거절할 주문 ID
+     * @param rejectReason  거절 사유
+     * @param currentStatus 현재 주문 상태 (PENDING이어야 함)
+     * @param nextStatus    변경할 다음 상태 (REJECTED)
+     * @param updatedBy     거절한 사용자 ID
+     * @return 업데이트된 행 수 (0이면 조건 불일치)
+     */
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Order o SET o.status = :nextStatus, o.rejectReason = :rejectReason, o.updatedAt = CURRENT_TIMESTAMP, o.updatedBy = :updatedBy " +
+            "WHERE o.orderId = :orderId AND o.status = :currentStatus AND o.deletedAt IS NULL")
+    int rejectConditionally(@Param("orderId") UUID orderId,
+                            @Param("rejectReason") String rejectReason,
+                            @Param("currentStatus") OrderStatus currentStatus,
+                            @Param("nextStatus") OrderStatus nextStatus,
+                            @Param("updatedBy") UUID updatedBy);
+
+    /**
+     * 사용자의 진행 중인 주문 존재 여부 확인
+     * 종료 상태(COMPLETED, CANCELED, REJECTED) 제외
+     * 사용자 삭제 전 검증에 사용
+     */
+    @Query("SELECT COUNT(o) > 0 FROM Order o " +
+            "WHERE o.customerId = :customerId " +
+            "AND o.status NOT IN (com.sparta.todayeats.order.entity.OrderStatus.COMPLETED, " +
+            "                     com.sparta.todayeats.order.entity.OrderStatus.CANCELED, " +
+            "                     com.sparta.todayeats.order.entity.OrderStatus.REJECTED) " +
+            "AND o.deletedAt IS NULL")
+    boolean existsActiveOrderByCustomerId(@Param("customerId") UUID customerId);
+}
