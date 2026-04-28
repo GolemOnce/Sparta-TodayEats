@@ -510,7 +510,7 @@ class OrderServiceTest {
         @DisplayName("성공 - MASTER 전체 주문 조회")
         void MASTER_주문_조회_성공() {
             // given
-            given(orderRepository.findActiveById(orderId))
+            given(orderRepository.findById(orderId))
                     .willReturn(Optional.of(pendingOrder()));
 
             // when
@@ -1255,7 +1255,6 @@ class OrderServiceTest {
         @Test
         @DisplayName("실패 - MASTER가 아닌 역할로 삭제 시도")
         void MASTER_아닌_역할_삭제_예외발생() {
-            given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(pendingOrder()));
             assertThatThrownBy(() -> orderService.deleteOrder(orderId, userId, UserRoleEnum.MANAGER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())
