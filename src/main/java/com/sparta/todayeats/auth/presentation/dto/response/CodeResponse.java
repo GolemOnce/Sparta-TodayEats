@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @AllArgsConstructor
-public class SendCodeResponse {
+public class CodeResponse {
     private String email;
     private LocalDateTime expiredAt;
 }

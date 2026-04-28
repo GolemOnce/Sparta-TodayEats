@@ -23,7 +23,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class AuthServiceV1 {
+public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthMailService authMailService;
@@ -37,6 +37,50 @@ public class AuthServiceV1 {
 
     private static final long CODE_VALID_MINUTES = 5;
     private static final long VERIFIED_VALID_MINUTES = 10;
+
+    public CodeResponse sendSignupCode(String email) {
+        // 이메일 중복 확인
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user != null && !user.isDeleted()) {
+            throw new BaseException(UserErrorCode.DUPLICATE_EMAIL);
+        }
+
+        // 인증번호 생성
+        String code = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
+
+        // 메일 전송
+        authMailService.sendSignupCode(email, code);
+
+        // Redis에 인증번호 저장
+        redisTemplate.opsForValue().set(
+                SIGNUP_PREFIX + email,
+                code,
+                Duration.ofMinutes(CODE_VALID_MINUTES)
+        );
+
+        return new CodeResponse(email, LocalDateTime.now().plusMinutes(CODE_VALID_MINUTES));
+    }
+
+    public CodeResponse confirmSignupCode(String email, String code) {
+        // 인증번호 조회
+        String signupKey = SIGNUP_PREFIX + email;
+        String savedCode = redisTemplate.opsForValue().get(signupKey);
+        if (savedCode == null || !savedCode.equals(code)) {
+            throw new BaseException(AuthErrorCode.INVALID_VERIFICATION_CODE);
+        }
+
+        // Redis에 인증번호 삭제
+        redisTemplate.delete(signupKey);
+
+        // Redis에 이메일 인증 여부 저장
+        redisTemplate.opsForValue().set(
+                VERIFIED_PREFIX + email,
+                "true",
+                Duration.ofMinutes(VERIFIED_VALID_MINUTES)
+        );
+
+        return new CodeResponse(email, LocalDateTime.now().plusMinutes(VERIFIED_VALID_MINUTES));
+    }
 
     public SignupResponse signup(SignupRequest request) {
         // 이메일 인증 여부 조회
@@ -71,50 +115,6 @@ public class AuthServiceV1 {
         redisTemplate.delete(verifiedKey);
 
         return new SignupResponse(user);
-    }
-
-    public SendCodeResponse sendSignupCode(String email) {
-        // 이메일 중복 확인
-        User user = userRepository.findByEmail(email).orElse(null);
-        if (user != null && !user.isDeleted()) {
-            throw new BaseException(UserErrorCode.DUPLICATE_EMAIL);
-        }
-
-        // 인증번호 생성
-        String code = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
-
-        // 메일 전송
-        authMailService.sendSignupCode(email, code);
-
-        // Redis에 인증번호 저장
-        redisTemplate.opsForValue().set(
-                SIGNUP_PREFIX + email,
-                code,
-                Duration.ofMinutes(CODE_VALID_MINUTES)
-        );
-
-        return new SendCodeResponse(email, LocalDateTime.now().plusMinutes(CODE_VALID_MINUTES));
-    }
-
-    public ConfirmCodeResponse confirmSignupCode(String email, String code) {
-        // 인증번호 조회
-        String signupKey = SIGNUP_PREFIX + email;
-        String savedCode = redisTemplate.opsForValue().get(signupKey);
-        if (savedCode == null || !savedCode.equals(code)) {
-            throw new BaseException(AuthErrorCode.INVALID_VERIFICATION_CODE);
-        }
-
-        // Redis에 인증번호 삭제
-        redisTemplate.delete(signupKey);
-
-        // Redis에 이메일 인증 여부 저장
-        redisTemplate.opsForValue().set(
-                VERIFIED_PREFIX + email,
-                "true",
-                Duration.ofMinutes(VERIFIED_VALID_MINUTES)
-        );
-
-        return new ConfirmCodeResponse(email);
     }
 
     public LoginResponse login(String email, String password) {
@@ -193,7 +193,7 @@ public class AuthServiceV1 {
         redisTemplate.delete(RT_PREFIX + userId);
     }
 
-    public SendCodeResponse sendPasswordResetLink(String email) {
+    public CodeResponse sendPasswordResetLink(String email) {
         // 삭제되지 않은 사용자만
         User user = userRepository.findByEmail(email).orElse(null);
         if (user != null && !user.isDeleted()) {
@@ -211,7 +211,7 @@ public class AuthServiceV1 {
             authMailService.sendPasswordResetLink(email, code);
         }
 
-        return new SendCodeResponse(email, LocalDateTime.now().plusMinutes(CODE_VALID_MINUTES));
+        return new CodeResponse(email, LocalDateTime.now().plusMinutes(CODE_VALID_MINUTES));
     }
 
     @Transactional(readOnly = true)
