@@ -215,7 +215,7 @@ class PaymentServiceTest {
                     .amount(15000L)
                     .build();
 
-            given(paymentRepository.findByIdAndOrder_CustomerId(paymentId, userId))
+            given(paymentRepository.findByIdAndOrder_CustomerIdAndDeletedAtIsNull(paymentId, userId))
                     .willReturn(Optional.of(payment));
 
             // when
@@ -241,7 +241,7 @@ class PaymentServiceTest {
 
             User admin = User.builder().role(UserRoleEnum.MASTER).build();
 
-            given(paymentRepository.findByIdAndOrder_CustomerId(paymentId, adminId))
+            given(paymentRepository.findByIdAndOrder_CustomerIdAndDeletedAtIsNull(paymentId, adminId))
                     .willReturn(Optional.empty());
             given(userAuthorizationService.getUserById(adminId))
                     .willReturn(admin);
@@ -265,7 +265,7 @@ class PaymentServiceTest {
 
             User normalUser = User.builder().role(UserRoleEnum.CUSTOMER).build();
 
-            given(paymentRepository.findByIdAndOrder_CustomerId(paymentId, otherUserId))
+            given(paymentRepository.findByIdAndOrder_CustomerIdAndDeletedAtIsNull(paymentId, otherUserId))
                     .willReturn(Optional.empty());
             given(userAuthorizationService.getUserById(otherUserId))
                     .willReturn(normalUser);
@@ -285,7 +285,7 @@ class PaymentServiceTest {
 
             User admin = User.builder().role(UserRoleEnum.MASTER).build();
 
-            given(paymentRepository.findByIdAndOrder_CustomerId(paymentId, adminId))
+            given(paymentRepository.findByIdAndOrder_CustomerIdAndDeletedAtIsNull(paymentId, adminId))
                     .willReturn(Optional.empty());
             given(userAuthorizationService.getUserById(adminId))
                     .willReturn(admin);
