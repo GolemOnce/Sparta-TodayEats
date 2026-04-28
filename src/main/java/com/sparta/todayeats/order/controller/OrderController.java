@@ -38,7 +38,7 @@ public class OrderController {
     /**
      * 주문 생성
      * POST /api/v1/orders
-     * CUSTOMER만 주문 생성 가능 (JWT 완성 후 활성화)
+     * CUSTOMER만 주문 생성 가능
      */
     @PostMapping
     public ResponseEntity<ApiResponse<CreateOrderResponse>> createOrder(
@@ -87,7 +87,7 @@ public class OrderController {
     /**
      * 주문 단건 조회
      * GET /api/v1/orders/{orderId}
-     * CUSTOMER: 본인 주문만, OWNER: 본인 가게 주문만, MANAGER/MASTER: 전체 - JWT 완성 후 활성화
+     * CUSTOMER: 본인 주문만, OWNER: 본인 가게 주문만, MANAGER/MASTER: 전체
      */
     @GetMapping("/{orderId}")
     public ResponseEntity<ApiResponse<OrderDetailResponse>> getOrder(
