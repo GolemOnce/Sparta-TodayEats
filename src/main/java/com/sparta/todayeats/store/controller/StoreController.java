@@ -29,7 +29,7 @@ import java.util.UUID;
 public class StoreController {
 
     private final StoreService storeService;
-    
+
     // 가게 생성
     @PostMapping
     @PreAuthorize("hasAnyRole('OWNER')")
@@ -42,15 +42,16 @@ public class StoreController {
     }
 
     // 가게 목록 조회 + 복합 검색 (카테고리, 이름)
-    // CUSTOMER,비로그인: 공개 가게만 노출 / OWNER,MANAGER,MASTER: 숨김 포함 전체 노출
+    // CUSTOMER,비로그인: 공개 가게만 노출 / OWNER: 자기것만 / MANAGER,MASTER: 전체 노출
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<StoreResponse>>> getStores(
             @RequestParam(required = false) String categoryName,
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable,
-            Authentication authentication) {
-        PageResponse<StoreResponse> response = storeService.getStores(categoryName, keyword, pageable, authentication);
+            Authentication authentication,
+            @AuthenticationPrincipal UUID userId) {
+        PageResponse<StoreResponse> response = storeService.getStores(categoryName, keyword, pageable, authentication, userId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

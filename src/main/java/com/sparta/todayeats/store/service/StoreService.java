@@ -72,14 +72,9 @@ public class StoreService {
 
 
     // 가게 목록 조회 && 검색 (카테고리 + 이름 복합 필터)
-    public PageResponse<StoreResponse> getStores(String categoryName, String keyword, Pageable pageable, Authentication authentication) {
-        // 비로그인 or CUSTOMER면 공개된 가게만 노출, 나머지는 전체 노출
-        boolean isCustomer = authentication == null
-                || authentication.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_CUSTOMER"));
-
-        // QueryDSL 동적 쿼리로 조회
-        Page<Store> result = storeRepository.searchStores(categoryName, keyword, pageable,isCustomer);
+    public PageResponse<StoreResponse> getStores(String categoryName, String keyword, Pageable pageable, Authentication authentication, UUID userId) {
+        // QueryDSL 동적 쿼리로 조회 (+ 권한)
+        Page<Store> result = storeRepository.searchStores(categoryName, keyword, pageable,authentication,userId);
 
         // 엔티티 → DTO 변환
         List<StoreResponse> content = result.getContent()
