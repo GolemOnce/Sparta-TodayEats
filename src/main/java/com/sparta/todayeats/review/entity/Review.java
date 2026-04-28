@@ -34,7 +34,7 @@ public class Review extends BaseEntity {
     private Order order;
 
     @Column(nullable = false)
-    private Integer rating;
+    private int rating;
 
     private String content;
 
