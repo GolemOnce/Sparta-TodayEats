@@ -8,7 +8,7 @@ import com.sparta.todayeats.review.dto.response.ReviewDetailResponse;
 import com.sparta.todayeats.review.dto.response.ReviewPageResponse;
 import com.sparta.todayeats.review.dto.response.ReviewUpdateResponse;
 import com.sparta.todayeats.review.service.ReviewService;
-import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
+import com.sparta.todayeats.user.entity.UserRoleEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;

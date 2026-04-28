@@ -1,6 +1,6 @@
 package com.sparta.todayeats.payment.service;
 
-import com.sparta.todayeats.auth.application.service.AuthServiceV1;
+import com.sparta.todayeats.auth.application.service.AuthService;
 import com.sparta.todayeats.global.exception.*;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.order.entity.Order;
@@ -12,8 +12,8 @@ import com.sparta.todayeats.payment.entity.Payment;
 import com.sparta.todayeats.payment.entity.PaymentStatus;
 import com.sparta.todayeats.payment.repository.PaymentRepository;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
-import com.sparta.todayeats.user.domain.entity.User;
-import com.sparta.todayeats.user.domain.repository.UserRepository;
+import com.sparta.todayeats.user.entity.User;
+import com.sparta.todayeats.user.repository.UserRepository;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,7 +30,7 @@ public class PaymentService {
 
     //
     private final OrderRepository orderRepository;
-    private final AuthServiceV1 authService;
+    private final AuthService authService;
     private final UserRepository userRepository;
     private final UserAuthorizationService userAuthorizationService;
 
