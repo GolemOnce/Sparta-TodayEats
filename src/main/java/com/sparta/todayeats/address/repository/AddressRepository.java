@@ -10,6 +10,6 @@ import java.util.UUID;
 
 public interface AddressRepository extends JpaRepository<Address, UUID> {
 
-    @Query("SELECT a FROM Address a WHERE a.addressId = :addressId AND a.deletedAt IS NULL")
+    @Query("SELECT a FROM Address a WHERE a.id = :addressId AND a.deletedAt IS NULL")
     Optional<Address> findActiveById(@Param("addressId") UUID addressId);
 }
