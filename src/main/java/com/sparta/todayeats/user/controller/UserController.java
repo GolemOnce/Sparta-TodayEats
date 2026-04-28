@@ -30,7 +30,7 @@ public class UserController {
     public ResponseEntity<Page<UserResponse>> searchUsers(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) UserRoleEnum role,
-            @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             @LoginUser UUID currentUserId
     ) {
         Page<UserResponse> response = userService.searchUsers(keyword, role, pageable, currentUserId);
