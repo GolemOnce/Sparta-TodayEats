@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface ReviewRepository extends JpaRepository<Review, UUID> {
@@ -28,4 +29,11 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
             countQuery = "SELECT COUNT(r) FROM Review r JOIN r.store WHERE r.store.id = :storeId AND r.deletedAt IS NULL"
     )
     Page<Review> findByStoreId(@Param("storeId") UUID storeId, Pageable pageable);
+
+    @Query("SELECT r FROM Review r " +
+            "JOIN FETCH r.user " +
+            "JOIN FETCH r.store " +
+            "JOIN FETCH r.order " +
+            "WHERE r.id = :id AND r.deletedAt IS NULL")
+    Optional<Review> getReviewById(@Param("id") UUID id);
 }
