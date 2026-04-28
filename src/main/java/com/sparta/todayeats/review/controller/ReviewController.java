@@ -35,7 +35,7 @@ public class ReviewController {
 
         ReviewCreateResponse response = reviewService.createReview(orderId, userId, request);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
 
     // 내 리뷰 조회 (GET /reviews) CUSTOMER + 특정 유저 리뷰 조회 (GET /reviews?userId=UUID) ADMIN
