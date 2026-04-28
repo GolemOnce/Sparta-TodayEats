@@ -29,7 +29,7 @@ public class ReviewService {
     // 통합 후 서비스로 교체
     OrderRepository orderRepository;
 
-
+    // 리뷰 등록
     public ReviewCreateResponse createReview(UUID orderId, UUID userId, ReviewCreateRequest request) {
         // 1. 주문 조회
         Order order = orderRepository.findById(orderId)
