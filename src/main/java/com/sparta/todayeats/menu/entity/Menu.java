@@ -29,7 +29,7 @@ public class Menu extends BaseEntity {
 
     // Price
     @Column(nullable = false)
-    private int price;
+    private Long price;
 
     // Description
     @Column(length = 500)
@@ -75,7 +75,7 @@ public class Menu extends BaseEntity {
         this.store = store;
     }
 
-    public void update(String name, int price, String description, String imageUrl) {
+    public void update(String name, Long price, String description, String imageUrl) {
         this.name = name;
         this.price = price;
         this.description = description;

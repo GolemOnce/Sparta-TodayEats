@@ -1,6 +1,5 @@
 package com.sparta.todayeats.menu.service;
 
-import com.sparta.todayeats.ai.service.AiService;
 import com.sparta.todayeats.category.domain.entity.Category;
 import com.sparta.todayeats.category.domain.repository.CategoryRepository;
 import com.sparta.todayeats.menu.entity.Menu;
@@ -16,7 +15,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 import java.util.UUID;
 
 @Service
@@ -27,7 +25,6 @@ public class MenuService {
     private final MenuRepository menuRepository;
     private final CategoryRepository categoryRepository;
     private final StoreRepository storeRepository;
-    private final AiService aiService;
 
     // 메뉴 생성
     @Transactional
@@ -40,21 +37,10 @@ public class MenuService {
 
         validateStoreOwner(store, userId);
 
-        String description = request.description();
-
-        if (request.aiDescription()) {
-            description = aiService
-                    .generateProductDescription(
-                            request.name() + " 상품 설명을 추천해줘",
-                            userId
-                    )
-                    .description();
-        }
-
         Menu menu = Menu.builder()
                 .name(request.name())
-                .price(request.price())
-                .description(description)
+                .price(9000L)
+                .description(request.description())
                 .imageUrl(request.imageUrl())
                 .category(category)
                 .store(store)
@@ -121,7 +107,7 @@ public class MenuService {
 
     // 메뉴 수정
     @Transactional
-    public void updateMenu(UUID menuId, MenuUpdateRequest request, UUID userId) {
+    public void updateMenu(UUID menuId, UUID userId, MenuUpdateRequest request) {
         Menu menu = findMenu(menuId);
         validateNotDeleted(menu);
         validateStoreOwner(menu.getStore(), userId);
@@ -136,7 +122,7 @@ public class MenuService {
 
     // 상태 변경
     @Transactional
-    public void updateMenuStatus(UUID menuId, MenuStatusUpdateRequest request, UUID userId) {
+    public void updateMenuStatus(UUID menuId, UUID userId, MenuStatusUpdateRequest request) {
         Menu menu = findMenu(menuId);
         validateNotDeleted(menu);
         validateStoreOwner(menu.getStore(), userId);
@@ -153,7 +139,8 @@ public class MenuService {
 
         menu.delete(userId);
     }
-
+    
+    // Validation methods
     private Menu findMenu(UUID menuId) {
         return menuRepository.findById(menuId)
                 .orElseThrow(() -> new IllegalArgumentException("메뉴 없음"));
@@ -164,16 +151,8 @@ public class MenuService {
             throw new IllegalArgumentException("삭제된 메뉴입니다.");
         }
     }
-
+    
     private void validateStoreOwner(Store store, UUID userId) {
-        if (store == null) {
-            throw new IllegalArgumentException("메뉴에 연결된 가게가 없습니다.");
-        }
-
-        if (store.getOwner() == null) {
-            throw new IllegalArgumentException("가게에 연결된 사장님이 없습니다.");
-        }
-
         if (!store.getOwner().getUserId().equals(userId)) {
             throw new IllegalArgumentException("해당 가게의 사장님만 접근할 수 있습니다.");
         }

@@ -7,7 +7,7 @@ import java.util.UUID;
 public record MenuResponse(
         UUID id,
         String name,
-        int price,
+        Long price,
         String description,
         boolean isHidden,
         boolean soldOut,
