@@ -134,6 +134,10 @@ public class PaymentService {
         Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new BaseException(PaymentErrorCode.PAYMENT_NOT_FOUND));
 
+        if (payment.isDeleted()) {
+            throw new BaseException(PaymentErrorCode.PAYMENT_NOT_FOUND);
+        }
+
         payment.updatePaymentStatus(request.getStatus());
         return PaymentUpdateResponse.from(payment);
     }
