@@ -35,7 +35,7 @@ public class Payment extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private PaymentStatus status = PaymentStatus.PENDING;
 
-    @NotNull
+    @Column(nullable = false)
     private Long amount;
 
     public void updatePaymentStatus(PaymentStatus status) {
