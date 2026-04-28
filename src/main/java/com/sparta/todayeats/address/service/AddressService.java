@@ -5,9 +5,7 @@ import com.sparta.todayeats.address.dto.reqeust.AddressUpdateRequest;
 import com.sparta.todayeats.address.dto.response.*;
 import com.sparta.todayeats.address.entity.Address;
 import com.sparta.todayeats.address.repository.AddressRepository;
-import com.sparta.todayeats.global.exception.AddressErrorCode;
-import com.sparta.todayeats.global.exception.BaseException;
-import com.sparta.todayeats.global.exception.UserErrorCode;
+import com.sparta.todayeats.global.exception.*;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.user.domain.entity.User;
 import com.sparta.todayeats.user.domain.repository.UserRepository;
@@ -120,4 +118,22 @@ public class AddressService {
     }
 
     // 배송지 삭제
+    @Transactional
+    public void deleteAddress(UUID userId, UUID addressId) {
+        // 1. 배송지 조회
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(() -> new BaseException(AddressErrorCode.ADDRESS_NOT_FOUND));
+
+        // 2. 권한 확인 (본인 또는 MASTER)
+        boolean isSelf = address.getUser().getUserId().equals(userId);
+        User user = userAuthorizationService.getUserById(userId);
+        boolean isMaster = userAuthorizationService.isMaster(user);
+
+        if (!isSelf && !isMaster) {
+            throw new BaseException(AddressErrorCode.ADDRESS_ACCESS_DENIED);
+        }
+
+        // 3. 소프트 딜리트
+        address.softDelete(userId);
+    }
 }
