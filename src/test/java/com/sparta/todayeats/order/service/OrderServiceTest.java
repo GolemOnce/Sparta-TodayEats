@@ -1,10 +1,10 @@
 package com.sparta.todayeats.order.service;
 
-import com.sparta.todayeats.address.domain.entity.AddressEntity;
-import com.sparta.todayeats.address.domain.repository.AddressRepository;
+import com.sparta.todayeats.address.entity.Address;
+import com.sparta.todayeats.address.repository.AddressRepository;
 import com.sparta.todayeats.global.exception.*;
-import com.sparta.todayeats.menu.domain.entity.MenuEntity;
-import com.sparta.todayeats.menu.domain.repository.MenuRepository;
+import com.sparta.todayeats.menu.entity.Menu;
+import com.sparta.todayeats.menu.repository.MenuRepository;
 import com.sparta.todayeats.order.dto.request.*;
 import com.sparta.todayeats.order.dto.response.*;
 import com.sparta.todayeats.order.entity.Order;
@@ -115,7 +115,7 @@ class OrderServiceTest {
         @DisplayName("성공 - 주문 생성 및 totalPrice 서버 계산")
         void 주문_생성_성공() {
             // given
-            MenuEntity mockMenu = mock(MenuEntity.class);
+            Menu mockMenu = mock(Menu.class);
             given(mockMenu.getPrice()).willReturn(18000L);
             given(mockMenu.getName()).willReturn("황금올리브 치킨");
             given(mockMenu.getStoreId()).willReturn(storeId);
@@ -125,7 +125,7 @@ class OrderServiceTest {
             given(storeRepository.findById(storeId))
                     .willReturn(Optional.of(mockStore));
 
-            AddressEntity mockAddress = mock(AddressEntity.class);
+            Address mockAddress = mock(Address.class);
             given(mockAddress.getUserId()).willReturn(userId);
             given(addressRepository.findActiveById(addressId)).willReturn(Optional.of(mockAddress));
 
@@ -180,7 +180,7 @@ class OrderServiceTest {
             given(storeRepository.findById(storeId))
                     .willReturn(Optional.of(mock(Store.class)));
 
-            AddressEntity mockAddress = mock(AddressEntity.class);
+            Address mockAddress = mock(Address.class);
             given(mockAddress.getUserId()).willReturn(userId);
             given(addressRepository.findActiveById(addressId))
                     .willReturn(Optional.of(mockAddress));
@@ -199,7 +199,7 @@ class OrderServiceTest {
         @DisplayName("실패 - 해당 가게 소속이 아닌 메뉴 주문 불가")
         void 다른_가게_메뉴_주문_예외발생() {
             // given
-            MenuEntity mockMenu = mock(MenuEntity.class);
+            Menu mockMenu = mock(Menu.class);
             given(mockMenu.getStoreId()).willReturn(UUID.randomUUID()); // 다른 가게 ID
 
             Store mockStore = mock(Store.class);
@@ -208,7 +208,7 @@ class OrderServiceTest {
             given(storeRepository.findById(storeId))
                     .willReturn(Optional.of(mockStore));
 
-            AddressEntity mockAddress = mock(AddressEntity.class);
+            Address mockAddress = mock(Address.class);
             given(mockAddress.getUserId()).willReturn(userId);
             given(addressRepository.findActiveById(addressId))
                     .willReturn(Optional.of(mockAddress));
@@ -255,7 +255,7 @@ class OrderServiceTest {
             //given
             Store mockStore = mock(Store.class);
             given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
-            AddressEntity mockAddress = mock(AddressEntity.class);
+            Address mockAddress = mock(Address.class);
             given(mockAddress.getUserId()).willReturn(UUID.randomUUID()); // 다른 유저 ID
             given(addressRepository.findActiveById(addressId)).willReturn(Optional.of(mockAddress));
 

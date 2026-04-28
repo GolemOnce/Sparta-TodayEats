@@ -1,4 +1,4 @@
-package com.sparta.todayeats.menu.domain.entity;
+package com.sparta.todayeats.menu.entity;
 
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -8,7 +8,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "p_menu")
 @Getter
-public class MenuEntity extends BaseEntity {
+public class Menu extends BaseEntity {
 
     @Id
     @Column(name = "menu_id")
