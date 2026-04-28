@@ -2,6 +2,7 @@ package com.sparta.todayeats.address.controller;
 
 import com.sparta.todayeats.address.dto.reqeust.AddressCreateRequest;
 import com.sparta.todayeats.address.dto.response.AddressCreateResponse;
+import com.sparta.todayeats.address.dto.response.AddressDetailResponse;
 import com.sparta.todayeats.address.dto.response.AddressPageResponse;
 import com.sparta.todayeats.address.service.AddressService;
 import com.sparta.todayeats.global.response.ApiResponse;
@@ -44,6 +45,14 @@ public class AddressController {
     }
 
     // 배송지 상세 조회
+    @GetMapping("/{addressId}")
+    public ResponseEntity<ApiResponse<AddressDetailResponse>> getDetailAddress(
+            @PathVariable UUID addressId,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        AddressDetailResponse response = addressService.getDetailAddress(userId, addressId);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 
     // 배송지 수정
 
