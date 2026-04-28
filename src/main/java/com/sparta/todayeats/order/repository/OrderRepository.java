@@ -172,4 +172,17 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
                             @Param("currentStatus") OrderStatus currentStatus,
                             @Param("nextStatus") OrderStatus nextStatus,
                             @Param("updatedBy") UUID updatedBy);
+
+    /**
+     * 사용자의 진행 중인 주문 존재 여부 확인
+     * 종료 상태(COMPLETED, CANCELED, REJECTED) 제외
+     * 사용자 삭제 전 검증에 사용
+     */
+    @Query("SELECT COUNT(o) > 0 FROM Order o " +
+            "WHERE o.customerId = :customerId " +
+            "AND o.status NOT IN (com.sparta.todayeats.order.entity.OrderStatus.COMPLETED, " +
+            "                     com.sparta.todayeats.order.entity.OrderStatus.CANCELED, " +
+            "                     com.sparta.todayeats.order.entity.OrderStatus.REJECTED) " +
+            "AND o.deletedAt IS NULL")
+    boolean existsActiveOrderByCustomerId(@Param("customerId") UUID customerId);
 }
