@@ -88,7 +88,7 @@ public class MenuController {
             @Valid @RequestBody MenuUpdateRequest request
 
     ) {
-        menuService.updateMenu(menuId, request, userId);
+        menuService.updateMenu(menuId, userId, request);
     }
 
     // 메뉴 삭제
