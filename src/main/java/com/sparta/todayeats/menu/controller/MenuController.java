@@ -84,9 +84,11 @@ public class MenuController {
     @PatchMapping("/api/v1/menus/{menuId}")
     public void updateMenu(
             @PathVariable UUID menuId,
+            @AuthenticationPrincipal UUID userId,
             @Valid @RequestBody MenuUpdateRequest request
+
     ) {
-        menuService.updateMenu(menuId, request);
+        menuService.updateMenu(menuId, request, userId);
     }
 
     // 메뉴 삭제

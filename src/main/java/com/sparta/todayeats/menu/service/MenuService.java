@@ -121,9 +121,10 @@ public class MenuService {
 
     // 메뉴 수정
     @Transactional
-    public void updateMenu(UUID menuId, MenuUpdateRequest request) {
+    public void updateMenu(UUID menuId, MenuUpdateRequest request, UUID userId) {
         Menu menu = findMenu(menuId);
         validateNotDeleted(menu);
+        validateStoreOwner(menu.getStore(), userId);
 
         menu.update(
                 request.name(),
@@ -135,9 +136,10 @@ public class MenuService {
 
     // 상태 변경
     @Transactional
-    public void updateMenuStatus(UUID menuId, MenuStatusUpdateRequest request) {
+    public void updateMenuStatus(UUID menuId, MenuStatusUpdateRequest request, UUID userId) {
         Menu menu = findMenu(menuId);
         validateNotDeleted(menu);
+        validateStoreOwner(menu.getStore(), userId);
 
         menu.updateStatus(request.isHidden(), request.soldOut());
     }
@@ -147,6 +149,7 @@ public class MenuService {
     public void deleteMenu(UUID menuId, UUID userId) {
         Menu menu = findMenu(menuId);
         validateNotDeleted(menu);
+        validateStoreOwner(menu.getStore(), userId);
 
         menu.delete(userId);
     }
@@ -196,6 +199,14 @@ public class MenuService {
     }
 
     private void validateStoreOwner(Store store, UUID userId) {
+        if (store == null) {
+            throw new IllegalArgumentException("메뉴에 연결된 가게가 없습니다.");
+        }
+
+        if (store.getOwner() == null) {
+            throw new IllegalArgumentException("가게에 연결된 사장님이 없습니다.");
+        }
+
         if (!store.getOwner().getUserId().equals(userId)) {
             throw new IllegalArgumentException("해당 가게의 사장님만 접근할 수 있습니다.");
         }
