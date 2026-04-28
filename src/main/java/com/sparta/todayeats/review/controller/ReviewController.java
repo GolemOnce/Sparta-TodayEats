@@ -42,7 +42,7 @@ public class ReviewController {
     @GetMapping("/reviews")
     public ResponseEntity<ApiResponse<ReviewPageResponse>> getReviews(
             @AuthenticationPrincipal UUID userId,
-            @RequestParam(required = false) UUID targetId,
+            @RequestParam(name = "userId", required = false) UUID targetId,
             Pageable pageable,
             Authentication authentication
     ) {
