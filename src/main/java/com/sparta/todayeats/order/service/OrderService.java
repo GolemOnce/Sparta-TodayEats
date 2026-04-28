@@ -344,6 +344,14 @@ public class OrderService {
     }
 
     /**
+     * 사용자의 진행 중인 주문 존재 여부 반환
+     * UserService에서 사용자 삭제 전 호출
+     */
+    public boolean hasActiveOrders(UUID userId) {
+        return orderRepository.existsActiveOrderByCustomerId(userId);
+    }
+
+    /**
      * soft delete 제외 주문 단건 조회
      * 주문 없으면 BaseException(ORDER_NOT_FOUND) 발생
      */
