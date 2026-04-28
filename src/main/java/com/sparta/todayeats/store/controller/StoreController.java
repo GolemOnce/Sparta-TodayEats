@@ -42,7 +42,7 @@ public class StoreController {
     }
 
     // 가게 목록 조회 + 복합 검색 (카테고리, 이름)
-    // CUSTOMER,비로그인: 공개 가게만 노출 / OWNER: 자기것만 / MANAGER,MASTER: 전체 노출
+    // CUSTOMER,비로그인: 공개 가게만 노출 / OWNER: 본인거+공개 / MANAGER,MASTER: 전체 노출
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<StoreResponse>>> getStores(
             @RequestParam(required = false) String categoryName,
@@ -56,11 +56,14 @@ public class StoreController {
     }
 
     // 가게 단건 조회
+    // CUSTOMER,비로그인: 공개 가게만 노출 / OWNER: 본인거+공게 / MANAGER,MASTER: 전체
     @GetMapping("/{storeId}")
     public ResponseEntity<ApiResponse<StoreResponse>> getStore(
-            @PathVariable UUID storeId) {
+            @PathVariable UUID storeId,
+            @AuthenticationPrincipal UUID userId,
+            Authentication authentication) {
 
-        StoreResponse response = storeService.getStore(storeId);
+        StoreResponse response = storeService.getStore(storeId, userId, authentication);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }

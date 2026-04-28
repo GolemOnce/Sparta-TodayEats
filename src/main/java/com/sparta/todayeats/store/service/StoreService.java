@@ -95,9 +95,20 @@ public class StoreService {
 
 
     // 가게 단건 조회
-    public StoreResponse getStore(UUID storeId) {
+    public StoreResponse getStore(UUID storeId, UUID userId, Authentication authentication) {
         // 가게 엔티티 조회
         Store store = getStoreEntity(storeId);
+
+        // 숨김 아니면 누구나 조회 가능
+        if (!store.getIsHidden()) {
+            return toResponse(store);
+        }
+
+        // 숨김이면 권한 체크
+        if (!canAccessHiddenStore(store, userId, authentication)) {
+            throw new BaseException(StoreErrorCode.STORE_NOT_VISIBLE);
+        }
+
         return toResponse(store);
     }
 
@@ -239,6 +250,24 @@ public class StoreService {
             return null;
         }
         return phone.trim();
+    }
+
+    // 권한 체크
+    private boolean canAccessHiddenStore(Store store, UUID userId, Authentication authentication) {
+
+        boolean isManagerOrMaster = authentication != null &&
+                authentication.getAuthorities().stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER")
+                                || a.getAuthority().equals("ROLE_MASTER"));
+
+        boolean isOwner = authentication != null &&
+                authentication.getAuthorities().stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_OWNER"));
+
+        boolean isMyStore = userId != null &&
+                store.getOwner().getUserId().equals(userId);
+
+        return isManagerOrMaster || (isOwner && isMyStore);
     }
 
     // Store 엔티티 → 생성 응답 DTO 변환
