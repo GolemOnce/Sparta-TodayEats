@@ -17,7 +17,7 @@ public class AiRequestLogEntity extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "ai_request_log_id", nullable = false, updatable = false)
-    private String id;
+    private UUID id;
 
     // 사용자 원본
     @Column(nullable = false, length = 100)
