@@ -241,6 +241,7 @@ class OrderServiceTest {
         @Test
         @DisplayName("실패 - CUSTOMER가 아닌 역할로 주문 생성 시도")
         void CUSTOMER_아닌_역할_주문생성_예외발생() {
+            // when & then
             assertThatThrownBy(() -> orderService.createOrder(
                     createOrderRequest(), userId, UserRoleEnum.OWNER))
                     .isInstanceOf(BaseException.class)
@@ -251,12 +252,14 @@ class OrderServiceTest {
         @Test
         @DisplayName("실패 - 타인 배송지로 주문 생성 시도")
         void 타인_배송지_주문생성_예외발생() {
+            //given
             Store mockStore = mock(Store.class);
             given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
             AddressEntity mockAddress = mock(AddressEntity.class);
             given(mockAddress.getUserId()).willReturn(UUID.randomUUID()); // 다른 유저 ID
             given(addressRepository.findActiveById(addressId)).willReturn(Optional.of(mockAddress));
 
+            // when & then
             assertThatThrownBy(() -> orderService.createOrder(
                     createOrderRequest(), userId, UserRoleEnum.CUSTOMER))
                     .isInstanceOf(BaseException.class)
@@ -633,8 +636,6 @@ class OrderServiceTest {
         @DisplayName("실패 - CUSTOMER가 아닌 역할로 수정 시도")
         void CUSTOMER_아닌_역할_수정_예외발생() {
             // given
-            given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(pendingOrder()));
 
             // when & then
             assertThatThrownBy(() -> orderService.updateOrder(
@@ -782,8 +783,6 @@ class OrderServiceTest {
         @DisplayName("실패 - CUSTOMER가 상태 변경 시도")
         void CUSTOMER_상태변경_예외발생() {
             // given
-            given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(pendingOrder()));
 
             // when & then
             assertThatThrownBy(() -> orderService.updateOrderStatus(
@@ -987,8 +986,6 @@ class OrderServiceTest {
         @DisplayName("실패 - OWNER가 취소 시도")
         void OWNER_취소_예외발생() {
             // given
-            given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(pendingOrder()));
 
             // when & then
             assertThatThrownBy(() -> orderService.cancelOrder(
@@ -1002,8 +999,6 @@ class OrderServiceTest {
         @DisplayName("실패 - MANAGER가 취소 시도")
         void MANAGER_취소_예외발생() {
             // given
-            given(orderRepository.findActiveById(orderId))
-                    .willReturn(Optional.of(pendingOrder()));
 
             // when & then
             assertThatThrownBy(() -> orderService.cancelOrder(
@@ -1186,7 +1181,7 @@ class OrderServiceTest {
         @Test
         @DisplayName("실패 - CUSTOMER가 거절 시도")
         void CUSTOMER_거절_예외발생() {
-            given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(pendingOrder()));
+            // when & then
             assertThatThrownBy(() -> orderService.rejectOrder(
                     orderId, new RejectOrderRequest("재료 소진"), userId, UserRoleEnum.CUSTOMER))
                     .isInstanceOf(BaseException.class)
@@ -1197,12 +1192,15 @@ class OrderServiceTest {
         @Test
         @DisplayName("실패 - OWNER가 타인 가게 주문 거절 시도")
         void OWNER_타인_가게_주문_거절_예외발생() {
+            //given
             given(orderRepository.findActiveById(orderId)).willReturn(Optional.of(pendingOrder()));
             User mockOwner = mock(User.class);
             given(mockOwner.getUserId()).willReturn(UUID.randomUUID());
             Store mockStore = mock(Store.class);
             given(mockStore.getOwner()).willReturn(mockOwner);
             given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
+
+            // when & then
             assertThatThrownBy(() -> orderService.rejectOrder(
                     orderId, new RejectOrderRequest("재료 소진"), userId, UserRoleEnum.OWNER))
                     .isInstanceOf(BaseException.class)
@@ -1255,6 +1253,7 @@ class OrderServiceTest {
         @Test
         @DisplayName("실패 - MASTER가 아닌 역할로 삭제 시도")
         void MASTER_아닌_역할_삭제_예외발생() {
+            // when & then
             assertThatThrownBy(() -> orderService.deleteOrder(orderId, userId, UserRoleEnum.MANAGER))
                     .isInstanceOf(BaseException.class)
                     .satisfies(e -> assertThat(((BaseException) e).getErrorCode())

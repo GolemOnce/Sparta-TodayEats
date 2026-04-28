@@ -182,11 +182,12 @@ public class OrderService {
                                            UUID userId,
                                            UserRoleEnum role
     ) {
-        Order order = findActiveOrder(orderId);
-
         if (role != UserRoleEnum.CUSTOMER) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
         }
+
+        Order order = findActiveOrder(orderId);
+
         if (!order.getCustomerId().equals(userId)) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
         }
@@ -210,11 +211,13 @@ public class OrderService {
                                                        UUID userId,
                                                        UserRoleEnum role
     ) {
-        Order order = findActiveOrder(orderId);
-
         if (role == UserRoleEnum.CUSTOMER) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
-        } else if (role == UserRoleEnum.OWNER) {
+        }
+
+        Order order = findActiveOrder(orderId);
+
+        if (role == UserRoleEnum.OWNER) {
             validateOwnerStoreAccess(order.getStoreId(), userId);
         } else if (role != UserRoleEnum.MANAGER && role != UserRoleEnum.MASTER) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
@@ -244,11 +247,12 @@ public class OrderService {
                                            UUID userId,
                                            UserRoleEnum role
     ) {
-        Order order = findActiveOrder(orderId);
-
         if (role != UserRoleEnum.CUSTOMER && role != UserRoleEnum.MASTER) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
         }
+
+        Order order = findActiveOrder(orderId);
+
         if (role == UserRoleEnum.CUSTOMER && !order.getCustomerId().equals(userId)) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
         }
@@ -285,11 +289,13 @@ public class OrderService {
                                            UUID userId,
                                            UserRoleEnum role
     ) {
-        Order order = findActiveOrder(orderId);
-
         if (role == UserRoleEnum.CUSTOMER) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
-        } else if (role == UserRoleEnum.OWNER) {
+        }
+
+        Order order = findActiveOrder(orderId);
+
+        if (role == UserRoleEnum.OWNER) {
             validateOwnerStoreAccess(order.getStoreId(), userId);
         } else if (role != UserRoleEnum.MANAGER && role != UserRoleEnum.MASTER) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
