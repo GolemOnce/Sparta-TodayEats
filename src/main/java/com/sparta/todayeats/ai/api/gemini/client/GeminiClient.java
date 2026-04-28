@@ -54,7 +54,12 @@ public class GeminiClient {
 
         if (bodyResponse == null
                 || bodyResponse.candidates() == null
-                || bodyResponse.candidates().isEmpty()) {
+                || bodyResponse.candidates().isEmpty()
+                || bodyResponse.candidates().get(0).content() == null
+                || bodyResponse.candidates().get(0).content().parts() == null
+                || bodyResponse.candidates().get(0).content().parts().isEmpty()
+                || bodyResponse.candidates().get(0).content().parts().get(0).text() == null
+                || bodyResponse.candidates().get(0).content().parts().get(0).text().isBlank()) {
             throw new BaseException(AiRequestLogErrorCode.AI_RESPONSE_EMPTY); // AI_RESPONSE_EMPTY
         }
 
