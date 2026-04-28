@@ -2,10 +2,7 @@ package com.sparta.todayeats.address.controller;
 
 import com.sparta.todayeats.address.dto.reqeust.AddressCreateRequest;
 import com.sparta.todayeats.address.dto.reqeust.AddressUpdateRequest;
-import com.sparta.todayeats.address.dto.response.AddressCreateResponse;
-import com.sparta.todayeats.address.dto.response.AddressDetailResponse;
-import com.sparta.todayeats.address.dto.response.AddressPageResponse;
-import com.sparta.todayeats.address.dto.response.AddressUpdateResponse;
+import com.sparta.todayeats.address.dto.response.*;
 import com.sparta.todayeats.address.service.AddressService;
 import com.sparta.todayeats.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -68,6 +65,14 @@ public class AddressController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
     // 기본 배송지 설정
+    @PatchMapping("/{addressId}")
+    public ResponseEntity<ApiResponse<AddressDefaultResponse>> setDefaultAddress(
+            @PathVariable UUID addressId,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        AddressDefaultResponse response = addressService.setDefaultAddress(userId, addressId);
 
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
     // 배송지 삭제
 }

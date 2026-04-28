@@ -2,10 +2,7 @@ package com.sparta.todayeats.address.service;
 
 import com.sparta.todayeats.address.dto.reqeust.AddressCreateRequest;
 import com.sparta.todayeats.address.dto.reqeust.AddressUpdateRequest;
-import com.sparta.todayeats.address.dto.response.AddressCreateResponse;
-import com.sparta.todayeats.address.dto.response.AddressDetailResponse;
-import com.sparta.todayeats.address.dto.response.AddressPageResponse;
-import com.sparta.todayeats.address.dto.response.AddressUpdateResponse;
+import com.sparta.todayeats.address.dto.response.*;
 import com.sparta.todayeats.address.entity.Address;
 import com.sparta.todayeats.address.repository.AddressRepository;
 import com.sparta.todayeats.global.exception.AddressErrorCode;
@@ -103,7 +100,24 @@ public class AddressService {
 
         return AddressUpdateResponse.from(address);
     }
+
     // 기본 배송지 설정
+    @Transactional
+    public AddressDefaultResponse setDefaultAddress(UUID userId, UUID addressId) {
+        // 1. 기존 기본 배송지 false로
+        addressRepository.findByUserUserIdAndIsDefaultTrue(userId)
+                .ifPresent(address -> address.updateDefault(false));
+
+        // 2. 새 기본 배송지 true로
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(() -> new BaseException(AddressErrorCode.ADDRESS_NOT_FOUND));
+
+        userAuthorizationService.validateSelf(userId, address.getUser().getUserId());
+
+        address.updateDefault(true);
+
+        return AddressDefaultResponse.from(address);
+    }
 
     // 배송지 삭제
 }
