@@ -5,6 +5,7 @@ import com.sparta.todayeats.area.presentation.dto.AreaCreateRequest;
 import com.sparta.todayeats.area.presentation.dto.AreaCreateResponse;
 import com.sparta.todayeats.area.presentation.dto.AreaResponse;
 import com.sparta.todayeats.area.presentation.dto.AreaUpdateRequest;
+import com.sparta.todayeats.global.annotation.LoginUser;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.response.ApiResponse;
 import jakarta.validation.Valid;
@@ -72,7 +73,7 @@ public class AreaController {
     // 운영 지역 삭제
     @PreAuthorize("hasAnyRole('MASTER')")
     @DeleteMapping("/{areaId}")
-    public ResponseEntity<ApiResponse<Void>> deleteArea(@PathVariable UUID areaId,@AuthenticationPrincipal UUID userId) {
+    public ResponseEntity<ApiResponse<Void>> deleteArea(@PathVariable UUID areaId,@LoginUser UUID userId) {
 
         areaService.deleteArea(areaId,userId);
 
