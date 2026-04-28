@@ -5,10 +5,10 @@ import com.sparta.todayeats.category.domain.repository.CategoryRepository;
 import com.sparta.todayeats.menu.entity.Menu;
 import com.sparta.todayeats.menu.repository.MenuRepository;
 import com.sparta.todayeats.menu.dto.request.MenuCreateRequest;
-import com.sparta.todayeats.menu.dto.request.MenuStatusUpdateRequest;
 import com.sparta.todayeats.menu.dto.request.MenuUpdateRequest;
 import com.sparta.todayeats.store.entity.Store;
 import com.sparta.todayeats.store.repository.StoreRepository;
+import com.sparta.todayeats.user.domain.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -52,6 +52,7 @@ class MenuServiceTest {
         @DisplayName("성공 - 메뉴 생성")
         void success() {
             // given
+            UUID userId = UUID.randomUUID();
             UUID storeId = UUID.randomUUID();
             UUID categoryId = UUID.randomUUID();
 
@@ -65,14 +66,17 @@ class MenuServiceTest {
 
             Category category = mock(Category.class);
             Store store = mock(Store.class);
+            User owner = mock(User.class);
 
+            given(store.getOwner()).willReturn(owner);
+            given(owner.getUserId()).willReturn(userId);
             given(categoryRepository.findById(categoryId)).willReturn(Optional.of(category));
             given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
             given(menuRepository.save(any(Menu.class)))
                     .willAnswer(invocation -> invocation.getArgument(0));
 
             // when
-            Menu result = menuService.createMenu(storeId, request);
+            Menu result = menuService.createMenu(storeId, request, userId);
 
             // then
             assertThat(result.getName()).isEqualTo("김치찌개");
@@ -90,6 +94,7 @@ class MenuServiceTest {
         @DisplayName("실패 - 카테고리가 없을 경우")
         void fail_category_not_found() {
             // given
+            UUID userId = UUID.randomUUID();
             UUID storeId = UUID.randomUUID();
             UUID categoryId = UUID.randomUUID();
 
@@ -104,7 +109,7 @@ class MenuServiceTest {
             given(categoryRepository.findById(categoryId)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> menuService.createMenu(storeId, request))
+            assertThatThrownBy(() -> menuService.createMenu(storeId, request, userId))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("카테고리 없음");
         }
@@ -113,6 +118,7 @@ class MenuServiceTest {
         @DisplayName("실패 - 가게가 없을 경우")
         void fail_store_not_found() {
             // given
+            UUID userId = UUID.randomUUID();
             UUID storeId = UUID.randomUUID();
             UUID categoryId = UUID.randomUUID();
 
@@ -130,7 +136,7 @@ class MenuServiceTest {
             given(storeRepository.findById(storeId)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> menuService.createMenu(storeId, request))
+            assertThatThrownBy(() -> menuService.createMenu(storeId, request, userId))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("가게 없음");
         }
@@ -174,7 +180,15 @@ class MenuServiceTest {
         @DisplayName("성공 - 사장님 메뉴 조회")
         void success() {
             // given
+            UUID userId = UUID.randomUUID();
             UUID storeId = UUID.randomUUID();
+
+            Store store = mock(Store.class);
+            User owner = mock(User.class);
+
+            given(store.getOwner()).willReturn(owner);
+            given(owner.getUserId()).willReturn(userId);
+            given(storeRepository.findById(storeId)).willReturn(Optional.of(store));
 
             Menu hiddenMenu = Menu.builder()
                     .name("숨김 메뉴")
@@ -189,7 +203,7 @@ class MenuServiceTest {
                     .willReturn(new PageImpl<>(List.of(hiddenMenu)));
 
             // when
-            Page<Menu> result = menuService.getOwnerMenusByStore(storeId, keyword, pageable);
+            Page<Menu> result = menuService.getOwnerMenusByStore(storeId, userId, keyword, pageable);
 
             // then
             assertThat(result.getContent()).hasSize(1);
@@ -242,43 +256,52 @@ class MenuServiceTest {
     @DisplayName("updateMenu()")
     class UpdateMenu {
 
-        @Test
-        @DisplayName("성공 - 메뉴 수정")
-        void success() {
-            // given
-            UUID menuId = UUID.randomUUID();
+            @Test
+            @DisplayName("성공 - 메뉴 수정")
+            void success() {
+                // given
+                UUID menuId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID();
 
-            Menu menu = Menu.builder()
-                    .name("김치찌개")
-                    .price(9000)
-                    .description("기존 설명")
-                    .imageUrl("old-image")
-                    .build();
+                Store store = mock(Store.class);
+                User owner = mock(User.class);
 
-            MenuUpdateRequest request = new MenuUpdateRequest(
-                    "된장찌개",
-                    8500,
-                    "수정된 설명",
-                    "new-image"
-            );
+                given(store.getOwner()).willReturn(owner);
+                given(owner.getUserId()).willReturn(userId);
 
-            given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
+                Menu menu = Menu.builder()
+                        .name("김치찌개")
+                        .price(9000)
+                        .description("기존 설명")
+                        .imageUrl("old-image")
+                        .store(store)
+                        .build();
 
-            // when
-            menuService.updateMenu(menuId, request);
+                MenuUpdateRequest request = new MenuUpdateRequest(
+                        "된장찌개",
+                        8500,
+                        "수정된 설명",
+                        "new-image"
+                );
 
-            // then
-            assertThat(menu.getName()).isEqualTo("된장찌개");
-            assertThat(menu.getPrice()).isEqualTo(8500);
-            assertThat(menu.getDescription()).isEqualTo("수정된 설명");
-            assertThat(menu.getImageUrl()).isEqualTo("new-image");
-        }
+                given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
+
+                // when
+                menuService.updateMenu(menuId, userId, request);
+
+                // then
+                assertThat(menu.getName()).isEqualTo("된장찌개");
+                assertThat(menu.getPrice()).isEqualTo(8500);
+                assertThat(menu.getDescription()).isEqualTo("수정된 설명");
+                assertThat(menu.getImageUrl()).isEqualTo("new-image");
+            }
 
         @Test
         @DisplayName("실패 - 메뉴가 없을 경우")
         void fail_menu_not_found() {
             // given
             UUID menuId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
 
             MenuUpdateRequest request = new MenuUpdateRequest(
                     "된장찌개",
@@ -290,145 +313,37 @@ class MenuServiceTest {
             given(menuRepository.findById(menuId)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> menuService.updateMenu(menuId, request))
+            assertThatThrownBy(() -> menuService.updateMenu(menuId, userId, request))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("메뉴 없음");
         }
 
-        @Test
-        @DisplayName("실패 - 삭제된 메뉴 수정")
-        void fail_deleted_menu() {
-            // given
-            UUID menuId = UUID.randomUUID();
+            @Test
+            @DisplayName("실패 - 삭제된 메뉴 수정")
+            void fail_deleted_menu() {
+                // given
+                UUID menuId = UUID.randomUUID();
+                UUID userId = UUID.randomUUID();
 
-            Menu menu = Menu.builder()
-                    .name("삭제된 메뉴")
-                    .price(9000)
-                    .build();
-            menu.softDelete(UUID.randomUUID());
+                Menu menu = Menu.builder()
+                        .name("삭제된 메뉴")
+                        .price(9000)
+                        .build();
+                menu.softDelete(UUID.randomUUID());
 
-            MenuUpdateRequest request = new MenuUpdateRequest(
-                    "수정 메뉴",
-                    10000,
-                    "수정 설명",
-                    "image-url"
-            );
+                MenuUpdateRequest request = new MenuUpdateRequest(
+                        "수정 메뉴",
+                        10000,
+                        "수정 설명",
+                        "image-url"
+                );
 
-            given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
+                given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
 
-            // when & then
-            assertThatThrownBy(() -> menuService.updateMenu(menuId, request))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("삭제된 메뉴입니다.");
-        }
-    }
-
-    @Nested
-    @DisplayName("updateMenuStatus()")
-    class UpdateMenuStatus {
-
-        @Test
-        @DisplayName("성공 - 메뉴 상태 변경")
-        void success() {
-            // given
-            UUID menuId = UUID.randomUUID();
-
-            Menu menu = Menu.builder()
-                    .name("김치찌개")
-                    .price(9000)
-                    .isHidden(false)
-                    .soldOut(false)
-                    .build();
-
-            MenuStatusUpdateRequest request = new MenuStatusUpdateRequest(true, true);
-
-            given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-
-            // when
-            menuService.updateMenuStatus(menuId, request);
-
-            // then
-            assertThat(menu.isHidden()).isTrue();
-            assertThat(menu.isSoldOut()).isTrue();
-        }
-    }
-
-    @Test
-    @DisplayName("실패 - 메뉴가 없을 경우")
-    void fail_menu_not_found() {
-        // given
-        UUID menuId = UUID.randomUUID();
-        MenuStatusUpdateRequest request = new MenuStatusUpdateRequest(true, true);
-
-        given(menuRepository.findById(menuId)).willReturn(Optional.empty());
-
-        // when & then
-        assertThatThrownBy(() -> menuService.updateMenuStatus(menuId, request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("메뉴 없음");
-    }
-
-    @Test
-    @DisplayName("실패 - 삭제된 메뉴 상태 변경")
-    void fail_deleted_menu() {
-        // given
-        UUID menuId = UUID.randomUUID();
-
-        Menu menu = Menu.builder()
-                .name("삭제된 메뉴")
-                .price(9000)
-                .build();
-
-        menu.softDelete(UUID.randomUUID());
-
-        MenuStatusUpdateRequest request = new MenuStatusUpdateRequest(true, true);
-
-        given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-
-        // when & then
-        assertThatThrownBy(() -> menuService.updateMenuStatus(menuId, request))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("삭제된 메뉴입니다.");
-    }
-
-    @Nested
-    @DisplayName("deleteMenu()")
-    class DeleteMenu {
-
-        @Test
-        @DisplayName("성공 - 메뉴 삭제 soft delete")
-        void success() {
-            // given
-            UUID menuId = UUID.randomUUID();
-            UUID userId = UUID.randomUUID();
-
-            Menu menu = Menu.builder()
-                    .name("김치찌개")
-                    .price(9000)
-                    .build();
-
-            given(menuRepository.findById(menuId)).willReturn(Optional.of(menu));
-
-            // when
-            menuService.deleteMenu(menuId, userId);
-
-            // then
-            assertThat(menu.isDeleted()).isTrue();
-        }
-
-        @Test
-        @DisplayName("실패 - 메뉴가 없을 경우")
-        void fail_menu_not_found() {
-            // given
-            UUID menuId = UUID.randomUUID();
-            UUID userId = UUID.randomUUID();
-
-            given(menuRepository.findById(menuId)).willReturn(Optional.empty());
-
-            // when & then
-            assertThatThrownBy(() -> menuService.deleteMenu(menuId, userId))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("메뉴 없음");
-        }
+                // when & then
+                assertThatThrownBy(() -> menuService.updateMenu(menuId, userId, request))
+                        .isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("삭제된 메뉴입니다.");
+            }
     }
 }
