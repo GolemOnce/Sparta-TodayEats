@@ -1,5 +1,7 @@
 package com.sparta.todayeats.review.entity;
 
+import com.sparta.todayeats.global.exception.BaseException;
+import com.sparta.todayeats.global.exception.ReviewErrorCode;
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.store.entity.Store;
@@ -40,6 +42,9 @@ public class Review extends BaseEntity {
 
     public void update(Integer rating, String content) {
         if (rating != null) {
+            if (rating < 1 || rating > 5) {
+                throw new BaseException(ReviewErrorCode.REVIEW_INVALID_RATING);
+            }
             this.rating = rating;
         }
         if (content != null) {
