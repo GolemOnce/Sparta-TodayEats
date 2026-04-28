@@ -5,6 +5,7 @@ import com.sparta.todayeats.order.Repository.OrderRepository;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.review.dto.request.ReviewCreateRequest;
 import com.sparta.todayeats.review.dto.response.ReviewCreateResponse;
+import com.sparta.todayeats.review.dto.response.ReviewDetailResponse;
 import com.sparta.todayeats.review.dto.response.ReviewPageResponse;
 import com.sparta.todayeats.review.entity.Review;
 import com.sparta.todayeats.review.repository.ReviewRepository;
@@ -228,6 +229,57 @@ class ReviewServiceTest {
 
             // when & then
             assertThatThrownBy(() -> reviewService.getStoreReviews(storeId, pageable))
+                    .isInstanceOf(BaseException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("리뷰 상세 조회")
+    class getDetailReview {
+
+        @Test
+        void 리뷰_상세_조회_성공() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+
+            // Order도 mock으로
+            Order order = mock(Order.class);
+            User user = mock(User.class);
+            Store store = mock(Store.class);
+
+            given(user.getUserId()).willReturn(userId);
+            given(store.getId()).willReturn(storeId);
+            given(order.getOrderId()).willReturn(orderId);
+
+            Review review = Review.builder()
+                    .user(user)
+                    .store(store)
+                    .order(order)
+                    .rating(5)
+                    .content("맛있어요")
+                    .build();
+
+            given(reviewRepository.getReviewById(reviewId)).willReturn(Optional.of(review));
+
+            // when
+            ReviewDetailResponse response = reviewService.getDetailReview(reviewId);
+
+            // then
+            assertThat(response.getRating()).isEqualTo(5);
+            assertThat(response.getContent()).isEqualTo("맛있어요");
+            assertThat(response.getStoreId()).isEqualTo(storeId);
+            assertThat(response.getCustomerId()).isEqualTo(userId);
+            verify(reviewRepository).getReviewById(reviewId);
+        }
+
+        @Test
+        void 존재하지_않는_리뷰_조회시_예외() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+            given(reviewRepository.getReviewById(reviewId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> reviewService.getDetailReview(reviewId))
                     .isInstanceOf(BaseException.class);
         }
     }
