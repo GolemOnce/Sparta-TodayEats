@@ -59,7 +59,7 @@ class MenuServiceTest {
 
             MenuCreateRequest request = new MenuCreateRequest(
                     "김치찌개",
-                    9000,
+                    9000L,
                     "돼지고기 김치찌개",
                     "image-url",
                     categoryId,
@@ -102,7 +102,7 @@ class MenuServiceTest {
 
             MenuCreateRequest request = new MenuCreateRequest(
                     "김치찌개",
-                    9000,
+                    9000L,
                     "돼지고기 김치찌개",
                     "image-url",
                     categoryId,
@@ -127,7 +127,7 @@ class MenuServiceTest {
 
             MenuCreateRequest request = new MenuCreateRequest(
                     "김치찌개",
-                    9000,
+                    9000L,
                     "돼지고기 김치찌개",
                     "image-url",
                     categoryId,
@@ -159,7 +159,7 @@ class MenuServiceTest {
 
             Menu menu = Menu.builder()
                     .name("김치찌개")
-                    .price(9000)
+                    .price(9000L)
                     .build();
 
             String keyword = "김치";
@@ -197,7 +197,7 @@ class MenuServiceTest {
 
             Menu hiddenMenu = Menu.builder()
                     .name("숨김 메뉴")
-                    .price(10000)
+                    .price(10000L)
                     .isHidden(true)
                     .build();
 
@@ -230,7 +230,7 @@ class MenuServiceTest {
 
             Menu menu = Menu.builder()
                     .name("콜라")
-                    .price(2000)
+                    .price(2000L)
                     .build();
 
             String keyword = "콜라";
@@ -273,7 +273,7 @@ class MenuServiceTest {
 
             Menu menu = Menu.builder()
                     .name("김치찌개")
-                    .price(9000)
+                    .price(9000L)
                     .description("기존 설명")
                     .imageUrl("old-image")
                     .build();
@@ -281,7 +281,7 @@ class MenuServiceTest {
 
             MenuUpdateRequest request = new MenuUpdateRequest(
                     "된장찌개",
-                    8500,
+                    8500L,
                     "수정된 설명",
                     "new-image"
             );
@@ -309,7 +309,7 @@ class MenuServiceTest {
 
             MenuUpdateRequest request = new MenuUpdateRequest(
                     "된장찌개",
-                    8500,
+                    8500L,
                     "수정된 설명",
                     "new-image"
             );
