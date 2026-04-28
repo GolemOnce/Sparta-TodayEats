@@ -45,7 +45,7 @@ class CategoryServiceTest {
             // given
             CategoryCreateRequest request = new CategoryCreateRequest("한식");
 
-            given(categoryRepository.existsByNameIgnoreCase("한식"))
+            given(categoryRepository.existsByNameIgnoreCaseAndDeletedAtIsNull("한식"))
                     .willReturn(false);
 
             given(categoryRepository.save(any(Category.class)))
@@ -70,7 +70,7 @@ class CategoryServiceTest {
             // given
             CategoryCreateRequest request = new CategoryCreateRequest("한식");
 
-            given(categoryRepository.existsByNameIgnoreCase("한식"))
+            given(categoryRepository.existsByNameIgnoreCaseAndDeletedAtIsNull("한식"))
                     .willReturn(true);
 
             // when & then
@@ -78,6 +78,25 @@ class CategoryServiceTest {
                     categoryService.createCategory(request)
             ).isInstanceOf(BaseException.class);
         }
+
+        @Test
+        void 카테고리_이름이_null이면_예외() {
+            CategoryCreateRequest request = new CategoryCreateRequest(null);
+
+            assertThatThrownBy(() ->
+                    categoryService.createCategory(request)
+            ).isInstanceOf(BaseException.class);
+        }
+
+        @Test
+        void 카테고리_이름이_공백이면_예외() {
+            CategoryCreateRequest request = new CategoryCreateRequest("   ");
+
+            assertThatThrownBy(() ->
+                    categoryService.createCategory(request)
+            ).isInstanceOf(BaseException.class);
+        }
+
     }
 
     // 카테고리 목록 조회
@@ -150,18 +169,18 @@ class CategoryServiceTest {
         @Test
         void 카테고리_단건조회_성공() {
             // given
-            UUID id = UUID.randomUUID();
+            UUID categoryId = UUID.randomUUID();
 
             Category category = Category.builder()
-                    .id(id)
+                    .id(categoryId)
                     .name("한식")
                     .build();
 
-            given(categoryRepository.findById(id))
+            given(categoryRepository.findById(categoryId))
                     .willReturn(Optional.of(category));
 
             // when
-            CategoryResponse result = categoryService.getCategory(id);
+            CategoryResponse result = categoryService.getCategory(categoryId);
 
             // then
             assertThat(result.getName()).isEqualTo("한식");
@@ -170,14 +189,14 @@ class CategoryServiceTest {
         @Test
         void 카테고리가_존재하지_않으면_예외발생() {
             // given
-            UUID id = UUID.randomUUID();
+            UUID categoryId = UUID.randomUUID();
 
-            given(categoryRepository.findById(id))
+            given(categoryRepository.findById(categoryId))
                     .willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() ->
-                    categoryService.getCategory(id)
+                    categoryService.getCategory(categoryId)
             ).isInstanceOf(BaseException.class);
         }
     }
@@ -190,6 +209,46 @@ class CategoryServiceTest {
         @Test
         void 카테고리_수정_성공() {
             // given
+            UUID categoryId = UUID.randomUUID();
+
+            Category category = Category.builder()
+                    .id(categoryId)
+                    .name("한식")
+                    .build();
+
+            given(categoryRepository.findById(categoryId))
+                    .willReturn(Optional.of(category));
+
+            CategoryUpdateRequest request =
+                    new CategoryUpdateRequest("중식");
+
+            // when
+            CategoryResponse result =
+                    categoryService.updateCategory(categoryId, request);
+
+            // then
+            assertThat(result.getName()).isEqualTo("중식");
+        }
+
+        @Test
+        void 카테고리_수정시_존재하지_않으면_예외발생() {
+            // given
+            UUID categoryId = UUID.randomUUID();
+
+            given(categoryRepository.findById(categoryId))
+                    .willReturn(Optional.empty());
+
+            CategoryUpdateRequest request =
+                    new CategoryUpdateRequest("중식");
+
+            // when & then
+            assertThatThrownBy(() ->
+                    categoryService.updateCategory(categoryId, request)
+            ).isInstanceOf(BaseException.class);
+        }
+
+        @Test
+        void 카테고리_수정시_이름이_중복이면_예외() {
             UUID id = UUID.randomUUID();
 
             Category category = Category.builder()
@@ -200,29 +259,11 @@ class CategoryServiceTest {
             given(categoryRepository.findById(id))
                     .willReturn(Optional.of(category));
 
-            CategoryUpdateRequest request =
-                    new CategoryUpdateRequest("중식");
+            given(categoryRepository.existsByNameIgnoreCaseAndDeletedAtIsNull("중식"))
+                    .willReturn(true);
 
-            // when
-            CategoryResponse result =
-                    categoryService.updateCategory(id, request);
+            CategoryUpdateRequest request = new CategoryUpdateRequest("중식");
 
-            // then
-            assertThat(result.getName()).isEqualTo("중식");
-        }
-
-        @Test
-        void 카테고리_수정시_존재하지_않으면_예외발생() {
-            // given
-            UUID id = UUID.randomUUID();
-
-            given(categoryRepository.findById(id))
-                    .willReturn(Optional.empty());
-
-            CategoryUpdateRequest request =
-                    new CategoryUpdateRequest("중식");
-
-            // when & then
             assertThatThrownBy(() ->
                     categoryService.updateCategory(id, request)
             ).isInstanceOf(BaseException.class);
@@ -237,34 +278,36 @@ class CategoryServiceTest {
         @Test
         void 카테고리_삭제_성공() {
             // given
-            UUID id = UUID.randomUUID();
+            UUID categoryId = UUID.randomUUID();
 
             Category category = Category.builder()
-                    .id(id)
+                    .id(categoryId)
                     .name("한식")
                     .build();
 
-            given(categoryRepository.findById(id))
+            given(categoryRepository.findById(categoryId))
                     .willReturn(Optional.of(category));
 
             // when
-            categoryService.deleteCategory(id);
+            UUID userId = UUID.randomUUID();
+            categoryService.deleteCategory(categoryId, userId);
 
             // then
-            assertThat(category.isDeleted()).isTrue();
+            assertThat(category.getDeletedAt()).isNotNull();
         }
 
         @Test
         void 카테고리_삭제시_존재하지_않으면_예외발생() {
             // given
-            UUID id = UUID.randomUUID();
+            UUID categoryId = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
 
-            given(categoryRepository.findById(id))
+            given(categoryRepository.findById(categoryId))
                     .willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() ->
-                    categoryService.deleteCategory(id)
+                    categoryService.deleteCategory(categoryId, userId)
             ).isInstanceOf(BaseException.class);
         }
     }

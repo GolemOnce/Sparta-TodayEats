@@ -26,6 +26,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.catchThrowable;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
@@ -49,7 +50,7 @@ class AreaServiceTest {
             // given
             AreaCreateRequest request = new AreaCreateRequest("이태원", "서울특별시", "용산구");
 
-            given(areaRepository.existsByNameIgnoreCase("이태원"))
+            given(areaRepository.existsByNameIgnoreCaseAndDeletedAtIsNull("이태원"))
                     .willReturn(false);
 
             given(areaRepository.save(any(Area.class)))
@@ -79,7 +80,7 @@ class AreaServiceTest {
             // given
             AreaCreateRequest request = new AreaCreateRequest("이태원", "서울특별시", "용산구");
 
-            given(areaRepository.existsByNameIgnoreCase("이태원"))
+            given(areaRepository.existsByNameIgnoreCaseAndDeletedAtIsNull("이태원"))
                     .willReturn(true);
 
             // when & then
@@ -93,7 +94,7 @@ class AreaServiceTest {
             // given
             AreaCreateRequest request = new AreaCreateRequest("  이태원  ", "서울특별시", "용산구");
 
-            given(areaRepository.existsByNameIgnoreCase("이태원"))
+            given(areaRepository.existsByNameIgnoreCaseAndDeletedAtIsNull("이태원"))
                     .willReturn(false);
 
             given(areaRepository.save(any(Area.class)))
@@ -113,6 +114,28 @@ class AreaServiceTest {
 
             // then
             assertThat(result.getName()).isEqualTo("이태원"); // trim 됐는지 확인
+        }
+
+        @Test
+        void 운영지역_이름이_null이면_예외() {
+            // given
+            AreaCreateRequest request = new AreaCreateRequest(null, "서울", "강남");
+
+            // when && then
+            assertThatThrownBy(() ->
+                    areaService.createArea(request)
+            ).isInstanceOf(BaseException.class);
+        }
+
+        @Test
+        void 운영지역_이름이_공백이면_예외() {
+            // given
+            AreaCreateRequest request = new AreaCreateRequest("   ", "서울", "강남");
+
+            // when && then
+            assertThatThrownBy(() ->
+                    areaService.createArea(request)
+            ).isInstanceOf(BaseException.class);
         }
     }
 
@@ -268,7 +291,7 @@ class AreaServiceTest {
             given(areaRepository.findById(id))
                     .willReturn(Optional.of(area));
 
-            given(areaRepository.existsByNameIgnoreCase("광화문"))
+            given(areaRepository.existsByNameIgnoreCaseAndDeletedAtIsNull("광화문"))
                     .willReturn(true);
 
             AreaUpdateRequest request = new AreaUpdateRequest("광화문", "서울특별시", "종로구", true);
@@ -321,6 +344,32 @@ class AreaServiceTest {
                     areaService.updateArea(id, request)
             ).isInstanceOf(BaseException.class);
         }
+
+        @Test
+        void 운영지역_수정시_이름이_null이면_예외() {
+            // given
+            UUID id = UUID.randomUUID();
+
+            Area area = Area.builder()
+                    .id(id)
+                    .name("이태원")
+                    .city("서울")
+                    .district("용산구")
+                    .isActive(true)
+                    .build();
+
+            given(areaRepository.findById(id)).willReturn(Optional.of(area));
+
+            AreaUpdateRequest request = new AreaUpdateRequest(null, "서울", "강남", true);
+
+            // when
+            Throwable thrown = catchThrowable(() ->
+                    areaService.updateArea(id, request)
+            );
+
+            // then
+            assertThat(thrown).isInstanceOf(BaseException.class);
+        }
     }
 
 
@@ -333,6 +382,7 @@ class AreaServiceTest {
         void 운영지역_삭제_성공() {
             // given
             UUID id = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
 
             Area area = Area.builder()
                     .id(id)
@@ -346,7 +396,7 @@ class AreaServiceTest {
                     .willReturn(Optional.of(area));
 
             // when
-            areaService.deleteArea(id);
+            areaService.deleteArea(id,userId);
 
             // then
             assertThat(area.isDeleted()).isTrue();
@@ -356,13 +406,14 @@ class AreaServiceTest {
         void 운영지역_삭제시_존재하지_않으면_예외발생() {
             // given
             UUID id = UUID.randomUUID();
+            UUID userId = UUID.randomUUID();
 
             given(areaRepository.findById(id))
                     .willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() ->
-                    areaService.deleteArea(id)
+                    areaService.deleteArea(id, userId)
             ).isInstanceOf(BaseException.class);
         }
     }
