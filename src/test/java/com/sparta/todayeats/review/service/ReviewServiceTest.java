@@ -1,12 +1,16 @@
 package com.sparta.todayeats.review.service;
 
 import com.sparta.todayeats.global.exception.BaseException;
+import com.sparta.todayeats.global.exception.ReviewErrorCode;
+import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.order.Repository.OrderRepository;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.review.dto.request.ReviewCreateRequest;
+import com.sparta.todayeats.review.dto.request.ReviewUpdateRequest;
 import com.sparta.todayeats.review.dto.response.ReviewCreateResponse;
 import com.sparta.todayeats.review.dto.response.ReviewDetailResponse;
 import com.sparta.todayeats.review.dto.response.ReviewPageResponse;
+import com.sparta.todayeats.review.dto.response.ReviewUpdateResponse;
 import com.sparta.todayeats.review.entity.Review;
 import com.sparta.todayeats.review.repository.ReviewRepository;
 import com.sparta.todayeats.store.entity.Store;
@@ -32,11 +36,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.any;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ReviewServiceTest {
@@ -52,6 +55,9 @@ class ReviewServiceTest {
 
     @Mock
     private StoreRepository storeRepository;
+
+    @Mock
+    private UserAuthorizationService userAuthorizationService;
 
     @InjectMocks
     private ReviewService reviewService;
@@ -280,6 +286,213 @@ class ReviewServiceTest {
 
             // when & then
             assertThatThrownBy(() -> reviewService.getDetailReview(reviewId))
+                    .isInstanceOf(BaseException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("리뷰 수정")
+    class updateReview {
+
+        @Test
+        void 리뷰_수정_성공() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+            ReviewUpdateRequest request = new ReviewUpdateRequest(4, "그냥 그랬어요");
+
+            Order order = mock(Order.class);
+            User user = mock(User.class);
+            Store store = mock(Store.class);
+
+            given(user.getUserId()).willReturn(userId);
+            given(store.getId()).willReturn(storeId);
+            given(order.getOrderId()).willReturn(orderId);
+
+            Review review = Review.builder()
+                    .user(user)
+                    .store(store)
+                    .order(order)
+                    .rating(5)
+                    .content("맛있어요")
+                    .build();
+
+            given(reviewRepository.getReviewById(reviewId)).willReturn(Optional.of(review));
+
+            // when
+            ReviewUpdateResponse response = reviewService.updateReview(reviewId, userId, request);
+
+            // then
+            assertThat(response.getRating()).isEqualTo(4);
+            assertThat(response.getContent()).isEqualTo("그냥 그랬어요");
+        }
+
+        @Test
+        void 존재하지_않는_리뷰_수정시_예외() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+            ReviewUpdateRequest request = new ReviewUpdateRequest(4, "그냥 그랬어요");
+
+            given(reviewRepository.getReviewById(reviewId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> reviewService.updateReview(reviewId, userId, request))
+                    .isInstanceOf(BaseException.class);
+        }
+
+        @Test
+        void 본인_리뷰가_아니면_예외() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+            UUID otherUserId = UUID.randomUUID();
+            ReviewUpdateRequest request = new ReviewUpdateRequest(4, "그냥 그랬어요");
+
+            User user = mock(User.class);
+            given(user.getUserId()).willReturn(userId);
+
+            Review review = Review.builder()
+                    .user(user)
+                    .store(mock(Store.class))
+                    .order(mock(Order.class))
+                    .rating(5)
+                    .content("맛있어요")
+                    .build();
+
+            given(reviewRepository.getReviewById(reviewId)).willReturn(Optional.of(review));
+            doThrow(new BaseException(ReviewErrorCode.REVIEW_ACCESS_DENIED))
+                    .when(userAuthorizationService).validateSelf(userId, otherUserId);
+
+            // when & then
+            assertThatThrownBy(() -> reviewService.updateReview(reviewId, otherUserId, request))
+                    .isInstanceOf(BaseException.class);
+        }
+
+        @Test
+        void rating만_수정() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+            ReviewUpdateRequest request = new ReviewUpdateRequest(3, null);
+
+            User user = mock(User.class);
+            given(user.getUserId()).willReturn(userId);
+
+            Review review = Review.builder()
+                    .user(user)
+                    .store(mock(Store.class))
+                    .order(mock(Order.class))
+                    .rating(5)
+                    .content("맛있어요")
+                    .build();
+
+            given(reviewRepository.getReviewById(reviewId)).willReturn(Optional.of(review));
+
+            // when
+            ReviewUpdateResponse response = reviewService.updateReview(reviewId, userId, request);
+
+            // then
+            assertThat(response.getRating()).isEqualTo(3);
+            assertThat(response.getContent()).isEqualTo("맛있어요");  // content 변경 없음
+        }
+    }
+
+    @Nested
+    @DisplayName("리뷰 삭제")
+    class deleteReview {
+
+        @Test
+        void 본인_리뷰_삭제_성공() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+
+            User user = mock(User.class);
+            given(user.getUserId()).willReturn(userId);
+            given(userAuthorizationService.getUserById(userId)).willReturn(user);
+            given(userAuthorizationService.isMaster(user)).willReturn(false);
+
+            Review review = Review.builder()
+                    .user(user)
+                    .store(mock(Store.class))
+                    .order(mock(Order.class))
+                    .rating(5)
+                    .content("맛있어요")
+                    .build();
+
+            given(reviewRepository.getReviewById(reviewId)).willReturn(Optional.of(review));
+
+            // when
+            reviewService.deleteReview(reviewId, userId);
+
+            // then
+            verify(reviewRepository).getReviewById(reviewId);
+        }
+
+        @Test
+        void MASTER_타인_리뷰_삭제_성공() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+            UUID masterId = UUID.randomUUID();
+            UUID ownerUserId = UUID.randomUUID();
+
+            User master = mock(User.class);
+            User owner = mock(User.class);
+            given(owner.getUserId()).willReturn(ownerUserId);
+            given(userAuthorizationService.getUserById(masterId)).willReturn(master);
+            given(userAuthorizationService.isMaster(master)).willReturn(true);
+
+            Review review = Review.builder()
+                    .user(owner)
+                    .store(mock(Store.class))
+                    .order(mock(Order.class))
+                    .rating(5)
+                    .content("맛있어요")
+                    .build();
+
+            given(reviewRepository.getReviewById(reviewId)).willReturn(Optional.of(review));
+
+            // when
+            reviewService.deleteReview(reviewId, masterId);
+
+            // then
+            verify(reviewRepository).getReviewById(reviewId);
+        }
+
+        @Test
+        void 존재하지_않는_리뷰_삭제시_예외() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+
+            User user = mock(User.class);
+            given(userAuthorizationService.getUserById(userId)).willReturn(user);
+            given(reviewRepository.getReviewById(reviewId)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> reviewService.deleteReview(reviewId, userId))
+                    .isInstanceOf(BaseException.class);
+        }
+
+        @Test
+        void 타인_리뷰_삭제시_예외() {
+            // given
+            UUID reviewId = UUID.randomUUID();
+            UUID otherUserId = UUID.randomUUID();
+
+            User user = mock(User.class);
+            User owner = mock(User.class);
+            given(owner.getUserId()).willReturn(userId);
+            given(userAuthorizationService.getUserById(otherUserId)).willReturn(user);
+            given(userAuthorizationService.isMaster(user)).willReturn(false);
+
+            Review review = Review.builder()
+                    .user(owner)
+                    .store(mock(Store.class))
+                    .order(mock(Order.class))
+                    .rating(5)
+                    .content("맛있어요")
+                    .build();
+
+            given(reviewRepository.getReviewById(reviewId)).willReturn(Optional.of(review));
+
+            // when & then
+            assertThatThrownBy(() -> reviewService.deleteReview(reviewId, otherUserId))
                     .isInstanceOf(BaseException.class);
         }
     }
