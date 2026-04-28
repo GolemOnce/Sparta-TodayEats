@@ -4,10 +4,8 @@ import com.sparta.todayeats.global.exception.*;
 import com.sparta.todayeats.order.Repository.OrderRepository;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.review.dto.request.ReviewCreateRequest;
-import com.sparta.todayeats.review.dto.request.ReviewPageRequest;
 import com.sparta.todayeats.review.dto.response.ReviewCreateResponse;
 import com.sparta.todayeats.review.dto.response.ReviewPageResponse;
-import com.sparta.todayeats.review.dto.response.ReviewResponse;
 import com.sparta.todayeats.review.entity.Review;
 import com.sparta.todayeats.review.repository.ReviewRepository;
 import com.sparta.todayeats.store.entity.Store;
@@ -29,12 +27,12 @@ import static com.sparta.todayeats.user.domain.entity.UserRoleEnum.MASTER;
 @Service
 @RequiredArgsConstructor
 public class ReviewService {
-    private final UserRepository userRepository;
-    private final StoreRepository storeRepository;
-    ReviewRepository reviewRepository;
+    private final ReviewRepository reviewRepository;
 
     // 통합 후 서비스로 교체
-    OrderRepository orderRepository;
+    private final UserRepository userRepository;
+    private final StoreRepository storeRepository;
+    private final OrderRepository orderRepository;
 
     // 리뷰 등록
     @Transactional
