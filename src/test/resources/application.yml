@@ -29,3 +29,8 @@ jwt:
   secret-key: dGVzdC1zZWNyZXQta2V5LWZvci1jaS1tdXN0LWJlLWxvbmctZW5vdWdo
   access-expiration: 1800000 # 30분 (30 * 60 * 1000)
   refresh-expiration: 604800000 # 7일 (7 * 24 * 60 * 60 * 1000)
+
+gemini:
+  api:
+    key: test
+    url: http://localhost
