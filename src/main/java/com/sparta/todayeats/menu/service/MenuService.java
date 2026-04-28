@@ -99,9 +99,10 @@ public class MenuService {
 
     // 메뉴 수정
     @Transactional
-    public void updateMenu(UUID menuId, MenuUpdateRequest request) {
+    public void updateMenu(UUID menuId, UUID userId, MenuUpdateRequest request) {
         Menu menu = findMenu(menuId);
         validateNotDeleted(menu);
+        validateStoreOwner(menu.getStore(), userId);
 
         menu.update(
                 request.name(),
@@ -113,9 +114,10 @@ public class MenuService {
 
     // 상태 변경
     @Transactional
-    public void updateMenuStatus(UUID menuId, MenuStatusUpdateRequest request) {
+    public void updateMenuStatus(UUID menuId, UUID userId, MenuStatusUpdateRequest request) {
         Menu menu = findMenu(menuId);
         validateNotDeleted(menu);
+        validateStoreOwner(menu.getStore(), userId);
 
         menu.updateStatus(request.isHidden(), request.soldOut());
     }
@@ -125,6 +127,7 @@ public class MenuService {
     public void deleteMenu(UUID menuId, UUID userId) {
         Menu menu = findMenu(menuId);
         validateNotDeleted(menu);
+        validateStoreOwner(menu.getStore(), userId);
 
         menu.delete(userId);
     }

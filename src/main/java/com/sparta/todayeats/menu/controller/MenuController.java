@@ -6,6 +6,7 @@ import com.sparta.todayeats.menu.dto.request.MenuCreateRequest;
 import com.sparta.todayeats.menu.dto.request.MenuUpdateRequest;
 import com.sparta.todayeats.menu.dto.response.MenuResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -76,16 +77,19 @@ public class MenuController {
 
     // 메뉴 수정
     // PATCH /api/v1/menus/{menuId}
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @PatchMapping("/api/v1/menus/{menuId}")
     public void updateMenu(
             @PathVariable UUID menuId,
+            @AuthenticationPrincipal UUID userId,
             @Valid @RequestBody MenuUpdateRequest request
     ) {
-        menuService.updateMenu(menuId, request);
+        menuService.updateMenu(menuId, userId, request);
     }
 
     // 메뉴 삭제
     // DELETE /api/v1/menus/{menuId}
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @DeleteMapping("/api/v1/menus/{menuId}")
     public void deleteMenu(
             @PathVariable UUID menuId,
