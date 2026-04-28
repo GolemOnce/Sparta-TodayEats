@@ -147,13 +147,16 @@ public class OrderService {
 
     /**
      * 주문 단건 조회
-     * - soft delete 제외
-     * - CUSTOMER: 본인 주문만 조회 가능
-     * - OWNER: 본인 가게 주문만 조회 가능
-     * - MANAGER/MASTER: 전체 조회 가능
+     * - CUSTOMER: 본인 주문만 조회 가능(삭제된 주문 미포함)
+     * - OWNER: 본인 가게 주문만 조회 가능(삭제된 주문 미포함)
+     * - MANAGER: 전체 조회 가능(삭제된 주문 미포함)
+     * - MASTER: 전체 조회 가능(삭제된 주문 포함)
      */
     public OrderDetailResponse getOrder(UUID orderId, UUID userId, UserRoleEnum role) {
-        Order order = findActiveOrder(orderId);
+        Order order = (role == UserRoleEnum.MASTER)
+                ? orderRepository.findById(orderId)
+                  .orElseThrow(() -> new BaseException(OrderErrorCode.ORDER_NOT_FOUND))
+                : findActiveOrder(orderId);
 
         if (role == UserRoleEnum.CUSTOMER) {
             if (!order.getCustomerId().equals(userId)) {
@@ -317,11 +320,11 @@ public class OrderService {
                             UUID userId,
                             UserRoleEnum role
     ) {
-        Order order = findActiveOrder(orderId);
-
         if (role != UserRoleEnum.MASTER) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
         }
+
+        Order order = findActiveOrder(orderId);
 
         // TODO: Payment 코드 완성 후 주석 해제
         // 결제 완료 상태면 환불 처리
