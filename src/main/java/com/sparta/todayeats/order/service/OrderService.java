@@ -1,10 +1,10 @@
 package com.sparta.todayeats.order.service;
 
-import com.sparta.todayeats.address.domain.entity.AddressEntity;
-import com.sparta.todayeats.address.domain.repository.AddressRepository;
+import com.sparta.todayeats.address.entity.Address;
+import com.sparta.todayeats.address.repository.AddressRepository;
 import com.sparta.todayeats.global.exception.*;
-import com.sparta.todayeats.menu.domain.entity.MenuEntity;
-import com.sparta.todayeats.menu.domain.repository.MenuRepository;
+import com.sparta.todayeats.menu.entity.Menu;
+import com.sparta.todayeats.menu.repository.MenuRepository;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.order.entity.OrderItem;
 import com.sparta.todayeats.order.entity.OrderStatus;
@@ -58,7 +58,7 @@ public class OrderService {
         }
 
         // 배송지 조회 및 검증 (주소 스냅샷용)
-        AddressEntity address = addressRepository.findActiveById(request.addressId())
+        Address address = addressRepository.findActiveById(request.addressId())
                 .orElseThrow(() -> new BaseException(AddressErrorCode.ADDRESS_NOT_FOUND));
         if (!address.getUserId().equals(userId)) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
@@ -81,7 +81,7 @@ public class OrderService {
 
         // 주문 항목 생성 및 totalPrice 계산
         for (CreateOrderRequest.OrderItemRequest itemReq : request.items()) {
-            MenuEntity menu = menuRepository.findActiveById(itemReq.menuId())
+            Menu menu = menuRepository.findActiveById(itemReq.menuId())
                     .orElseThrow(() -> new BaseException(MenuErrorCode.MENU_NOT_FOUND));
 
             // 메뉴가 해당 가게 소속인지 검증

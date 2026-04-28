@@ -1,4 +1,4 @@
-package com.sparta.todayeats.address.domain.entity;
+package com.sparta.todayeats.address.entity;
 
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -8,7 +8,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "p_address")
 @Getter
-public class AddressEntity extends BaseEntity {
+public class Address extends BaseEntity {
 
     @Id
     @Column(name = "address_id")
