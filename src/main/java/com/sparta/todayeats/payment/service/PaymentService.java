@@ -107,7 +107,7 @@ public class PaymentService {
     public PaymentDetailResponse getPaymentDetails(UUID userId, UUID paymentId) {
 
         // 1. 본인 결제내역으로 먼저 조회 시도
-        Payment payment = paymentRepository.findByIdAndOrder_CustomerId(paymentId, userId)
+        Payment payment = paymentRepository.findByIdAndOrder_CustomerIdAndDeletedAtIsNull(paymentId, userId)
                 .orElseGet(() -> {
                     // 2. 없으면 관리자 권한 확인 후 paymentId로만 재조회
                     User user = userAuthorizationService.getUserById(userId);

@@ -24,5 +24,5 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     Page<Payment> findByUserId(@Param("userId") UUID userId, Pageable pageable);
 
     // 단일 조회
-    Optional<Payment> findByIdAndOrder_CustomerId(UUID paymentId, UUID customerId);
+    Optional<Payment> findByIdAndOrder_CustomerIdAndDeletedAtIsNull(UUID paymentId, UUID customerId);
 }
