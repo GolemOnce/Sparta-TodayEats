@@ -3,7 +3,7 @@ package com.sparta.todayeats.review.entity;
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.store.entity.Store;
-import com.sparta.todayeats.user.domain.entity.User;
+import com.sparta.todayeats.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 

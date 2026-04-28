@@ -2,7 +2,7 @@ package com.sparta.todayeats.review.service;
 
 import com.sparta.todayeats.global.exception.*;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
-import com.sparta.todayeats.order.Repository.OrderRepository;
+import com.sparta.todayeats.order.repository.OrderRepository;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.review.dto.request.ReviewCreateRequest;
 import com.sparta.todayeats.review.dto.request.ReviewUpdateRequest;
@@ -14,9 +14,9 @@ import com.sparta.todayeats.review.entity.Review;
 import com.sparta.todayeats.review.repository.ReviewRepository;
 import com.sparta.todayeats.store.entity.Store;
 import com.sparta.todayeats.store.repository.StoreRepository;
-import com.sparta.todayeats.user.domain.entity.User;
-import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
-import com.sparta.todayeats.user.domain.repository.UserRepository;
+import com.sparta.todayeats.user.entity.User;
+import com.sparta.todayeats.user.entity.UserRoleEnum;
+import com.sparta.todayeats.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,8 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
-import static com.sparta.todayeats.user.domain.entity.UserRoleEnum.MANAGER;
-import static com.sparta.todayeats.user.domain.entity.UserRoleEnum.MASTER;
 
 @Service
 @RequiredArgsConstructor
