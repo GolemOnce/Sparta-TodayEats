@@ -25,7 +25,7 @@ public class PaymentResponse {
     public static PaymentResponse from(Payment payment) {
         return PaymentResponse.builder()
                 .paymentId(payment.getId())
-                .orderId(payment.getOrder().getId())
+                .orderId(payment.getOrder().getOrderId())
                 .amount(payment.getAmount())
                 .status(payment.getStatus())
                 .method(payment.getPaymentMethod())
