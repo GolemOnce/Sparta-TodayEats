@@ -23,7 +23,7 @@ public class UserResponse {
     private LocalDateTime deletedAt;
     private UUID deletedBy;
 
-    public UserResponse(User user, boolean isAdminUser) {
+    public UserResponse(User user, boolean isAdmin) {
         this.userId = user.getUserId();
         this.email = user.getEmail();
         this.nickname = user.getNickname();
@@ -32,7 +32,7 @@ public class UserResponse {
         this.createdAt = user.getCreatedAt();
         this.updatedAt = user.getUpdatedAt();
 
-        if (isAdminUser) {
+        if (isAdmin) {
             this.createdBy = user.getCreatedBy();
             this.updatedBy = user.getUpdatedBy();
             this.deletedAt = user.getDeletedAt();

@@ -1,6 +1,6 @@
 package com.sparta.todayeats.user.service;
 
-import com.sparta.todayeats.auth.application.service.AuthServiceV1;
+import com.sparta.todayeats.auth.application.service.AuthService;
 import com.sparta.todayeats.global.exception.AuthErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.CommonErrorCode;
@@ -31,7 +31,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
@@ -47,7 +46,7 @@ class UserServiceTest {
     private UserAuthorizationService userAuthorizationService;
 
     @Mock
-    private AuthServiceV1 authService;
+    private AuthService authService;
 
     @Mock
     private PasswordEncoder passwordEncoder;

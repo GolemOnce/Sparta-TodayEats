@@ -1,6 +1,6 @@
 package com.sparta.todayeats.user.service;
 
-import com.sparta.todayeats.auth.application.service.AuthServiceV1;
+import com.sparta.todayeats.auth.application.service.AuthService;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.UserErrorCode;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
@@ -26,7 +26,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserService {
     private final UserAuthorizationService userAuthorizationService;
-    private final AuthServiceV1 authService;
+    private final AuthService authService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
