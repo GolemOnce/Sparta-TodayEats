@@ -74,5 +74,14 @@ public class AddressController {
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
+
     // 배송지 삭제
+    @DeleteMapping("/{addressId}")
+    public ResponseEntity<ApiResponse<Void>> deleteAddress(
+            @PathVariable UUID addressId,
+            @AuthenticationPrincipal UUID userId) {
+        addressService.deleteAddress(userId, addressId);
+
+        return ResponseEntity.noContent().build();
+    }
 }
