@@ -1,10 +1,10 @@
 package com.sparta.todayeats.order.repository;
 
 import com.sparta.todayeats.order.entity.Order;
+import jakarta.persistence.LockModeType;
 import com.sparta.todayeats.order.entity.OrderStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Lock;
@@ -19,8 +19,9 @@ import java.util.UUID;
  */
 public interface OrderRepository extends JpaRepository<Order, UUID> {
 
+    // 비관적 락 조회
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT o FROM Order o WHERE o.id = :id")
+    @Query("SELECT o FROM Order o WHERE o.orderId = :id")
     Optional<Order> findByIdWithLock(@Param("id") UUID id);
 
     /**
