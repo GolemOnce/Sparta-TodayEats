@@ -6,6 +6,7 @@ import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.CommonErrorCode;
 import com.sparta.todayeats.global.exception.UserErrorCode;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
+import com.sparta.todayeats.order.service.OrderService;
 import com.sparta.todayeats.user.entity.User;
 import com.sparta.todayeats.user.entity.UserRoleEnum;
 import com.sparta.todayeats.user.repository.UserRepository;
@@ -47,6 +48,9 @@ class UserServiceTest {
 
     @Mock
     private AuthService authService;
+
+    @Mock
+    private OrderService orderService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -320,6 +324,7 @@ class UserServiceTest {
             given(userAuthorizationService.getUserById(CURRENT_USER_ID)).willReturn(user);
             given(userAuthorizationService.isMaster(user)).willReturn(false);
             given(userAuthorizationService.isAdmin(user)).willReturn(false);
+            given(orderService.hasActiveOrders(CURRENT_USER_ID)).willReturn(false);
 
             // when
             DeleteUserResponse response = userService.deleteUser(CURRENT_USER_ID, CURRENT_USER_ID);
@@ -363,6 +368,22 @@ class UserServiceTest {
             assertThatThrownBy(() -> userService.deleteUser(CURRENT_USER_ID, CURRENT_USER_ID))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(UserErrorCode.CANNOT_DELETE_MASTER.getMessage());
+        }
+
+        @Test
+        void 사용자_삭제_실패_대상_주문_있음() {
+            // given
+            User user = user(UserRoleEnum.CUSTOMER);
+
+            given(userAuthorizationService.getUserById(CURRENT_USER_ID)).willReturn(user);
+            given(userAuthorizationService.isMaster(user)).willReturn(false);
+            given(userAuthorizationService.isAdmin(user)).willReturn(false);
+            given(orderService.hasActiveOrders(CURRENT_USER_ID)).willReturn(true);
+
+            // when & then
+            assertThatThrownBy(() -> userService.deleteUser(CURRENT_USER_ID, CURRENT_USER_ID))
+                    .isInstanceOf(BaseException.class)
+                    .hasMessage(UserErrorCode.ACTIVE_ORDER_EXISTS.getMessage());
         }
     }
 }
