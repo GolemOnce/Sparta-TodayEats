@@ -28,7 +28,7 @@ public class ReviewPageResponse {
                 .size(reviewPage.getSize())
                 .totalElements(reviewPage.getTotalElements())
                 .totalPages(reviewPage.getTotalPages())
-                .sort("createdAt,DESC")
+                .sort(reviewPage.getSort().isSorted() ? reviewPage.getSort().toString() : "createdAt,DESC")
                 .build();
     }
 }
