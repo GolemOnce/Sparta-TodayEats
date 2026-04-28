@@ -11,7 +11,7 @@ public record MenuUpdateRequest(
         String name,
 
         @Min(value = 0, message = "가격은 0원 이상이어야 합니다.")
-        int price,
+        Long price,
 
         @Size(max = 500, message = "설명은 500자 이하입니다.")
         String description,

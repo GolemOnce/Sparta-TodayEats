@@ -39,7 +39,7 @@ public class MenuService {
 
         Menu menu = Menu.builder()
                 .name(request.name())
-                .price(request.price())
+                .price(9000L)
                 .description(request.description())
                 .imageUrl(request.imageUrl())
                 .category(category)
