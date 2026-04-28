@@ -11,7 +11,7 @@ import java.util.UUID;
 public interface StoreRepository extends JpaRepository<Store, UUID>, StoreRepositoryCustom {
 
     // 이름 중복 확인
-    boolean existsByNameIgnoreCase(String name);
+    boolean existsByNameIgnoreCaseAndDeletedAtIsNull(String name);
 
     // store 조회 시 owner도 한번에 가져오기
     @Query("SELECT s FROM Store s JOIN FETCH s.owner WHERE s.id = :storeId")

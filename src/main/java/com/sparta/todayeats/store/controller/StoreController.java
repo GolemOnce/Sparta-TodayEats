@@ -29,7 +29,7 @@ import java.util.UUID;
 public class StoreController {
 
     private final StoreService storeService;
-
+    
     // 가게 생성
     @PostMapping
     @PreAuthorize("hasAnyRole('OWNER')")

@@ -202,9 +202,9 @@ public class StoreService {
                 .orElseThrow(() -> new BaseException(CategoryErrorCode.CATEGORY_NOT_FOUND));
     }
 
-    // 가게 이름 중복 검증
+    // 가게  이름 중복 여부 확인 (삭제 안 된 것만 중복 체크)
     private void validateDuplicateStore(String name) {
-        if (storeRepository.existsByNameIgnoreCase(name)) {
+        if (storeRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(name)) {
             throw new BaseException(StoreErrorCode.STORE_ALREADY_EXISTS);
         }
     }
