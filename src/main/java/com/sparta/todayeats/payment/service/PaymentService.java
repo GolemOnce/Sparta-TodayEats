@@ -68,9 +68,6 @@ public class PaymentService {
             payment.updatePaymentStatus(PaymentStatus.CANCELLED);
         }
 
-        // 7. order status 갱신
-         order.updateOrderStatus(OrderStatus.PENDING);
-
         return PaymentCreateResponse.builder()
                         .paymentId(payment.getId())
                         .orderId(orderId)
