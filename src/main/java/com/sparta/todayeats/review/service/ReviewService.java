@@ -1,12 +1,15 @@
 package com.sparta.todayeats.review.service;
 
 import com.sparta.todayeats.global.exception.*;
+import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.order.Repository.OrderRepository;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.review.dto.request.ReviewCreateRequest;
+import com.sparta.todayeats.review.dto.request.ReviewUpdateRequest;
 import com.sparta.todayeats.review.dto.response.ReviewCreateResponse;
 import com.sparta.todayeats.review.dto.response.ReviewDetailResponse;
 import com.sparta.todayeats.review.dto.response.ReviewPageResponse;
+import com.sparta.todayeats.review.dto.response.ReviewUpdateResponse;
 import com.sparta.todayeats.review.entity.Review;
 import com.sparta.todayeats.review.repository.ReviewRepository;
 import com.sparta.todayeats.store.entity.Store;
@@ -34,6 +37,7 @@ public class ReviewService {
     private final UserRepository userRepository;
     private final StoreRepository storeRepository;
     private final OrderRepository orderRepository;
+    private final UserAuthorizationService userAuthorizationService;
 
     // 리뷰 등록
     @Transactional
@@ -124,5 +128,21 @@ public class ReviewService {
                 .orElseThrow(() -> new BaseException(ReviewErrorCode.REVIEW_NOT_FOUND));
 
         return ReviewDetailResponse.from(review);
+    }
+
+    // 리뷰 수정
+    @Transactional
+    public ReviewUpdateResponse updateReview(UUID reviewId, UUID userId, ReviewUpdateRequest request) {
+        // 1. 리뷰 조회
+        Review review = reviewRepository.getReviewById(reviewId)
+                .orElseThrow(() -> new BaseException(ReviewErrorCode.REVIEW_NOT_FOUND));
+
+        // 2. 권한 확인
+        userAuthorizationService.validateSelf(review.getUser().getUserId(),  userId);
+
+        // 3. 수정
+        review.update(request.getRating(),  request.getContent());
+
+        return ReviewUpdateResponse.from(review);
     }
 }

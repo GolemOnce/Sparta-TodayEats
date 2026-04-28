@@ -37,4 +37,13 @@ public class Review extends BaseEntity {
     private Integer rating;
 
     private String content;
+
+    public void update(Integer rating, String content) {
+        if (rating != null) {
+            this.rating = rating;
+        }
+        if (content != null) {
+            this.content = content;
+        }
+    }
 }
