@@ -135,9 +135,9 @@ public class AreaService {
         return areaRepository.findByNameContainingIgnoreCase(keyword, pageable);
     }
 
-    // 운영 지역 이름 기준 중복 조회 (대소문자 상관없이 존재 여부 확인)
+    // 운영 지역 이름 중복 여부 확인 (삭제 안 된 것만 중복 체크)
     private void validateDuplicateArea(String name) {
-        if (areaRepository.existsByNameIgnoreCase(name)) {
+        if (areaRepository.existsByNameIgnoreCaseAndDeletedAtIsNull(name)) {
             throw new BaseException(AreaErrorCode.AREA_ALREADY_EXISTS);
         }
     }

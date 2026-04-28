@@ -8,12 +8,15 @@ import org.hibernate.annotations.Where;
 import java.util.UUID;
 
 @Entity
-@Table(name = "p_area")
 @Getter
 @Builder
 @AllArgsConstructor
 @Where(clause = "deleted_at is null")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(
+        name = "p_area",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"name", "deleted_at"})
+)
 public class Area extends BaseEntity {
 
     @Id
@@ -21,7 +24,7 @@ public class Area extends BaseEntity {
     @Column(name = "area_id")
     private UUID id;
 
-    @Column(nullable = false, length = 100, unique = true)
+    @Column(nullable = false, length = 100)
     private String name;
 
     @Column(nullable = false, length = 50)

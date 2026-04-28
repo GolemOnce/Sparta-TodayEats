@@ -12,12 +12,15 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "p_store")
 @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Where(clause = "deleted_at is null")
+@Table(
+        name = "p_store",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"name", "deleted_at"})
+)
 public class Store extends BaseEntity {
 
     @Id
