@@ -6,6 +6,7 @@ import com.sparta.todayeats.address.dto.response.AddressPageResponse;
 import com.sparta.todayeats.address.service.AddressService;
 import com.sparta.todayeats.global.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -32,6 +33,15 @@ public class AddressController {
     }
 
     // 배송지 목록 조회
+    @GetMapping
+    public ResponseEntity<ApiResponse<AddressPageResponse>> getPagedAddress(
+            @AuthenticationPrincipal UUID userId,
+            Pageable pageable
+    ) {
+        AddressPageResponse response = addressService.getPagedAddresses(userId, pageable);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
 
     // 배송지 상세 조회
 
