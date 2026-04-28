@@ -1,5 +1,6 @@
 package com.sparta.todayeats.store.controller;
 
+import com.sparta.todayeats.global.annotation.LoginUser;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.store.dto.request.StoreCreateRequest;
@@ -33,7 +34,7 @@ public class StoreController {
     // 가게 생성
     @PostMapping
     @PreAuthorize("hasAnyRole('OWNER')")
-    public ResponseEntity<ApiResponse<StoreCreateResponse>> createStore(@Valid @RequestBody StoreCreateRequest request,@AuthenticationPrincipal UUID userId) {
+    public ResponseEntity<ApiResponse<StoreCreateResponse>> createStore(@Valid @RequestBody StoreCreateRequest request,@LoginUser UUID userId) {
         StoreCreateResponse response = storeService.createStore(request, userId);
 
         return ResponseEntity
@@ -50,7 +51,7 @@ public class StoreController {
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
             Pageable pageable,
             Authentication authentication,
-            @AuthenticationPrincipal UUID userId) {
+            @LoginUser UUID userId) {
         PageResponse<StoreResponse> response = storeService.getStores(categoryName, keyword, pageable, authentication, userId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -60,7 +61,7 @@ public class StoreController {
     @GetMapping("/{storeId}")
     public ResponseEntity<ApiResponse<StoreResponse>> getStore(
             @PathVariable UUID storeId,
-            @AuthenticationPrincipal UUID userId,
+            @LoginUser UUID userId,
             Authentication authentication) {
 
         StoreResponse response = storeService.getStore(storeId, userId, authentication);
@@ -74,7 +75,7 @@ public class StoreController {
     @PreAuthorize("hasAnyRole('OWNER','MANAGER','MASTER')")
     public ResponseEntity<ApiResponse<StoreResponse>> updateStore(
             @PathVariable UUID storeId,
-            @Valid @RequestBody StoreUpdateRequest request,@AuthenticationPrincipal UUID userId, Authentication authentication) {
+            @Valid @RequestBody StoreUpdateRequest request,@LoginUser UUID userId, Authentication authentication) {
 
         StoreResponse response = storeService.updateStore(storeId, request,userId,authentication);
 
@@ -86,7 +87,7 @@ public class StoreController {
     @DeleteMapping("/{storeId}")
     @PreAuthorize("hasAnyRole('OWNER','MASTER')")
     public ResponseEntity<ApiResponse<Void>> deleteStore(
-            @PathVariable UUID storeId,@AuthenticationPrincipal UUID userId, Authentication authentication) {
+            @PathVariable UUID storeId,@LoginUser UUID userId, Authentication authentication) {
 
         storeService.deleteStore(storeId, userId, authentication);
 
@@ -99,7 +100,7 @@ public class StoreController {
     @PreAuthorize("hasAnyRole('OWNER','MANAGER','MASTER')")
     public ResponseEntity<ApiResponse<StoreHiddenResponse>> updateHidden(
             @PathVariable UUID storeId,
-            @Valid @RequestBody StoreHiddenRequest request,@AuthenticationPrincipal UUID userId,  Authentication authentication) {
+            @Valid @RequestBody StoreHiddenRequest request, @LoginUser UUID userId, Authentication authentication) {
 
         StoreHiddenResponse response = storeService.updateHidden(storeId, request, userId, authentication);
 

@@ -2,6 +2,7 @@ package com.sparta.todayeats.category.presentation.controller;
 
 import com.sparta.todayeats.category.application.service.CategoryService;
 import com.sparta.todayeats.category.presentation.dto.*;
+import com.sparta.todayeats.global.annotation.LoginUser;
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.global.response.PageResponse;
 import jakarta.validation.Valid;
@@ -69,7 +70,7 @@ public class CategoryController {
     // 카테고리 삭제
     @DeleteMapping("/{categoryId}")
     @PreAuthorize("hasAnyRole('MASTER')")
-    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable UUID categoryId,@AuthenticationPrincipal UUID userId) {
+    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable UUID categoryId,@LoginUser UUID userId) {
 
         categoryService.deleteCategory(categoryId,userId);
 
