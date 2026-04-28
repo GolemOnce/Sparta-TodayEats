@@ -21,6 +21,8 @@ public interface AddressRepository extends JpaRepository<Address, UUID> {
     )
     Page<Address> findByUserId(@Param("userId") UUID userId, Pageable pageable);
 
+    Optional<Address> findByUserUserIdAndIsDefaultTrue(UUID userId);
+
     @Query("SELECT a FROM Address a WHERE a.id = :addressId AND a.deletedAt IS NULL")
     Optional<Address> findActiveById(@Param("addressId") UUID addressId);
 }
