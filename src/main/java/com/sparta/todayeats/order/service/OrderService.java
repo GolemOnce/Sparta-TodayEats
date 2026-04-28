@@ -160,11 +160,7 @@ public class OrderService {
                 throw new BaseException(CommonErrorCode.FORBIDDEN);
             }
         } else if (role == UserRoleEnum.OWNER) {
-            Store store = storeRepository.findById(order.getStoreId())
-                    .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
-            if (!store.getOwner().getUserId().equals(userId)) {
-                throw new BaseException(CommonErrorCode.FORBIDDEN);
-            }
+            validateOwnerStoreAccess(order.getStoreId(), userId);
         } else if (role != UserRoleEnum.MANAGER && role != UserRoleEnum.MASTER) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
         }
@@ -216,11 +212,7 @@ public class OrderService {
         if (role == UserRoleEnum.CUSTOMER) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
         } else if (role == UserRoleEnum.OWNER) {
-            Store store = storeRepository.findById(order.getStoreId())
-                    .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
-            if (!store.getOwner().getUserId().equals(userId)) {
-                throw new BaseException(CommonErrorCode.FORBIDDEN);
-            }
+            validateOwnerStoreAccess(order.getStoreId(), userId);
         } else if (role != UserRoleEnum.MANAGER && role != UserRoleEnum.MASTER) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
         }
@@ -295,11 +287,7 @@ public class OrderService {
         if (role == UserRoleEnum.CUSTOMER) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
         } else if (role == UserRoleEnum.OWNER) {
-            Store store = storeRepository.findById(order.getStoreId())
-                    .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
-            if (!store.getOwner().getUserId().equals(userId)) {
-                throw new BaseException(CommonErrorCode.FORBIDDEN);
-            }
+            validateOwnerStoreAccess(order.getStoreId(), userId);
         } else if (role != UserRoleEnum.MANAGER && role != UserRoleEnum.MASTER) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
         }
@@ -359,5 +347,20 @@ public class OrderService {
     private Order findActiveOrder(UUID orderId) {
         return orderRepository.findActiveById(orderId)
                 .orElseThrow(() -> new BaseException(OrderErrorCode.ORDER_NOT_FOUND));
+    }
+
+    /**
+     * OWNER 가게 소유권 검증
+     * 가게가 존재하지 않으면 STORE_NOT_FOUND, 본인 가게가 아니면 FORBIDDEN 발생
+     *
+     * @param storeId 검증할 가게 ID
+     * @param userId  요청한 사용자 ID
+     */
+    private void validateOwnerStoreAccess(UUID storeId, UUID userId) {
+        Store store = storeRepository.findById(storeId)
+                .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
+        if (!store.getOwner().getUserId().equals(userId)) {
+            throw new BaseException(CommonErrorCode.FORBIDDEN);
+        }
     }
 }
