@@ -50,6 +50,7 @@ public class PaymentDetailResponse {
                         .orderId(payment.getOrder().getId())
                         .status(payment.getOrder().getStatus())
                         .storeName(payment.getOrder().getStoreName())
+                        .createdAt(payment.getOrder().getCreatedAt())
                         .createdBy(payment.getOrder().getCreatedBy())
                         .updatedAt(payment.getOrder().getUpdatedAt())
                         .updatedBy(payment.getOrder().getUpdatedBy())
