@@ -42,19 +42,16 @@ public class StoreService {
     // 가게 생성
     @Transactional
     public StoreCreateResponse createStore(StoreCreateRequest request, UUID userId) {
-        // 운영 지역 조회
+        // 운영 지역 조회, 활성화 여부 확인
         Area area = getAreaEntity(request.getAreaId());
-
-        // 운영 지역 활성화 여부 확인
         validateAreaActive(area);
 
-        // 가게 이름 중복 검증
-        validateDuplicateStore(request.getName());
+        // 가게 이름 정규화, 중복 검증
+        String name = normalizeStoreName(request.getName());
+        validateDuplicateStore(name);
 
-        // 소유자 조회
+        // 소유자, 카테고리 조회
         User owner = getUserEntity(userId);
-
-        // 카테고리 조회
         Category category = getCategoryEntity(request.getCategoryId());
 
         // 가게 엔티티 생성
@@ -62,9 +59,9 @@ public class StoreService {
                 .owner(owner)
                 .area(area)
                 .category(category)
-                .name(request.getName())
+                .name(name)
                 .address(request.getAddress())
-                .phone(request.getPhone())
+                .phone(normalizePhone(request.getPhone()))
                 .build();
 
         // DB 저장
@@ -120,14 +117,18 @@ public class StoreService {
         boolean isManagerOrMaster = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_MANAGER") || a.getAuthority().equals("ROLE_MASTER"));
 
-        System.out.println("isManagerOrMaster: " + isManagerOrMaster);
-
         if (!isManagerOrMaster) {
             validateStoreOwner(store, userId);
         }
 
+        // 정규화, 이름 중복 체크
+        String name = normalizeStoreName(request.getName());
+        if (!store.getName().equalsIgnoreCase(name)) {
+            validateDuplicateStore(name);
+        }
+
         // 전체 교체
-        store.update(request.getName(), request.getAddress(), request.getPhone());
+        store.update(name, request.getAddress(), normalizePhone(request.getPhone()));
 
         return toResponse(store);
     }
@@ -136,7 +137,6 @@ public class StoreService {
     // 가게 삭제
     @Transactional
     public void deleteStore(UUID storeId, UUID userId, Authentication authentication) {
-
         // 삭제 대상 가게 조회
         Store store = getStoreEntity(storeId);
 
@@ -156,7 +156,6 @@ public class StoreService {
     // 가게 숨김 처리
     @Transactional
     public StoreHiddenResponse updateHidden(UUID storeId, StoreHiddenRequest request, UUID userId,  Authentication authentication) {
-
         // 숨김 처리 대상 가게 조회
         Store store = getStoreEntity(storeId);
 
@@ -223,6 +222,28 @@ public class StoreService {
         if (!store.getOwner().getUserId().equals(userId)) {
             throw new BaseException(StoreErrorCode.STORE_FORBIDDEN);
         }
+    }
+
+    // 가게 이름 정규화
+    private String normalizeStoreName(String name) {
+        if (name == null) {
+            throw new BaseException(StoreErrorCode.INVALID_STORE_NAME);
+        }
+        String normalized = name.trim();
+
+        if (normalized.isBlank()) {
+            throw new BaseException(StoreErrorCode.INVALID_STORE_NAME);
+        }
+
+        return normalized;
+    }
+
+    // 핸드폰 번호 정규화
+    private String normalizePhone(String phone) {
+        if (phone == null || phone.isBlank()) {
+            return null;
+        }
+        return phone.trim();
     }
 
     // Store 엔티티 → 생성 응답 DTO 변환

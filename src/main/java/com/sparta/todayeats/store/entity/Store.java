@@ -63,9 +63,7 @@ public class Store extends BaseEntity {
     public void update(String name, String address, String phone) {
         this.name = name;
         this.address = address;
-        if (phone != null) {
-            this.phone = phone.isBlank() ? null : phone;
-        }
+        this.phone = phone;
     }
 
     public void updateAverageRating(BigDecimal averageRating) {
