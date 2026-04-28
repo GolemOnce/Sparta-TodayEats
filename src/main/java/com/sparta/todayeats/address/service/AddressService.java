@@ -79,7 +79,6 @@ public class AddressService {
         // 2. 권한 확인
         userAuthorizationService.validateSelf(userId, address.getUser().getUserId());
 
-
         return AddressDetailResponse.from(address);
     }
 
