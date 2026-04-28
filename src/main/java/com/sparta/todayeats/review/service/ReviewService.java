@@ -145,4 +145,24 @@ public class ReviewService {
 
         return ReviewUpdateResponse.from(review);
     }
+
+    // 리뷰 삭제
+    @Transactional
+    public void deleteReview(UUID reviewId, UUID userId) {
+        // 1. 권한 확인
+        User user = userAuthorizationService.getUserById(userId);
+
+        Review review = reviewRepository.getReviewById(reviewId)
+                .orElseThrow(() -> new BaseException(ReviewErrorCode.REVIEW_NOT_FOUND));
+
+        boolean isSelf = review.getUser().getUserId().equals(userId);
+        boolean isMaster = userAuthorizationService.isMaster(user);
+
+        if (!isSelf && !isMaster) {
+            throw new BaseException(ReviewErrorCode.REVIEW_ACCESS_DENIED);
+        }
+
+        // 2. 소프트 딜리트
+        review.softDelete(userId);
+    }
 }

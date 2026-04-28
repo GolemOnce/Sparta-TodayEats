@@ -93,4 +93,12 @@ public class ReviewController {
 
 
     // 리뷰 삭제 (DELETE /reviews/{reviewId}) 본인 + 어드민
+    @DeleteMapping("/reviews/{reviewId}")
+    public ResponseEntity<ApiResponse<Void>> deleteReview(
+            @PathVariable UUID reviewId,
+            @AuthenticationPrincipal UUID userId
+    ) {
+        reviewService.deleteReview(reviewId, userId);
+        return ResponseEntity.noContent().build();
+    }
 }
