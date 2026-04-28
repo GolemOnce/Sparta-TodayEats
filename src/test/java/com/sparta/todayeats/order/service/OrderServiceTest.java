@@ -361,7 +361,7 @@ class OrderServiceTest {
         }
 
         @Test
-        @DisplayName("실패 - soft delete된 주문은 목록에 포함되지 않음")
+        @DisplayName("성공 - Repository가 빈 결과 반환 시 빈 목록 응답")
         void soft_delete된_주문_목록_미포함() {
             // given
             // soft delete된 주문은 Repository 쿼리에서 deletedAt IS NULL 조건으로 제외됨
@@ -379,7 +379,7 @@ class OrderServiceTest {
         }
 
         @Test
-        @DisplayName("실패 - 다른 사용자의 주문은 조회되지 않음")
+        @DisplayName("성공 - 다른 userId로 조회 시 해당 userId의 결과만 반환")
         void 다른_사용자_주문_조회_불가() {
             // given
             UUID otherUserId = UUID.randomUUID();
