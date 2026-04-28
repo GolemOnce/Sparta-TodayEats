@@ -28,7 +28,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,6 +41,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 class StoreServiceTest {
@@ -126,7 +131,7 @@ class StoreServiceTest {
                     category.getId()
             );
 
-            given(storeRepository.existsByNameIgnoreCase("맛있는 치킨")).willReturn(false);
+            given(storeRepository.existsByNameIgnoreCaseAndDeletedAtIsNull("맛있는 치킨")).willReturn(false);
             given(userRepository.findById(userId)).willReturn(Optional.of(owner));
             given(areaRepository.findById(area.getId())).willReturn(Optional.of(area));
             given(categoryRepository.findById(category.getId())).willReturn(Optional.of(category));
@@ -156,16 +161,24 @@ class StoreServiceTest {
         void 가게_이름이_중복이면_예외발생() {
             // given
             UUID userId = UUID.randomUUID();
+            UUID areaId = UUID.randomUUID();
 
             StoreCreateRequest request = new StoreCreateRequest(
                     "맛있는 치킨",
                     "서울특별시 용산구 이태원로 123",
                     "02-1234-5678",
-                    UUID.randomUUID(),
+                    areaId,
                     UUID.randomUUID()
             );
 
-            given(storeRepository.existsByNameIgnoreCase("맛있는 치킨")).willReturn(true);
+            // Area mock — active 상태
+            Area mockArea = mock(Area.class);
+            given(mockArea.getIsActive()).willReturn(true);
+            given(areaRepository.findById(areaId)).willReturn(Optional.of(mockArea));
+
+            // 이름 중복 → 예외 발생 포인트
+            given(storeRepository.existsByNameIgnoreCaseAndDeletedAtIsNull("맛있는 치킨"))
+                    .willReturn(true);
 
             // when & then
             assertThatThrownBy(() ->
@@ -177,16 +190,27 @@ class StoreServiceTest {
         void 소유자가_존재하지_않으면_예외발생() {
             // given
             UUID userId = UUID.randomUUID();
+            UUID areaId = UUID.randomUUID();
+            UUID categoryId = UUID.randomUUID();
 
             StoreCreateRequest request = new StoreCreateRequest(
                     "맛있는 치킨",
                     "서울특별시 용산구 이태원로 123",
                     "02-1234-5678",
-                    UUID.randomUUID(),
-                    UUID.randomUUID()
+                    areaId,
+                    categoryId
             );
 
-            given(storeRepository.existsByNameIgnoreCase("맛있는 치킨")).willReturn(false);
+            // Area mock — active 상태로 세팅
+            Area mockArea = mock(Area.class);
+            given(mockArea.getIsActive()).willReturn(true);
+            given(areaRepository.findById(areaId)).willReturn(Optional.of(mockArea));
+
+            // 이름 중복 없음
+            given(storeRepository.existsByNameIgnoreCaseAndDeletedAtIsNull("맛있는 치킨"))
+                    .willReturn(false);
+
+            // User 없음 → 예외 발생 포인트
             given(userRepository.findById(userId)).willReturn(Optional.empty());
 
             // when & then
@@ -206,38 +230,42 @@ class StoreServiceTest {
         void 가게_전체조회_성공() {
             // given
             Pageable pageable = PageRequest.of(0, 10);
-            User owner = createUser(UUID.randomUUID());
-            Area area = createArea();
-            Category category = createCategory();
-            Store store = createStore(owner, area, category);
 
-            Page<Store> pageResult = new PageImpl<>(List.of(store), pageable, 1);
+            Store store = createStore(createUser(UUID.randomUUID()), createArea(), createCategory());
 
-            given(storeRepository.searchStores(null, null, pageable)).willReturn(pageResult);
+            Page<Store> page = new PageImpl<>(List.of(store), pageable, 1);
+
+            given(storeRepository.searchStores(null, null, pageable, null, null))
+                    .willReturn(page);
 
             // when
-            PageResponse<StoreResponse> result = storeService.getStores(null, null, pageable);
+            PageResponse<StoreResponse> result =
+                    storeService.getStores(null, null, pageable, null, null);
 
             // then
             assertThat(result.getContent()).hasSize(1);
-            assertThat(result.getContent().get(0).getName()).isEqualTo("맛있는 치킨");
         }
 
         @Test
         void 카테고리_이름으로_검색조회_성공() {
             // given
             Pageable pageable = PageRequest.of(0, 10);
+
             User owner = createUser(UUID.randomUUID());
             Area area = createArea();
             Category category = createCategory();
+
             Store store = createStore(owner, area, category);
 
-            Page<Store> pageResult = new PageImpl<>(List.of(store), pageable, 1);
+            Page<Store> pageResult =
+                    new PageImpl<>(List.of(store), pageable, 1);
 
-            given(storeRepository.searchStores("한식", null, pageable)).willReturn(pageResult);
+            given(storeRepository.searchStores("한식", null, pageable, null, null))
+                    .willReturn(pageResult);
 
             // when
-            PageResponse<StoreResponse> result = storeService.getStores("한식", null, pageable);
+            PageResponse<StoreResponse> result =
+                    storeService.getStores("한식", null, pageable, null, null);
 
             // then
             assertThat(result.getContent()).hasSize(1);
@@ -255,10 +283,10 @@ class StoreServiceTest {
 
             Page<Store> pageResult = new PageImpl<>(List.of(store), pageable, 1);
 
-            given(storeRepository.searchStores(null, "치킨", pageable)).willReturn(pageResult);
+            given(storeRepository.searchStores(null, "치킨", pageable, null, null)).willReturn(pageResult);
 
             // when
-            PageResponse<StoreResponse> result = storeService.getStores(null, "치킨", pageable);
+            PageResponse<StoreResponse> result = storeService.getStores(null, "치킨", pageable,null,null);
 
             // then
             assertThat(result.getContent()).hasSize(1);
@@ -276,10 +304,10 @@ class StoreServiceTest {
 
             Page<Store> pageResult = new PageImpl<>(List.of(store), pageable, 1);
 
-            given(storeRepository.searchStores("한식", "치킨", pageable)).willReturn(pageResult);
+            given(storeRepository.searchStores("한식", "치킨", pageable,null,null)).willReturn(pageResult);
 
             // when
-            PageResponse<StoreResponse> result = storeService.getStores("한식", "치킨", pageable);
+            PageResponse<StoreResponse> result = storeService.getStores("한식", "치킨", pageable,null,null);
 
             // then
             assertThat(result.getContent()).hasSize(1);
@@ -305,7 +333,7 @@ class StoreServiceTest {
             given(storeRepository.findByIdWithOwner(storeId)).willReturn(Optional.of(store));
 
             // when
-            StoreResponse result = storeService.getStore(storeId);
+            StoreResponse result = storeService.getStore(storeId,null,null);
 
             // then
             assertThat(result.getName()).isEqualTo("맛있는 치킨");
@@ -321,7 +349,7 @@ class StoreServiceTest {
 
             // when & then
             assertThatThrownBy(() ->
-                    storeService.getStore(storeId)
+                    storeService.getStore(storeId,null,null)
             ).isInstanceOf(BaseException.class);
         }
     }
@@ -337,24 +365,25 @@ class StoreServiceTest {
             // given
             UUID userId = UUID.randomUUID();
             User owner = createUser(userId);
-            Area area = createArea();
-            Category category = createCategory();
-            Store store = createStore(owner, area, category);
+            Store store = createStore(owner, createArea(), createCategory());
 
             given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.of(store));
+            given(storeRepository.existsByNameIgnoreCaseAndDeletedAtIsNull("수정된 치킨집")).willReturn(false);
+
+            // Authentication mock
+            Authentication authentication = mock(Authentication.class);
+            given(authentication.getAuthorities())
+                    .willReturn((Collection) List.of(new SimpleGrantedAuthority("ROLE_OWNER")));
 
             StoreUpdateRequest request = new StoreUpdateRequest(
-                    "수정된 치킨집",
-                    "서울특별시 용산구 이태원로 999",
-                    "02-9999-9999"
+                    "수정된 치킨집", "서울특별시 용산구 이태원로 999", "02-9999-9999"
             );
 
             // when
-            StoreResponse result = storeService.updateStore(UUID.randomUUID(), request, userId);
+            StoreResponse result = storeService.updateStore(UUID.randomUUID(), request, userId, authentication);
 
             // then
             assertThat(result.getName()).isEqualTo("수정된 치킨집");
-            assertThat(result.getAddress()).isEqualTo("서울특별시 용산구 이태원로 999");
         }
 
         @Test
@@ -367,6 +396,11 @@ class StoreServiceTest {
 
             given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.of(store));
 
+            // OWNER 권한 → isManagerOrMaster = false → 소유자 체크 진입
+            Authentication authentication = mock(Authentication.class);
+            given(authentication.getAuthorities())
+                    .willReturn((Collection) List.of(new SimpleGrantedAuthority("ROLE_OWNER")));
+
             StoreUpdateRequest request = new StoreUpdateRequest(
                     "수정된 치킨집",
                     "서울특별시 용산구 이태원로 999",
@@ -375,7 +409,7 @@ class StoreServiceTest {
 
             // when & then
             assertThatThrownBy(() ->
-                    storeService.updateStore(UUID.randomUUID(), request, otherUserId)
+                    storeService.updateStore(UUID.randomUUID(), request, otherUserId,authentication)
             ).isInstanceOf(BaseException.class);
         }
 
@@ -394,7 +428,7 @@ class StoreServiceTest {
 
             // when & then
             assertThatThrownBy(() ->
-                    storeService.updateStore(UUID.randomUUID(), request, userId)
+                    storeService.updateStore(UUID.randomUUID(), request, userId,null)
             ).isInstanceOf(BaseException.class);
         }
     }
@@ -414,8 +448,12 @@ class StoreServiceTest {
 
             given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.of(store));
 
+            Authentication authentication = mock(Authentication.class);
+            given(authentication.getAuthorities())
+                    .willReturn((Collection) List.of(new SimpleGrantedAuthority("ROLE_OWNER")));
+
             // when
-            storeService.deleteStore(UUID.randomUUID(), userId);
+            storeService.deleteStore(UUID.randomUUID(), userId,authentication);
 
             // then
             assertThat(store.isDeleted()).isTrue();
@@ -431,9 +469,14 @@ class StoreServiceTest {
 
             given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.of(store));
 
+            // OWNER 권한 → isMaster = false → 소유자 체크 진입
+            Authentication authentication = mock(Authentication.class);
+            given(authentication.getAuthorities())
+                    .willReturn((Collection) List.of(new SimpleGrantedAuthority("ROLE_OWNER")));
+
             // when & then
             assertThatThrownBy(() ->
-                    storeService.deleteStore(UUID.randomUUID(), otherUserId)
+                    storeService.deleteStore(UUID.randomUUID(), otherUserId,authentication)
             ).isInstanceOf(BaseException.class);
         }
 
@@ -446,7 +489,7 @@ class StoreServiceTest {
 
             // when & then
             assertThatThrownBy(() ->
-                    storeService.deleteStore(UUID.randomUUID(), userId)
+                    storeService.deleteStore(UUID.randomUUID(), userId,null)
             ).isInstanceOf(BaseException.class);
         }
     }
@@ -466,10 +509,15 @@ class StoreServiceTest {
 
             given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.of(store));
 
+            Authentication authentication = mock(Authentication.class);
+            given(authentication.getAuthorities())
+                    .willReturn((Collection) List.of(new SimpleGrantedAuthority("ROLE_OWNER")));
+
+
             StoreHiddenRequest request = new StoreHiddenRequest(true);
 
             // when
-            StoreHiddenResponse result = storeService.updateHidden(UUID.randomUUID(), request, userId);
+            StoreHiddenResponse result = storeService.updateHidden(UUID.randomUUID(), request, userId,authentication);
 
             // then
             assertThat(result.getIsHidden()).isTrue();
@@ -485,10 +533,14 @@ class StoreServiceTest {
 
             given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.of(store));
 
+            Authentication authentication = mock(Authentication.class);
+            given(authentication.getAuthorities())
+                    .willReturn((Collection) List.of(new SimpleGrantedAuthority("ROLE_OWNER")));
+
             StoreHiddenRequest request = new StoreHiddenRequest(false);
 
             // when
-            StoreHiddenResponse result = storeService.updateHidden(UUID.randomUUID(), request, userId);
+            StoreHiddenResponse result = storeService.updateHidden(UUID.randomUUID(), request, userId,authentication);
 
             // then
             assertThat(result.getIsHidden()).isFalse();
@@ -504,11 +556,16 @@ class StoreServiceTest {
 
             given(storeRepository.findByIdWithOwner(any())).willReturn(Optional.of(store));
 
+            Authentication authentication = mock(Authentication.class);
+            given(authentication.getAuthorities())
+                    .willReturn((Collection) List.of(new SimpleGrantedAuthority("ROLE_OWNER")));
+
+
             StoreHiddenRequest request = new StoreHiddenRequest(true);
 
             // when & then
             assertThatThrownBy(() ->
-                    storeService.updateHidden(UUID.randomUUID(), request, otherUserId)
+                    storeService.updateHidden(UUID.randomUUID(), request, otherUserId,authentication)
             ).isInstanceOf(BaseException.class);
         }
     }

@@ -56,7 +56,7 @@ public class StoreController {
     }
 
     // 가게 단건 조회
-    // CUSTOMER,비로그인: 공개 가게만 노출 / OWNER: 본인거+공게 / MANAGER,MASTER: 전체
+    // CUSTOMER,비로그인: 공개 가게만 노출 / OWNER: 본인거+공게 / MANAGER,MASTER: 전체 노출
     @GetMapping("/{storeId}")
     public ResponseEntity<ApiResponse<StoreResponse>> getStore(
             @PathVariable UUID storeId,
