@@ -17,11 +17,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(SpringExtension.class)
+@ExtendWith(MockitoExtension.class)
 class AddressServiceTest {
     @Mock
     private AddressRepository addressRepository;
@@ -52,7 +52,6 @@ class AddressServiceTest {
 
         // Mock 데이터
         mockUser = mock(User.class);
-        given(mockUser.getUserId()).willReturn(userId);
     }
     @Nested
     @DisplayName("배송지 등록")
@@ -64,7 +63,6 @@ class AddressServiceTest {
             AddressCreateRequest request = new AddressCreateRequest("집", "서울시 강남구", "101호", "12345");
 
             User user = mock(User.class);
-            given(user.getUserId()).willReturn(userId);
             given(userRepository.findById(userId)).willReturn(Optional.of(user));
 
             Address address = Address.builder()
