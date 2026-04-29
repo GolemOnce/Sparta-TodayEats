@@ -6,10 +6,9 @@ import com.sparta.todayeats.category.dto.response.CategoryResponse;
 import com.sparta.todayeats.category.dto.request.CategoryUpdateRequest;
 import com.sparta.todayeats.category.entity.Category;
 import com.sparta.todayeats.category.repository.CategoryRepository;
-import com.sparta.todayeats.category.presentation.dto.*;
-import com.sparta.todayeats.category.service.CategoryService;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.response.PageResponse;
+import com.sparta.todayeats.store.repository.StoreRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -39,6 +38,9 @@ class CategoryServiceTest {
 
     @Mock
     private CategoryRepository categoryRepository;
+
+    @Mock
+    private StoreRepository storeRepository;
 
     // 카테고리 생성
     @Nested
@@ -292,6 +294,9 @@ class CategoryServiceTest {
 
             given(categoryRepository.findById(categoryId))
                     .willReturn(Optional.of(category));
+
+            // 연관 가게 없음
+            given(storeRepository.existsByCategoryIdAndDeletedAtIsNull(categoryId)).willReturn(false);
 
             // when
             UUID userId = UUID.randomUUID();

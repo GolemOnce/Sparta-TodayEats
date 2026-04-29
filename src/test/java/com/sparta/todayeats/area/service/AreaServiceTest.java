@@ -9,6 +9,7 @@ import com.sparta.todayeats.area.dto.request.AreaUpdateRequest;
 import com.sparta.todayeats.area.service.AreaService;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.exception.BaseException;
+import com.sparta.todayeats.store.repository.StoreRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,9 @@ class AreaServiceTest {
 
     @Mock
     private AreaRepository areaRepository;
+
+    @Mock
+    private StoreRepository storeRepository;
 
 
     // 운영 지역 생성
@@ -395,6 +399,8 @@ class AreaServiceTest {
 
             given(areaRepository.findById(id))
                     .willReturn(Optional.of(area));
+            // 연관 가게 없음
+            given(storeRepository.existsByAreaIdAndDeletedAtIsNull(id)).willReturn(false);
 
             // when
             areaService.deleteArea(id,userId);
