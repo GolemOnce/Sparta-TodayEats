@@ -11,6 +11,8 @@ import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.order.entity.OrderStatus;
 import com.sparta.todayeats.order.entity.OrderType;
 import com.sparta.todayeats.order.repository.OrderRepository;
+import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
+import com.sparta.todayeats.payment.service.PaymentService;
 import com.sparta.todayeats.store.entity.Store;
 import com.sparta.todayeats.store.repository.StoreRepository;
 import com.sparta.todayeats.user.entity.User;
@@ -60,6 +62,8 @@ class OrderServiceTest {
     private StoreRepository storeRepository;
     @Mock
     private AddressRepository addressRepository;
+    @Mock
+    private PaymentService paymentService;
 
     private CreateOrderRequest createOrderRequest() {
         return new CreateOrderRequest(
@@ -135,6 +139,8 @@ class OrderServiceTest {
                     .willReturn(Optional.of(mockMenu));
             given(orderRepository.save(any(Order.class)))
                     .willAnswer(inv -> inv.getArgument(0));
+            given(paymentService.createPayment(any(), eq(userId), any()))
+                    .willReturn(mock(PaymentCreateResponse.class));
 
             // when
             CreateOrderResponse result = orderService.createOrder(createOrderRequest(), userId, UserRoleEnum.CUSTOMER);
@@ -870,6 +876,7 @@ class OrderServiceTest {
                     .willReturn(Optional.of(canceledOrder));
             given(orderRepository.cancelConditionally(eq(orderId), eq("단순 변심"), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name()), eq(userId)))
                     .willReturn(1);
+            willDoNothing().given(paymentService).refund(any());
 
             // when
             CancelOrderResponse result = orderService.cancelOrder(
@@ -893,6 +900,7 @@ class OrderServiceTest {
                     .willReturn(Optional.of(canceledOrder));
             given(orderRepository.cancelConditionally(eq(orderId), isNull(), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name()), eq(userId)))
                     .willReturn(1);
+            willDoNothing().given(paymentService).refund(any());
 
             // when
             CancelOrderResponse result = orderService.cancelOrder(orderId, null, userId, UserRoleEnum.CUSTOMER);
@@ -1107,6 +1115,7 @@ class OrderServiceTest {
                     .willReturn(Optional.of(pendingOrder()))
                     .willReturn(Optional.of(rejectedOrder));
             given(orderRepository.rejectConditionally(eq(orderId), eq("재료 소진"), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED), eq(userId))).willReturn(1);
+            willDoNothing().given(paymentService).refund(any());
 
             // when
             RejectOrderResponse result = orderService.rejectOrder(orderId, new RejectOrderRequest("재료 소진"), userId, UserRoleEnum.OWNER);
@@ -1133,6 +1142,7 @@ class OrderServiceTest {
                     .willReturn(Optional.of(pendingOrder()))
                     .willReturn(Optional.of(rejectedOrder));
             given(orderRepository.rejectConditionally(eq(orderId), isNull(), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED), eq(userId))).willReturn(1);
+            willDoNothing().given(paymentService).refund(any());
 
             // when
             RejectOrderResponse result = orderService.rejectOrder(orderId, null, userId, UserRoleEnum.OWNER);
@@ -1155,6 +1165,7 @@ class OrderServiceTest {
                     .willReturn(Optional.of(rejectedOrder));
             given(orderRepository.rejectConditionally(eq(orderId), eq("운영자 거절"), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED), eq(userId)))
                     .willReturn(1);
+            willDoNothing().given(paymentService).refund(any());
 
             // when
             RejectOrderResponse result = orderService.rejectOrder(orderId, new RejectOrderRequest("운영자 거절"), userId, UserRoleEnum.MASTER);
@@ -1257,6 +1268,7 @@ class OrderServiceTest {
             Order order = pendingOrder();
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
+            willDoNothing().given(paymentService).refund(any());
 
             // when
             orderService.deleteOrder(orderId, userId, UserRoleEnum.MASTER);
