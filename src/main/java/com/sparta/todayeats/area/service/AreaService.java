@@ -1,11 +1,11 @@
-package com.sparta.todayeats.area.application.service;
+package com.sparta.todayeats.area.service;
 
-import com.sparta.todayeats.area.domain.entity.Area;
-import com.sparta.todayeats.area.domain.repository.AreaRepository;
-import com.sparta.todayeats.area.presentation.dto.AreaCreateRequest;
-import com.sparta.todayeats.area.presentation.dto.AreaCreateResponse;
-import com.sparta.todayeats.area.presentation.dto.AreaResponse;
-import com.sparta.todayeats.area.presentation.dto.AreaUpdateRequest;
+import com.sparta.todayeats.area.entity.Area;
+import com.sparta.todayeats.area.repository.AreaRepository;
+import com.sparta.todayeats.area.dto.request.AreaCreateRequest;
+import com.sparta.todayeats.area.dto.response.AreaCreateResponse;
+import com.sparta.todayeats.area.dto.response.AreaResponse;
+import com.sparta.todayeats.area.dto.request.AreaUpdateRequest;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.exception.AreaErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;

@@ -1,4 +1,4 @@
-package com.sparta.todayeats.area.presentation.dto;
+package com.sparta.todayeats.area.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
