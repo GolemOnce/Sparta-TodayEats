@@ -163,6 +163,14 @@ public class PaymentService {
     public void refund(UUID orderId) {
         Payment payment = paymentRepository.findByOrder_OrderIdAndDeletedAtIsNull(orderId)
                 .orElseThrow(() -> new BaseException(PaymentErrorCode.PAYMENT_NOT_FOUND));
+
+        if (payment.getStatus() == PaymentStatus.CANCELLED) {
+            return; // 이미 환불된 상태 → 멱등 처리
+        }
+        if (payment.getStatus() != PaymentStatus.COMPLETED) {
+            throw new BaseException(PaymentErrorCode.INVALID_PAYMENT_STATUS); // PENDING 등 환불 불가 상태
+        }
+
         payment.updatePaymentStatus(PaymentStatus.CANCELLED);
     }
 }
