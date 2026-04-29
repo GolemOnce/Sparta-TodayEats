@@ -18,8 +18,4 @@ public class ApiResponse<T> {
     public static <T> ApiResponse<T> success(T data) {
         return new ApiResponse<>(200, "SUCCESS", data);
     }
-
-    public static <T> ApiResponse<T> deleted(T data) {
-        return new ApiResponse<>(204, "NO_CONTENT", null);
-    }
 }

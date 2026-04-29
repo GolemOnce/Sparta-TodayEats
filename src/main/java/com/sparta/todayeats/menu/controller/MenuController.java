@@ -1,5 +1,6 @@
 package com.sparta.todayeats.menu.controller;
 
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.menu.service.MenuService;
 import com.sparta.todayeats.menu.entity.Menu;
 import com.sparta.todayeats.menu.dto.request.MenuCreateRequest;
@@ -20,7 +21,6 @@ import org.springframework.http.ResponseEntity;
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.menu.dto.response.MenuCreateResponse;
 import com.sparta.todayeats.menu.dto.response.MenuDetailResponse;
-import com.sparta.todayeats.menu.dto.response.MenuListResponse;
 
 import java.util.UUID;
 import jakarta.validation.Valid;
@@ -52,7 +52,7 @@ public class MenuController {
     // 메뉴 목록 조회 - 고객용
     // GET /api/v1/stores/{storeId}/menus
     @GetMapping("/api/v1/stores/{storeId}/menus")
-    public ResponseEntity<ApiResponse<MenuListResponse>> getMenusByStore(
+    public ResponseEntity<ApiResponse<PageResponse<MenuDetailResponse>>> getMenusByStore(
             @PathVariable UUID storeId,
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "0") int page,
@@ -62,7 +62,9 @@ public class MenuController {
 
         Page<Menu> menus = menuService.getMenusByStore(storeId, keyword, pageable);
 
-        MenuListResponse response = MenuListResponse.from(menus);
+        PageResponse<MenuDetailResponse> response = PageResponse.from(
+                menus, menus.map(MenuDetailResponse::from).getContent()
+        );
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -71,7 +73,7 @@ public class MenuController {
     // GET /api/v1/stores/{storeId}/menus/owner
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/api/v1/stores/{storeId}/menus/owner")
-    public ResponseEntity<ApiResponse<MenuListResponse>> getOwnerMenusByStore(
+    public ResponseEntity<ApiResponse<PageResponse<MenuDetailResponse>>> getOwnerMenusByStore(
             @PathVariable UUID storeId,
             @AuthenticationPrincipal UUID userId,
             @RequestParam(required = false) String keyword,
@@ -82,7 +84,9 @@ public class MenuController {
 
         Page<Menu> menus = menuService.getOwnerMenusByStore(storeId, userId, keyword, pageable);
 
-        MenuListResponse response = MenuListResponse.from(menus);
+        PageResponse<MenuDetailResponse> response = PageResponse.from(
+                menus, menus.map(MenuDetailResponse::from).getContent()
+        );
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -147,7 +151,7 @@ public class MenuController {
     ) {
         menuService.deleteMenu(menuId, userId);
 
-        return ResponseEntity.ok(ApiResponse.deleted(null));
+        return ResponseEntity.noContent().build();
     }
 
     // 페이징

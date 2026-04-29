@@ -1,6 +1,8 @@
 package com.sparta.todayeats.user.controller;
 
 import com.sparta.todayeats.global.annotation.LoginUser;
+import com.sparta.todayeats.global.response.ApiResponse;
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.user.entity.UserRoleEnum;
 import com.sparta.todayeats.user.dto.request.UpdatePasswordRequest;
 import com.sparta.todayeats.user.dto.request.UpdateRoleRequest;
@@ -9,7 +11,6 @@ import com.sparta.todayeats.user.dto.response.*;
 import com.sparta.todayeats.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -27,50 +28,54 @@ public class UserController {
 
     @Secured({"ROLE_MANAGER", "ROLE_MASTER"})
     @GetMapping
-    public ResponseEntity<Page<UserResponse>> searchUsers(
+    public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> searchUsers(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) UserRoleEnum role,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable,
             @LoginUser UUID currentUserId
     ) {
-        Page<UserResponse> response = userService.searchUsers(keyword, role, pageable, currentUserId);
-        return ResponseEntity.ok(response);
+        PageResponse<UserResponse> response = userService.searchUsers(keyword, role, pageable, currentUserId);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/{targetUserId}")
-    public ResponseEntity<UserResponse> findUser(@PathVariable UUID targetUserId, @LoginUser UUID currentUserId) {
-        return ResponseEntity.ok(userService.findUser(targetUserId, currentUserId));
+    public ResponseEntity<ApiResponse<UserResponse>> findUser(@PathVariable UUID targetUserId, @LoginUser UUID currentUserId) {
+        UserResponse response = userService.findUser(targetUserId, currentUserId);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PutMapping
-    public ResponseEntity<UpdateUserResponse> updateUser(
+    public ResponseEntity<ApiResponse<UpdateUserResponse>> updateUser(
             @Valid @RequestBody UpdateUserRequest request, @LoginUser UUID userId
     ) {
-        return ResponseEntity.ok(userService.updateUser(request, userId));
+        UpdateUserResponse response = userService.updateUser(request, userId);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PatchMapping("/password")
-    public ResponseEntity<UpdatePasswordResponse> updatePassword(
+    public ResponseEntity<ApiResponse<UpdatePasswordResponse>> updatePassword(
             @Valid @RequestBody UpdatePasswordRequest request, @LoginUser UUID userId
     ) {
-        return ResponseEntity.ok(userService.updatePassword(request, userId));
+        UpdatePasswordResponse response = userService.updatePassword(request, userId);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @Secured("ROLE_MASTER")
     @PatchMapping("/{targetUserId}/role")
-    public ResponseEntity<UpdateRoleResponse> updateRole(
+    public ResponseEntity<ApiResponse<UpdateRoleResponse>> updateRole(
             @PathVariable UUID targetUserId, @Valid @RequestBody UpdateRoleRequest request
     ) {
-        return ResponseEntity.ok(userService.updateRole(targetUserId, request));
+        UpdateRoleResponse response = userService.updateRole(targetUserId, request);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @DeleteMapping("/{targetUserId}")
-    public ResponseEntity<?> deleteUser(@PathVariable UUID targetUserId, @LoginUser UUID currentUserId) {
+    public ResponseEntity<ApiResponse<?>> deleteUser(@PathVariable UUID targetUserId, @LoginUser UUID currentUserId) {
         DeleteUserResponse response = userService.deleteUser(targetUserId, currentUserId);
 
         if (response == null) {
             return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

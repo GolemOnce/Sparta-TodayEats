@@ -2,6 +2,7 @@ package com.sparta.todayeats.payment.service;
 
 import com.sparta.todayeats.auth.application.service.AuthService;
 import com.sparta.todayeats.global.exception.*;
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.order.entity.OrderStatus;
@@ -86,7 +87,7 @@ public class PaymentService {
 
     // 목록 조회
     @Transactional(readOnly = true)
-    public PaymentPageResponse getPagedPayments(UUID userId, @Nullable UUID targetUserId, Pageable pageable) {
+    public PageResponse<PaymentResponse> getPagedPayments(UUID userId, @Nullable UUID targetUserId, Pageable pageable) {
 
         UUID queryId;
 
@@ -101,7 +102,10 @@ public class PaymentService {
         }
 
         Page<Payment> payments = paymentRepository.findByUserId(queryId, pageable);
-        return PaymentPageResponse.from(payments);
+
+        return PageResponse.from(
+                payments, payments.map(PaymentResponse::from).getContent()
+        );
     }
 
     // 상세 조회

@@ -174,7 +174,7 @@ public class OrderController {
      * MASTER만 가능
      */
     @DeleteMapping("/{orderId}")
-    public ResponseEntity<Void> deleteOrder(
+    public ResponseEntity<ApiResponse<Void>> deleteOrder(
             @PathVariable UUID orderId,
             @AuthenticationPrincipal UUID userId,
             Authentication authentication

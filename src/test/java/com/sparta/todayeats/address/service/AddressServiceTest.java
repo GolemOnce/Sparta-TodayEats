@@ -7,6 +7,7 @@ import com.sparta.todayeats.address.entity.Address;
 import com.sparta.todayeats.address.repository.AddressRepository;
 import com.sparta.todayeats.global.exception.AuthErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.user.entity.User;
 import com.sparta.todayeats.user.repository.UserRepository;
@@ -126,10 +127,10 @@ class AddressServiceTest {
             given(addressRepository.findByUserId(userId, pageable)).willReturn(addressPage);
 
             // when
-            AddressPageResponse response = addressService.getPagedAddresses(userId, pageable);
+            PageResponse<AddressResponse> response = addressService.getPagedAddresses(userId, pageable);
 
             // then
-            assertThat(response.getAddresses().size()).isEqualTo(1);
+            assertThat(response.getContent().size()).isEqualTo(1);
             assertThat(response.getTotalElements()).isEqualTo(1);
             verify(addressRepository).findByUserId(userId, pageable);
         }
@@ -153,10 +154,10 @@ class AddressServiceTest {
             given(addressRepository.findByUserId(userId, pageable)).willReturn(Page.empty(pageable));
 
             // when
-            AddressPageResponse response = addressService.getPagedAddresses(userId, pageable);
+            PageResponse<AddressResponse> response = addressService.getPagedAddresses(userId, pageable);
 
             // then
-            assertThat(response.getAddresses().size()).isEqualTo(0);
+            assertThat(response.getContent().size()).isEqualTo(0);
             assertThat(response.getTotalElements()).isEqualTo(0);
         }
     }

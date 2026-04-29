@@ -3,6 +3,7 @@ package com.sparta.todayeats.auth.presentation.controller;
 import com.sparta.todayeats.auth.application.service.AuthService;
 import com.sparta.todayeats.auth.presentation.dto.request.*;
 import com.sparta.todayeats.auth.presentation.dto.response.*;
+import com.sparta.todayeats.global.response.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,52 +18,60 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/verify-code/send")
-    public ResponseEntity<CodeResponse> sendSignupCode(@Valid @RequestBody SendCodeRequest request) {
-        return ResponseEntity.ok(authService.sendSignupCode(request.getEmail()));
+    public ResponseEntity<ApiResponse<CodeResponse>> sendSignupCode(@Valid @RequestBody SendCodeRequest request) {
+        CodeResponse response = authService.sendSignupCode(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping("/verify-code/confirm")
-    public ResponseEntity<CodeResponse> confirmSignupCode(@Valid @RequestBody ConfirmCodeRequest request) {
-        return ResponseEntity.ok(authService.confirmSignupCode(request.getEmail(), request.getCode()));
+    public ResponseEntity<ApiResponse<CodeResponse>> confirmSignupCode(@Valid @RequestBody ConfirmCodeRequest request) {
+        CodeResponse response = authService.confirmSignupCode(request.getEmail(), request.getCode());
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<SignupResponse> signup(@Valid @RequestBody SignupRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.signup(request));
+    public ResponseEntity<ApiResponse<SignupResponse>> signup(@Valid @RequestBody SignupRequest request) {
+        SignupResponse response = authService.signup(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(response));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request.getEmail(), request.getPassword()));
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = authService.login(request.getEmail(), request.getPassword());
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping("/reissue")
-    public ResponseEntity<TokenResponse> reissue(@Valid @RequestBody RefreshTokenRequest request) {
-        return ResponseEntity.ok(authService.reissue(request.getRefreshToken()));
+    public ResponseEntity<ApiResponse<TokenResponse>> reissue(@Valid @RequestBody RefreshTokenRequest request) {
+        TokenResponse response = authService.reissue(request.getRefreshToken());
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(Authentication authentication) {
+    public ResponseEntity<ApiResponse<Void>> logout(Authentication authentication) {
         authService.logout(authentication.getName());
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/reset-password/send")
-    public ResponseEntity<CodeResponse> sendPasswordResetLink(@Valid @RequestBody SendCodeRequest request) {
-        return ResponseEntity.ok(authService.sendPasswordResetLink(request.getEmail()));
+    public ResponseEntity<ApiResponse<CodeResponse>> sendPasswordResetLink(@Valid @RequestBody SendCodeRequest request) {
+        CodeResponse response = authService.sendPasswordResetLink(request.getEmail());
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/reset-password")
-    public ResponseEntity<ConfirmCodeResponse> confirmPasswordResetLink(@RequestParam String code) {
-        return ResponseEntity.ok(authService.confirmPasswordResetLink(code));
+    public ResponseEntity<ApiResponse<ConfirmCodeResponse>> confirmPasswordResetLink(@RequestParam String code) {
+        ConfirmCodeResponse response = authService.confirmPasswordResetLink(code);
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PatchMapping("/reset-password")
-    public ResponseEntity<ResetPasswordResponse> resetPassword(
+    public ResponseEntity<ApiResponse<ResetPasswordResponse>> resetPassword(
             @RequestParam String code, @Valid @RequestBody ResetPasswordRequest request
     ) {
-        return ResponseEntity.ok(authService.resetPassword(
-                code, request.getNewPassword(), request.getConfirmNewPassword())
+        ResetPasswordResponse response = authService.resetPassword(
+                code, request.getNewPassword(), request.getConfirmNewPassword()
         );
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

@@ -6,6 +6,7 @@ import com.sparta.todayeats.address.dto.response.*;
 import com.sparta.todayeats.address.entity.Address;
 import com.sparta.todayeats.address.repository.AddressRepository;
 import com.sparta.todayeats.global.exception.*;
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.user.entity.User;
 import com.sparta.todayeats.user.repository.UserRepository;
@@ -61,7 +62,7 @@ public class AddressService {
 
     // 배송지 조회
     @Transactional(readOnly = true)
-    public AddressPageResponse getPagedAddresses(UUID userId, Pageable pageable) {
+    public PageResponse<AddressResponse> getPagedAddresses(UUID userId, Pageable pageable) {
         // userId 유효성 검증
         if (!userRepository.existsById(userId)) {
             throw new BaseException(UserErrorCode.USER_NOT_FOUND);
@@ -69,7 +70,9 @@ public class AddressService {
 
         Page<Address> addresses = addressRepository.findByUserId(userId, pageable);
 
-        return AddressPageResponse.from(addresses);
+        return PageResponse.from(
+                addresses, addresses.map(AddressResponse::from).getContent()
+        );
     }
 
     // 배송지 상세 조회
