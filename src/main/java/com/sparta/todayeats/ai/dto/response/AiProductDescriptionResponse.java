@@ -1,6 +1,7 @@
 package com.sparta.todayeats.ai.dto.response;
 
 public record AiProductDescriptionResponse(
-        String description
+        String prompt,
+        String result
 ) {
 }

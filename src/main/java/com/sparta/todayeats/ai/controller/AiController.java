@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.sparta.todayeats.global.response.ApiResponse;
+
 import java.util.UUID;
 
 @RestController
@@ -24,12 +26,13 @@ public class AiController {
 
     @PostMapping("/product-description")
     @PreAuthorize("hasRole('OWNER')") // 필수 기능 구현: 오너 역할로만 리퀘스트 가능
-    public ResponseEntity<AiProductDescriptionResponse> generateProductDescription(
+    public ResponseEntity<ApiResponse<AiProductDescriptionResponse>> generateProductDescription(
             @Valid @RequestBody AiProductDescriptionRequest request,
             @AuthenticationPrincipal UUID userId
     ) {
-        return ResponseEntity.ok(
-                aiService.generateProductDescription(request.prompt(), userId)
-        );
+        AiProductDescriptionResponse response =
+                aiService.generateProductDescription(request.prompt(), userId);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }

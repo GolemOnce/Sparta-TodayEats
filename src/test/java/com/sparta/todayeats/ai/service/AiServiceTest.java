@@ -43,7 +43,7 @@ class AiServiceTest {
                 aiService.generateProductDescription(prompt, userId);
 
         // then
-        assertThat(response.description()).isEqualTo(aiResponse);
+        assertThat(response.result()).isEqualTo(aiResponse);
 
         verify(geminiClient).generateContent(prompt + " 답변을 최대한 간결하게 50자 이하로");
         verify(aiRequestLogRepository).save(any(AiRequestLogEntity.class));
