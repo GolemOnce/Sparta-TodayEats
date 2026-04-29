@@ -39,7 +39,7 @@ public class MenuService {
 
         Menu menu = Menu.builder()
                 .name(request.name())
-                .price(9000L)
+                .price(request.price())
                 .description(request.description())
                 .imageUrl(request.imageUrl())
                 .category(category)
@@ -107,7 +107,7 @@ public class MenuService {
 
     // 메뉴 수정
     @Transactional
-    public void updateMenu(UUID menuId, UUID userId, MenuUpdateRequest request) {
+    public Menu updateMenu(UUID menuId, UUID userId, MenuUpdateRequest request) {
         Menu menu = findMenu(menuId);
         validateNotDeleted(menu);
         validateStoreOwner(menu.getStore(), userId);
@@ -118,16 +118,20 @@ public class MenuService {
                 request.description(),
                 request.imageUrl()
         );
+
+        return menu;
     }
 
     // 상태 변경
     @Transactional
-    public void updateMenuStatus(UUID menuId, UUID userId, MenuStatusUpdateRequest request) {
+    public Menu updateMenuStatus(UUID menuId, UUID userId, MenuStatusUpdateRequest request) {
         Menu menu = findMenu(menuId);
         validateNotDeleted(menu);
         validateStoreOwner(menu.getStore(), userId);
 
         menu.updateStatus(request.isHidden(), request.soldOut());
+
+        return menu;
     }
 
     // 메뉴 삭제
