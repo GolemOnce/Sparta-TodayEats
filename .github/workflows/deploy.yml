@@ -76,7 +76,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "build/libs/*.jar"
-          target: "/home/ubuntu/Sparta-TodayEats/build/libs/"
+          target: "/home/ubuntu/Sparta-TodayEats"
           strip_components: 2
 
       - name: Deploy to EC2
@@ -87,5 +87,7 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/ubuntu/Sparta-TodayEats
-            docker-compose down
-            docker-compose up -d --build
+            mv TodayEats-*.jar app.jar
+            docker compose down
+            docker compose build --no-cache
+            docker compose up -d
