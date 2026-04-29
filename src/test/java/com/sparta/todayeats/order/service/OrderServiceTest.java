@@ -888,6 +888,7 @@ class OrderServiceTest {
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.CANCELED);
+            then(paymentService).should().refund(orderId);
         }
 
         @Test
@@ -911,6 +912,7 @@ class OrderServiceTest {
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.CANCELED);
+            then(paymentService).should().refund(orderId);
         }
 
         @Test
@@ -1091,6 +1093,7 @@ class OrderServiceTest {
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.CANCELED);
+            then(paymentService).should().refund(orderId);
         }
     }
 
@@ -1128,6 +1131,7 @@ class OrderServiceTest {
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.REJECTED);
             assertThat(result.rejectReason()).isEqualTo("재료 소진");
+            then(paymentService).should().refund(orderId);
         }
 
         @Test
@@ -1155,6 +1159,7 @@ class OrderServiceTest {
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.REJECTED);
             assertThat(result.rejectReason()).isNull();
+            then(paymentService).should().refund(orderId);
         }
 
         @Test
@@ -1178,6 +1183,7 @@ class OrderServiceTest {
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.REJECTED);
             assertThat(result.rejectReason()).isEqualTo("운영자 거절");
+            then(paymentService).should().refund(orderId);
         }
 
         @Test
@@ -1282,6 +1288,7 @@ class OrderServiceTest {
             assertThat(order.isDeleted()).isTrue();
             assertThat(order.getDeletedAt()).isNotNull();
             assertThat(order.getDeletedBy()).isEqualTo(userId);
+            then(paymentService).should().refund(orderId);
         }
 
         @Test
