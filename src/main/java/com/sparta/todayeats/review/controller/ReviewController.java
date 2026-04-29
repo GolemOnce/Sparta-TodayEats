@@ -1,12 +1,10 @@
 package com.sparta.todayeats.review.controller;
 
 import com.sparta.todayeats.global.response.ApiResponse;
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.review.dto.request.ReviewCreateRequest;
 import com.sparta.todayeats.review.dto.request.ReviewUpdateRequest;
-import com.sparta.todayeats.review.dto.response.ReviewCreateResponse;
-import com.sparta.todayeats.review.dto.response.ReviewDetailResponse;
-import com.sparta.todayeats.review.dto.response.ReviewPageResponse;
-import com.sparta.todayeats.review.dto.response.ReviewUpdateResponse;
+import com.sparta.todayeats.review.dto.response.*;
 import com.sparta.todayeats.review.service.ReviewService;
 import com.sparta.todayeats.user.entity.UserRoleEnum;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +38,7 @@ public class ReviewController {
 
     // 내 리뷰 조회 (GET /reviews) CUSTOMER + 특정 유저 리뷰 조회 (GET /reviews?userId=UUID) ADMIN
     @GetMapping("/reviews")
-    public ResponseEntity<ApiResponse<ReviewPageResponse>> getReviews(
+    public ResponseEntity<ApiResponse<PageResponse<ReviewResponse>>> getReviews(
             @AuthenticationPrincipal UUID userId,
             @RequestParam(name = "userId", required = false) UUID targetId,
             Pageable pageable,
@@ -53,18 +51,18 @@ public class ReviewController {
 
         UUID targetUserId = targetId != null ? targetId : userId;
 
-        ReviewPageResponse response = reviewService.getPagedReviews(userId, targetUserId, role, pageable);
+        PageResponse<ReviewResponse> response = reviewService.getPagedReviews(userId, targetUserId, role, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     // 특정 가게 리뷰 조회 (GET /stores/{storeId}/reviews 모두
     @GetMapping("/stores/{storeId}/reviews")
-    public ResponseEntity<ApiResponse<ReviewPageResponse>> getStoreReviews(
+    public ResponseEntity<ApiResponse<PageResponse<ReviewResponse>>> getStoreReviews(
             @PathVariable UUID storeId,
             Pageable pageable) {
 
-        ReviewPageResponse response = reviewService.getStoreReviews(storeId, pageable);
+        PageResponse<ReviewResponse> response = reviewService.getStoreReviews(storeId, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(response));
     }
@@ -94,7 +92,7 @@ public class ReviewController {
 
     // 리뷰 삭제 (DELETE /reviews/{reviewId}) 본인 + 어드민
     @DeleteMapping("/reviews/{reviewId}")
-    public ResponseEntity<Void> deleteReview(
+    public ResponseEntity<ApiResponse<Void>> deleteReview(
             @PathVariable UUID reviewId,
             @AuthenticationPrincipal UUID userId
     ) {

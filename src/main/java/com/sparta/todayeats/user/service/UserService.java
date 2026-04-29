@@ -4,6 +4,7 @@ import com.sparta.todayeats.address.service.AddressService;
 import com.sparta.todayeats.auth.application.service.AuthService;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.UserErrorCode;
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.global.util.PageableUtils;
 import com.sparta.todayeats.order.service.OrderService;
@@ -38,7 +39,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public Page<UserResponse> searchUsers(
+    public PageResponse<UserResponse> searchUsers(
             String keyword, UserRoleEnum role, Pageable pageable, UUID currentUserId
     ) {
         // 관리자 검증: DB 조회
@@ -51,7 +52,9 @@ public class UserService {
         // 사용자 조회
         Page<User> userPage = userRepository.searchUsers(keyword, role, pageable);
 
-        return userPage.map(user -> new UserResponse(user, true));
+        return PageResponse.from(
+                userPage, userPage.map(user -> new UserResponse(user, true)).getContent()
+        );
     }
 
     public UserResponse findUser(UUID targetUserId, UUID currentUserId) {

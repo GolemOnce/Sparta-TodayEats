@@ -6,6 +6,7 @@ import com.sparta.todayeats.global.exception.AuthErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.CommonErrorCode;
 import com.sparta.todayeats.global.exception.UserErrorCode;
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.order.service.OrderService;
 import com.sparta.todayeats.review.service.ReviewService;
@@ -93,7 +94,7 @@ class UserServiceTest {
             given(userRepository.searchUsers(KEYWORD, ROLE, pageable)).willReturn(userPage);
 
             // when
-            Page<UserResponse> responsePage = userService.searchUsers(KEYWORD, ROLE, pageable, CURRENT_USER_ID);
+            PageResponse<UserResponse> responsePage = userService.searchUsers(KEYWORD, ROLE, pageable, CURRENT_USER_ID);
 
             // then
             assertThat(responsePage).isNotNull();

@@ -2,15 +2,13 @@ package com.sparta.todayeats.review.service;
 
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.ReviewErrorCode;
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.order.repository.OrderRepository;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.review.dto.request.ReviewCreateRequest;
 import com.sparta.todayeats.review.dto.request.ReviewUpdateRequest;
-import com.sparta.todayeats.review.dto.response.ReviewCreateResponse;
-import com.sparta.todayeats.review.dto.response.ReviewDetailResponse;
-import com.sparta.todayeats.review.dto.response.ReviewPageResponse;
-import com.sparta.todayeats.review.dto.response.ReviewUpdateResponse;
+import com.sparta.todayeats.review.dto.response.*;
 import com.sparta.todayeats.review.entity.Review;
 import com.sparta.todayeats.review.repository.ReviewRepository;
 import com.sparta.todayeats.store.entity.Store;
@@ -149,10 +147,10 @@ class ReviewServiceTest {
             given(reviewRepository.findByUserId(userId, pageable)).willReturn(reviewPage);
 
             // when
-            ReviewPageResponse response = reviewService.getPagedReviews(userId, null, UserRoleEnum.CUSTOMER, pageable);
+            PageResponse<ReviewResponse> response = reviewService.getPagedReviews(userId, null, UserRoleEnum.CUSTOMER, pageable);
 
             // then
-            assertThat(response.getReviews()).hasSize(1);
+            assertThat(response.getContent()).hasSize(1);
             verify(reviewRepository).findByUserId(userId, pageable);
         }
 
@@ -176,7 +174,7 @@ class ReviewServiceTest {
             given(reviewRepository.findByUserId(targetId, pageable)).willReturn(reviewPage);
 
             // when
-            ReviewPageResponse response = reviewService.getPagedReviews(userId, targetId, UserRoleEnum.MANAGER, pageable);
+            PageResponse<ReviewResponse> response = reviewService.getPagedReviews(userId, targetId, UserRoleEnum.MANAGER, pageable);
 
             // then
             assertThat(response).isNotNull();
@@ -200,10 +198,10 @@ class ReviewServiceTest {
             given(reviewRepository.findByUserId(userId, pageable)).willReturn(Page.empty(pageable));
 
             // when
-            ReviewPageResponse response = reviewService.getPagedReviews(userId, null, UserRoleEnum.CUSTOMER, pageable);
+            PageResponse<ReviewResponse> response = reviewService.getPagedReviews(userId, null, UserRoleEnum.CUSTOMER, pageable);
 
             // then
-            assertThat(response.getReviews()).isEmpty();
+            assertThat(response.getContent()).isEmpty();
         }
     }
 
@@ -220,7 +218,7 @@ class ReviewServiceTest {
             given(reviewRepository.findByStoreId(storeId, pageable)).willReturn(reviewPage);
 
             // when
-            ReviewPageResponse response = reviewService.getStoreReviews(storeId, pageable);
+            PageResponse<ReviewResponse> response = reviewService.getStoreReviews(storeId, pageable);
 
             // then
             assertThat(response).isNotNull();

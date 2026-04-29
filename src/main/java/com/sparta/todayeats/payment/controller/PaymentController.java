@@ -1,6 +1,7 @@
 package com.sparta.todayeats.payment.controller;
 
 import com.sparta.todayeats.global.response.ApiResponse;
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
 import com.sparta.todayeats.payment.dto.request.PaymentUpdateRequest;
 import com.sparta.todayeats.payment.dto.response.*;
@@ -34,11 +35,11 @@ public class PaymentController {
 
     // 결제 목록 조회
     @GetMapping("/payments")
-    public ResponseEntity<ApiResponse<PaymentPageResponse>> getPayments(
+    public ResponseEntity<ApiResponse<PageResponse<PaymentResponse>>> getPayments(
             @AuthenticationPrincipal UUID userId,
             @RequestParam(name = "userId", required = false) UUID targetUserId,
             Pageable pageable) {
-        PaymentPageResponse response = paymentService.getPagedPayments(userId, targetUserId, pageable);
+        PageResponse<PaymentResponse> response = paymentService.getPagedPayments(userId, targetUserId, pageable);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
@@ -63,7 +64,7 @@ public class PaymentController {
 
     // 결제 삭제
     @DeleteMapping("/payments/{paymentId}")
-    public ResponseEntity<Void> deletePayment(
+    public ResponseEntity<ApiResponse<Void>> deletePayment(
             @PathVariable("paymentId") UUID paymentId,
             @AuthenticationPrincipal UUID userId) {
         paymentService.deletePayment(paymentId, userId);
