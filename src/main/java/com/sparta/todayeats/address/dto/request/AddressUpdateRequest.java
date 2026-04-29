@@ -1,4 +1,4 @@
-package com.sparta.todayeats.address.dto.reqeust;
+package com.sparta.todayeats.address.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class AddressCreateRequest {
+public class AddressUpdateRequest {
     private String alias;
     private String address;
     private String detail;

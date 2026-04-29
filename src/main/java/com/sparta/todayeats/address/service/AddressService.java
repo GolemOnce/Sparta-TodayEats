@@ -1,7 +1,7 @@
 package com.sparta.todayeats.address.service;
 
-import com.sparta.todayeats.address.dto.reqeust.AddressCreateRequest;
-import com.sparta.todayeats.address.dto.reqeust.AddressUpdateRequest;
+import com.sparta.todayeats.address.dto.request.AddressCreateRequest;
+import com.sparta.todayeats.address.dto.request.AddressUpdateRequest;
 import com.sparta.todayeats.address.dto.response.*;
 import com.sparta.todayeats.address.entity.Address;
 import com.sparta.todayeats.address.repository.AddressRepository;
