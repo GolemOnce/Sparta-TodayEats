@@ -48,6 +48,6 @@ public class AiService {
                 new AiRequestLogEntity(prompt, requestPrompt, response, userId)
         );
 
-        return new AiProductDescriptionResponse(response);
+        return new AiProductDescriptionResponse(prompt, response);
     }
 }
