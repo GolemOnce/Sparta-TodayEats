@@ -1078,6 +1078,7 @@ class OrderServiceTest {
                     .willReturn(Optional.of(canceledOrder));
             given(orderRepository.cancelConditionally(eq(orderId), eq("단순 변심"), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name()), eq(userId)))
                     .willReturn(1);
+            willDoNothing().given(paymentService).refund(any());
 
             // when
             CancelOrderResponse result = orderService.cancelOrder(
