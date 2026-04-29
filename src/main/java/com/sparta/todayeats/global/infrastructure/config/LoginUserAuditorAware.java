@@ -11,6 +11,7 @@ import java.util.UUID;
 
 @Component
 public class LoginUserAuditorAware implements AuditorAware<UUID> {
+    // 현재 로그인한 사용자의 UUID를 Auditing에 제공
     @Override
     public Optional<UUID> getCurrentAuditor() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
