@@ -27,7 +27,7 @@ public class AddressPageResponse {
                 .size(addressPage.getSize())
                 .totalElements(addressPage.getTotalElements())
                 .totalPages(addressPage.getTotalPages())
-                .sort("createAt,DESC")
+                .sort(addressPage.getSort().isSorted() ? addressPage.getSort().toString() : "createdAt,DESC")
                 .build();
     }
 }
