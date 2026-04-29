@@ -275,15 +275,8 @@ public class OrderService {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
 
-        // 주문 취소 시 환불 처리 (결제 없는 기존 주문은 무시)
-        try {
-            paymentService.refund(orderId);
-        } catch (BaseException e) {
-            if (e.getErrorCode() != PaymentErrorCode.PAYMENT_NOT_FOUND) {
-                throw e;
-            }
-            log.debug("No payment found for order {}, skipping refund", orderId);
-        }
+        // 주문 취소 시 환불 처리
+        refundIfPossible(orderId);
 
         Order updated = findActiveOrder(orderId);
         log.info("주문 취소: orderId={}", orderId);
@@ -323,15 +316,8 @@ public class OrderService {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
 
-        // 주문 거절 시 환불 처리 (결제 없는 기존 주문은 무시)
-        try {
-            paymentService.refund(orderId);
-        } catch (BaseException e) {
-            if (e.getErrorCode() != PaymentErrorCode.PAYMENT_NOT_FOUND) {
-                throw e;
-            }
-            log.debug("No payment found for order {}, skipping refund", orderId);
-        }
+        // 주문 거절 시 환불 처리
+        refundIfPossible(orderId);
 
         Order updated = findActiveOrder(orderId);
         log.info("주문 거절: orderId={}", orderId);
@@ -353,16 +339,8 @@ public class OrderService {
 
         Order order = findActiveOrder(orderId);
 
-        // 결제 완료 상태면 환불 처리 (결제 없는 기존 주문은 무시)
-        try {
-            paymentService.refund(orderId);
-        } catch (BaseException e) {
-            if (e.getErrorCode() != PaymentErrorCode.PAYMENT_NOT_FOUND
-                    && e.getErrorCode() != PaymentErrorCode.INVALID_PAYMENT_STATUS) {
-                throw e;
-            }
-            log.debug("Skipping refund for order {} due to payment state: {}", orderId, e.getErrorCode());
-        }
+        // 주문 삭제 시 환불 처리
+        refundIfPossible(orderId);
 
         order.delete(userId);
 
@@ -398,6 +376,24 @@ public class OrderService {
                 .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
         if (!store.getOwner().getUserId().equals(userId)) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
+        }
+    }
+
+    /**
+     * 환불 처리 (결제 상태에 따라 무시 가능)
+     * - PAYMENT_NOT_FOUND: 결제가 없는 주문 (현재 구현상 발생 불가, 확장 대비) → 무시
+     * - INVALID_PAYMENT_STATUS: 아직 결제가 완료되지 않은 상태 (PENDING 등) → 무시
+     * - 그 외 예외는 그대로 전파
+     */
+    private void refundIfPossible(UUID orderId) {
+        try {
+            paymentService.refund(orderId);
+        } catch (BaseException e) {
+            if (e.getErrorCode() != PaymentErrorCode.PAYMENT_NOT_FOUND
+                    && e.getErrorCode() != PaymentErrorCode.INVALID_PAYMENT_STATUS) {
+                throw e;
+            }
+            log.debug("Skipping refund for order {} due to payment state: {}", orderId, e.getErrorCode());
         }
     }
 }
