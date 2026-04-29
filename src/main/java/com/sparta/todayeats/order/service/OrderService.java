@@ -58,9 +58,9 @@ public class OrderService {
         }
 
         // 배송지 조회 및 검증 (주소 스냅샷용)
-        Address address = addressRepository.findActiveById(request.addressId())
+        Address address = addressRepository.findByUserUserIdAndIsDefaultTrue(request.addressId())
                 .orElseThrow(() -> new BaseException(AddressErrorCode.ADDRESS_NOT_FOUND));
-        if (!address.getUserId().equals(userId)) {
+        if (!address.getId().equals(userId)) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
         }
 
@@ -68,7 +68,7 @@ public class OrderService {
         Order order = Order.builder()
                 .customerId(userId)
                 .storeId(store.getId())
-                .addressId(address.getAddressId())
+                .addressId(address.getId())
                 .storeName(store.getName())             // 가게명 스냅샷
                 .deliveryAddress(address.getAddress())  // 도로명 주소 스냅샷
                 .deliveryDetail(address.getDetail())    // 상세주소 스냅샷
