@@ -120,6 +120,7 @@ public class AddressService {
     public void deleteAddress(UUID userId, UUID addressId) {
         // 1. 배송지 조회
         Address address = addressRepository.findById(addressId)
+                .filter(a->!a.isDeleted())
                 .orElseThrow(() -> new BaseException(AddressErrorCode.ADDRESS_NOT_FOUND));
 
         // 2. 권한 확인 (본인 또는 MASTER)
