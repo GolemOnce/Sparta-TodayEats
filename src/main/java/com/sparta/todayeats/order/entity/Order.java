@@ -1,0 +1,154 @@
+package com.sparta.todayeats.order.entity;
+
+import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
+import com.sparta.todayeats.global.exception.BaseException;
+import com.sparta.todayeats.global.exception.OrderErrorCode;
+import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+/** 주문 엔티티 */
+@Entity
+@Table(name = "p_order")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Order extends BaseEntity {
+
+    private static final int CANCEL_LIMIT_MINUTES = 5;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "order_id", updatable = false, nullable = false)
+    private UUID orderId;
+
+    @Column(name = "customer_id", nullable = false)
+    private UUID customerId;                    // FK → p_user.user_id
+
+    @Column(name = "store_id", nullable = false)
+    private UUID storeId;                       // FK → p_store.store_id
+
+    @Column(name = "address_id", nullable = false)
+    private UUID addressId;                     // FK → p_address.address_id
+
+    // ─── 스냅샷 필드 (주문 시점 값 고정) ────────────────────────────────
+    @Column(name = "store_name", nullable = false, length = 100)
+    private String storeName;                   // 가게명 스냅샷
+
+    @Column(name = "delivery_address", nullable = false, length = 255)
+    private String deliveryAddress;             // 도로명 주소 스냅샷
+
+    @Column(name = "delivery_detail", length = 255)
+    private String deliveryDetail;              // 상세주소 스냅샷
+    // ─────────────────────────────────────────────────────────────────────
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_type", nullable = false, length = 20)
+    private OrderType orderType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private OrderStatus status;
+
+    @Column(name = "note", columnDefinition = "TEXT")
+    private String note;
+
+    @Column(name = "cancel_reason", length = 255)
+    private String cancelReason;    // 취소 사유 (선택)
+
+    @Column(name = "reject_reason", length = 255)
+    private String rejectReason;    // 거절 사유 (선택)
+
+    @Column(name = "total_price", nullable = false)
+    private Long totalPrice;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItem> orderItems = new ArrayList<>();
+
+    @Builder
+    public Order(UUID customerId, UUID storeId, UUID addressId,
+                 String storeName, String deliveryAddress, String deliveryDetail,
+                 OrderType orderType, String note, Long totalPrice) {
+        this.customerId = customerId;
+        this.storeId = storeId;
+        this.addressId = addressId;
+        this.storeName = storeName;
+        this.deliveryAddress = deliveryAddress;
+        this.deliveryDetail = deliveryDetail;
+        this.orderType = orderType;
+        this.status = OrderStatus.PENDING;  // 최초 생성 시 항상 PENDING
+        this.note = note;
+        this.totalPrice = totalPrice;
+    }
+
+    /**
+     * 주문 항목 추가
+     */
+    public void addOrderItem(OrderItem item) {
+        this.orderItems.add(item);
+    }
+
+    /**
+     * 서버에서 계산한 총 주문 금액 갱신
+     */
+    public void updateTotalPrice(long total) {
+        this.totalPrice = total;
+    }
+
+    /**
+     * 요청사항 수정
+     */
+    public void updateNote(String note) {
+        if (this.status != OrderStatus.PENDING) {
+            throw new BaseException(OrderErrorCode.ORDER_UPDATE_NOT_ALLOWED);
+        }
+        this.note = note;
+    }
+
+    /**
+     * 상태 전이 유효성 검증
+     * 허용되지 않은 전이면 BaseException(INVALID_ORDER_STATUS) 발생
+     */
+    public void validateStatusTransition(OrderStatus nextStatus) {
+        this.status.validateTransition(nextStatus);
+    }
+
+    /**
+     * 주문 취소
+     * 조건 1: PENDING 상태여야 함
+     * 조건 2: 주문 생성 후 5분 이내여야 함
+     */
+    public void cancelByCustomer() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new BaseException(OrderErrorCode.ORDER_CANCEL_NOT_ALLOWED);
+        }
+        LocalDateTime cancelDeadline = this.getCreatedAt().plusMinutes(CANCEL_LIMIT_MINUTES);
+        if (LocalDateTime.now().isAfter(cancelDeadline)) {
+            throw new BaseException(OrderErrorCode.CANCEL_TIME_EXCEEDED);
+        }
+    }
+
+    /**
+     * 주문 거절 도메인 검증
+     * 조건: PENDING 상태여야 함
+     */
+    public void rejectByOwner() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new BaseException(OrderErrorCode.ORDER_REJECT_NOT_ALLOWED);
+        }
+    }
+
+    /**
+     * Soft delete (MASTER만 가능)
+     */
+    public void delete(UUID userId) {
+        this.softDelete(userId);
+    }
+}

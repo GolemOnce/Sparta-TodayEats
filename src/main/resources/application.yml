@@ -11,3 +11,8 @@ spring:
   data:
     redis:
       port: 6379
+
+gemini:
+  api:
+    key: ${GEMINI_API_KEY}
+    url: ${GEMINI_API_URL}

@@ -1,0 +1,36 @@
+app:
+  url:
+    base: http://localhost:8080
+    password-reset-path: /api/v1/auth/reset-password
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/todayeats
+    username: test
+    password: test
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: test
+    password: test
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+jwt:
+  secret-key: dGVzdC1zZWNyZXQta2V5LWZvci1jaS1tdXN0LWJlLWxvbmctZW5vdWdo
+  access-expiration: 1800000 # 30분 (30 * 60 * 1000)
+  refresh-expiration: 604800000 # 7일 (7 * 24 * 60 * 60 * 1000)
+
+gemini:
+  api:
+    key: test
+    url: http://localhost
