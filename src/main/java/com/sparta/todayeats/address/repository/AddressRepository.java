@@ -4,6 +4,7 @@ import com.sparta.todayeats.address.entity.Address;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -25,4 +26,11 @@ public interface AddressRepository extends JpaRepository<Address, UUID> {
 
     @Query("SELECT a FROM Address a WHERE a.id = :addressId AND a.deletedAt IS NULL")
     Optional<Address> findActiveById(@Param("addressId") UUID addressId);
+
+    @Modifying
+    @Query("UPDATE Address a " +
+            "SET a.deletedAt = NOW(), a.deletedBy = :currentUserId " +
+            "WHERE a.user.userId = :targetUserId AND a.deletedAt IS NULL")
+    void softDeleteByUserId(@Param("targetUserId") UUID targetUserId,
+                            @Param("currentUserId") UUID currentUserId);
 }

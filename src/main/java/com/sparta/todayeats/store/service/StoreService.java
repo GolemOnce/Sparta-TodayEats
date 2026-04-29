@@ -6,6 +6,7 @@ import com.sparta.todayeats.category.entity.Category;
 import com.sparta.todayeats.category.repository.CategoryRepository;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.exception.*;
+import com.sparta.todayeats.menu.service.MenuService;
 import com.sparta.todayeats.store.dto.request.StoreCreateRequest;
 import com.sparta.todayeats.store.dto.request.StoreHiddenRequest;
 import com.sparta.todayeats.store.dto.request.StoreUpdateRequest;
@@ -35,6 +36,7 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class StoreService {
 
+    private final MenuService menuService;
     private final StoreRepository storeRepository;
     private final AreaRepository areaRepository;
     private final CategoryRepository categoryRepository;
@@ -324,5 +326,20 @@ public class StoreService {
                 .updatedAt(store.getUpdatedAt())
                 .updatedBy(store.getUpdatedBy())
                 .build();
+    }
+
+    // 가게 연쇄 삭제
+    @Transactional
+    public void deleteAllStoresByUserId(UUID targetUserId, UUID currentUserId) {
+        // 가게 목록
+        List<Store> ownerStores = storeRepository.findAllByOwnerUserId(targetUserId);
+
+        for (Store store : ownerStores) {
+            // 가게 메뉴 Soft Delete
+            menuService.deleteAllMenusByStoreId(store.getId(), currentUserId);
+
+            // 가게 Soft Delete
+            store.softDelete(currentUserId);
+        }
     }
 }

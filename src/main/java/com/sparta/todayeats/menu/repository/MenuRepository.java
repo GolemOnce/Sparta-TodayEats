@@ -1,9 +1,11 @@
 package com.sparta.todayeats.menu.repository;
 
 import com.sparta.todayeats.menu.entity.Menu;
+import com.sparta.todayeats.store.entity.Store;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -88,4 +90,14 @@ public interface MenuRepository extends JpaRepository<Menu, UUID> {
         AND m.soldOut = false
     """)
     Optional<Menu> findActiveById(@Param("menuId") UUID menuId);
+
+    @Modifying
+    @Query("UPDATE Menu m " +
+            "SET m.deletedAt = NOW(), m.deletedBy = :currentUserId " +
+            "WHERE m.store.id = :storeId AND m.deletedAt IS NULL")
+    void softDeleteByStoreId(@Param("storeId") UUID storeId,
+                             @Param("currentUserId") UUID currentUserId);
+
+    // 테스트 데이터 생성용
+    boolean existsByNameAndStore(String name, Store store);
 }

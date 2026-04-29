@@ -161,4 +161,10 @@ public class MenuService {
             throw new IllegalArgumentException("해당 가게의 사장님만 접근할 수 있습니다.");
         }
     }
+
+    // 메뉴 연쇄 삭제
+    @Transactional
+    public void deleteAllMenusByStoreId(UUID storeId, UUID currentUserId) {
+        menuRepository.softDeleteByStoreId(storeId, currentUserId);
+    }
 }

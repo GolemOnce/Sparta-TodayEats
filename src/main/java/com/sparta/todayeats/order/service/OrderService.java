@@ -352,7 +352,7 @@ public class OrderService {
      * UserService에서 사용자 삭제 전 호출
      */
     public boolean hasActiveOrders(UUID userId) {
-        return orderRepository.existsActiveOrderByCustomerId(userId);
+        return orderRepository.existsActiveOrderByUserId(userId);
     }
 
     /**

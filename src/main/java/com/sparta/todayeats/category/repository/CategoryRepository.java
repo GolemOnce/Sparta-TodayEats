@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface CategoryRepository extends JpaRepository<Category, UUID> {
@@ -14,4 +15,6 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
     // 카테고리 이름 기준 부분 일치(대소문자 무시) 검색 + 페이징 조회
     Page<Category> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
+    // 테스트 데이터 생성용
+    Optional<Category> findByName(String name);
 }
