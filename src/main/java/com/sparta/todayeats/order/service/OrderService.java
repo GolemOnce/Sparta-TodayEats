@@ -62,7 +62,7 @@ public class OrderService {
         }
 
         // 배송지 조회 및 검증 (주소 스냅샷용)
-        Address address = addressRepository.findByUserUserIdAndIsDefaultTrue(userId)
+        Address address = addressRepository.findActiveById(request.addressId())
                 .orElseThrow(() -> new BaseException(AddressErrorCode.ADDRESS_NOT_FOUND));
         if (!address.getUser().getUserId().equals(userId)) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
