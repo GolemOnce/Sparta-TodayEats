@@ -126,8 +126,10 @@ class OrderServiceTest {
                     .willReturn(Optional.of(mockStore));
 
             Address mockAddress = mock(Address.class);
-            given(mockAddress.getId()).willReturn(userId);
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(addressId)).willReturn(Optional.of(mockAddress));
+            User mockUser = mock(User.class);
+            given(mockUser.getUserId()).willReturn(userId);
+            given(mockAddress.getUser()).willReturn(mockUser);
+            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId)).willReturn(Optional.of(mockAddress));
 
             given(menuRepository.findActiveById(menuId))
                     .willReturn(Optional.of(mockMenu));
@@ -163,7 +165,7 @@ class OrderServiceTest {
             // given
             given(storeRepository.findById(storeId))
                     .willReturn(Optional.of(mock(Store.class)));
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(addressId))
+            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId))
                     .willReturn(Optional.empty());
 
             // when & then
@@ -181,8 +183,10 @@ class OrderServiceTest {
                     .willReturn(Optional.of(mock(Store.class)));
 
             Address mockAddress = mock(Address.class);
-            given(mockAddress.getId()).willReturn(userId);
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(addressId))
+            User mockUser = mock(User.class);
+            given(mockUser.getUserId()).willReturn(userId);
+            given(mockAddress.getUser()).willReturn(mockUser);
+            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId))
                     .willReturn(Optional.of(mockAddress));
 
             given(menuRepository.findActiveById(menuId))
@@ -209,8 +213,10 @@ class OrderServiceTest {
                     .willReturn(Optional.of(mockStore));
 
             Address mockAddress = mock(Address.class);
-            given(mockAddress.getId()).willReturn(userId);
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(addressId))
+            User mockUser = mock(User.class);
+            given(mockUser.getUserId()).willReturn(userId);
+            given(mockAddress.getUser()).willReturn(mockUser);
+            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId))
                     .willReturn(Optional.of(mockAddress));
 
             given(menuRepository.findActiveById(menuId))
@@ -256,9 +262,10 @@ class OrderServiceTest {
             Store mockStore = mock(Store.class);
             given(storeRepository.findById(storeId)).willReturn(Optional.of(mockStore));
             Address mockAddress = mock(Address.class);
-            given(mockAddress.getId()).willReturn(UUID.randomUUID()); // 다른 유저 ID
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(addressId)).willReturn(Optional.of(mockAddress));
-
+            User otherUser = mock(User.class);
+            given(otherUser.getUserId()).willReturn(UUID.randomUUID()); // 다른 유저 ID
+            given(mockAddress.getUser()).willReturn(otherUser);
+            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId)).willReturn(Optional.of(mockAddress));
             // when & then
             assertThatThrownBy(() -> orderService.createOrder(
                     createOrderRequest(), userId, UserRoleEnum.CUSTOMER))
