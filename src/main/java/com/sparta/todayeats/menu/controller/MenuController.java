@@ -88,6 +88,7 @@ public class MenuController {
             @PathVariable UUID menuId,
             @AuthenticationPrincipal UUID userId,
             @Valid @RequestBody MenuUpdateRequest request
+
     ) {
         menuService.updateMenu(menuId, userId, request);
     }

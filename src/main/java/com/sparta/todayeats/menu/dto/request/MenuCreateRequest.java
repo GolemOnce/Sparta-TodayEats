@@ -23,6 +23,8 @@ public record MenuCreateRequest(
         String imageUrl,
 
         @NotNull(message = "카테고리 ID는 필수입니다.")
-        UUID categoryId
+        UUID categoryId,
+
+        boolean aiDescription
 ) {
 }

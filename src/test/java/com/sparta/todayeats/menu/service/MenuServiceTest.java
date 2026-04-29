@@ -8,7 +8,7 @@ import com.sparta.todayeats.menu.dto.request.MenuCreateRequest;
 import com.sparta.todayeats.menu.dto.request.MenuUpdateRequest;
 import com.sparta.todayeats.store.entity.Store;
 import com.sparta.todayeats.store.repository.StoreRepository;
-import com.sparta.todayeats.user.domain.entity.User;
+import com.sparta.todayeats.user.entity.User;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -60,7 +60,8 @@ class MenuServiceTest {
                         9000L,
                         "돼지고기 김치찌개",
                         "image-url",
-                        categoryId
+                        categoryId,
+                        false
                 );
 
                 Category category = mock(Category.class);
@@ -100,7 +101,8 @@ class MenuServiceTest {
                         9000L,
                         "돼지고기 김치찌개",
                         "image-url",
-                        categoryId
+                        categoryId,
+                        false
                 );
 
                 given(categoryRepository.findById(categoryId)).willReturn(Optional.empty());
@@ -123,7 +125,8 @@ class MenuServiceTest {
                     9000L,
                     "돼지고기 김치찌개",
                     "image-url",
-                    categoryId
+                    categoryId,
+                    false
             );
 
             Category category = mock(Category.class);
