@@ -13,6 +13,7 @@ import com.sparta.todayeats.order.entity.OrderType;
 import com.sparta.todayeats.order.repository.OrderRepository;
 import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
 import com.sparta.todayeats.payment.entity.PaymentMethod;
+import com.sparta.todayeats.payment.entity.PaymentStatus;
 import com.sparta.todayeats.payment.service.PaymentService;
 import com.sparta.todayeats.store.entity.Store;
 import com.sparta.todayeats.store.repository.StoreRepository;
@@ -142,7 +143,9 @@ class OrderServiceTest {
                     .willAnswer(inv -> inv.getArgument(0));
             given(paymentService.createPayment(any(), eq(userId),
                     argThat(req -> req.getPaymentMethod() == PaymentMethod.CARD)))
-                    .willReturn(mock(PaymentCreateResponse.class));
+                    .willReturn(PaymentCreateResponse.builder()
+                            .status(PaymentStatus.COMPLETED)
+                            .build());
 
             // when
             CreateOrderResponse result = orderService.createOrder(createOrderRequest(), userId, UserRoleEnum.CUSTOMER);
