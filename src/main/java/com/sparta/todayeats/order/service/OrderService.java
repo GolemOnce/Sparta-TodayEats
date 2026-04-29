@@ -12,7 +12,9 @@ import com.sparta.todayeats.order.repository.OrderRepository;
 import com.sparta.todayeats.order.dto.request.*;
 import com.sparta.todayeats.order.dto.response.*;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
+import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
 import com.sparta.todayeats.payment.entity.PaymentMethod;
+import com.sparta.todayeats.payment.entity.PaymentStatus;
 import com.sparta.todayeats.payment.service.PaymentService;
 import com.sparta.todayeats.store.entity.Store;
 import com.sparta.todayeats.store.repository.StoreRepository;
@@ -110,7 +112,11 @@ public class OrderService {
         Order saved = orderRepository.save(order);
 
         // 주문 생성과 함께 결제 처리 (기본 결제 수단: CARD)
-        paymentService.createPayment(saved.getOrderId(), userId, new PaymentCreateRequest(PaymentMethod.CARD));
+        PaymentCreateResponse payment = paymentService.createPayment(
+                saved.getOrderId(), userId, new PaymentCreateRequest(PaymentMethod.CARD));
+        if (payment.getStatus() != PaymentStatus.COMPLETED) {
+            throw new BaseException(PaymentErrorCode.PAYMENT_FAILED);
+        }
 
         log.info("주문 생성 완료: orderId={}, userId={}, total={}", saved.getOrderId(), userId, total);
         return CreateOrderResponse.from(saved);
