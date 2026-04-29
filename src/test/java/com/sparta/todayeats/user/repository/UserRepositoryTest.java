@@ -1,7 +1,7 @@
 package com.sparta.todayeats.user.repository;
 
 import com.sparta.todayeats.global.config.TestJpaConfig;
-import com.sparta.todayeats.global.infrastructure.config.QueryDslConfig;
+import com.sparta.todayeats.global.config.QueryDslConfig;
 import com.sparta.todayeats.user.entity.User;
 import com.sparta.todayeats.user.entity.UserRoleEnum;
 import org.junit.jupiter.api.BeforeEach;

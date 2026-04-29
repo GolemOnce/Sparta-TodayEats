@@ -1,6 +1,6 @@
 package com.sparta.todayeats.payment.service;
 
-import com.sparta.todayeats.auth.application.service.AuthService;
+import com.sparta.todayeats.auth.service.AuthService;
 import com.sparta.todayeats.global.exception.*;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.service.UserAuthorizationService;

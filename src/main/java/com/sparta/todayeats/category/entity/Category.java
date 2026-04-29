@@ -1,6 +1,6 @@
 package com.sparta.todayeats.category.entity;
 
-import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
+import com.sparta.todayeats.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Where;
