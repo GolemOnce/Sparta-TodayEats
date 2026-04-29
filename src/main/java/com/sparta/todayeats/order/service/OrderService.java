@@ -357,10 +357,11 @@ public class OrderService {
         try {
             paymentService.refund(orderId);
         } catch (BaseException e) {
-            if (e.getErrorCode() != PaymentErrorCode.PAYMENT_NOT_FOUND) {
+            if (e.getErrorCode() != PaymentErrorCode.PAYMENT_NOT_FOUND
+                    && e.getErrorCode() != PaymentErrorCode.INVALID_PAYMENT_STATUS) {
                 throw e;
             }
-            log.debug("No payment found for order {}, skipping refund", orderId);
+            log.debug("Skipping refund for order {} due to payment state: {}", orderId, e.getErrorCode());
         }
 
         order.delete(userId);
