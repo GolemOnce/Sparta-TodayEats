@@ -1,7 +1,7 @@
 package com.sparta.todayeats.user.service;
 
 import com.sparta.todayeats.address.service.AddressService;
-import com.sparta.todayeats.auth.application.service.AuthService;
+import com.sparta.todayeats.auth.service.AuthService;
 import com.sparta.todayeats.global.exception.AuthErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.CommonErrorCode;

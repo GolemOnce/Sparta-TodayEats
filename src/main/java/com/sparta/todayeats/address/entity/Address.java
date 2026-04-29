@@ -1,7 +1,7 @@
 package com.sparta.todayeats.address.entity;
 
 import com.sparta.todayeats.address.dto.request.AddressUpdateRequest;
-import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
+import com.sparta.todayeats.global.entity.BaseEntity;
 import com.sparta.todayeats.user.entity.User;
 import jakarta.persistence.*;
 
