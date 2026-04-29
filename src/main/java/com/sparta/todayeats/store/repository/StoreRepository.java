@@ -16,4 +16,8 @@ public interface StoreRepository extends JpaRepository<Store, UUID>, StoreReposi
     // store 조회 시 owner도 한번에 가져오기
     @Query("SELECT s FROM Store s JOIN FETCH s.owner WHERE s.id = :storeId")
     Optional<Store> findByIdWithOwner(@Param("storeId") UUID storeId);
+
+    // 카테고리에 속한 삭제되지 않은 가게 존재 여부 확인
+    boolean existsByCategoryIdAndDeletedAtIsNull(UUID categoryId);
+    
 }

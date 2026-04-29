@@ -9,6 +9,7 @@ import com.sparta.todayeats.category.repository.CategoryRepository;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.CategoryErrorCode;
 import com.sparta.todayeats.global.response.PageResponse;
+import com.sparta.todayeats.store.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,7 @@ import java.util.UUID;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final StoreRepository storeRepository;
 
     // 카테고리 생성
     @Transactional
@@ -116,22 +118,15 @@ public class CategoryService {
     public void deleteCategory(UUID categoryId, UUID deletedBy) {
         Category category = getCategoryEntity(categoryId);
 
+        // 연관 가게가 있으면 삭제 불가
+        if (storeRepository.existsByCategoryIdAndDeletedAtIsNull(categoryId)) {
+            throw new BaseException(CategoryErrorCode.CATEGORY_HAS_STORES);
+        }
+
         // 소프트 삭제 처리
         category.softDelete(deletedBy);
     }
 
-
-    // Category 엔티티 → 목록 응답 DTO 변환
-    private CategoryResponse toResponse(Category category) {
-        return CategoryResponse.builder()
-                .categoryId(category.getId())
-                .name(category.getName())
-                .createdAt(category.getCreatedAt())
-                .createdBy(category.getCreatedBy())
-                .updatedAt(category.getUpdatedAt())
-                .updatedBy(category.getUpdatedBy())
-                .build();
-    }
 
     // 카테고리 이름 중복 여부 확인 (삭제 안 된 것만 중복 체크)
     private void validateDuplicateCategory(String name) {
@@ -168,5 +163,17 @@ public class CategoryService {
         }
 
         return categoryRepository.findByNameContainingIgnoreCase(keyword, pageable);
+    }
+
+    // Category 엔티티 → 목록 응답 DTO 변환
+    private CategoryResponse toResponse(Category category) {
+        return CategoryResponse.builder()
+                .categoryId(category.getId())
+                .name(category.getName())
+                .createdAt(category.getCreatedAt())
+                .createdBy(category.getCreatedBy())
+                .updatedAt(category.getUpdatedAt())
+                .updatedBy(category.getUpdatedBy())
+                .build();
     }
 }
