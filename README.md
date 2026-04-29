@@ -14,10 +14,11 @@
 2. [팀원 역할 분담](#-팀원-역할-분담)
 3. [서비스 구성 및 실행 방법](#-서비스-구성-및-실행-방법)
 4. [프로젝트 목적 / 상세](#-프로젝트-목적--상세)
-5. [기술 스택](#-기술-스택)
-6. [ERD](#-erd)
-7. [API 명세서](#-api-명세서)
-8. [문서화](#-문서화)
+5. [ERD](#-erd)
+6. [Architecture](#-architecture)
+7. [기술 스택](#-기술-스택)
+8. [API 명세서](#-api-명세서)
+9. [문서화](#-문서화)
 
 ---
 
@@ -100,28 +101,64 @@ docker-compose down
 
 ## 🎯 프로젝트 목적 / 상세
 
-### 🛒 주문 · 결제
+### 목적
+배달 주문 서비스를 직접 설계·구현하며, 단순 기능 구현에 그치지 않고 **추후 기능 확장을 고려한 구조 설계**를 목표로 하였습니다.
+역할 기반 접근 제어, 동시성 제어, 데이터 무결성 등 실무에서 요구되는 백엔드 핵심 역량을 경험하고, 확장 가능한 서비스 구조를 고민하며 개발하였습니다.
+
+### 상세
+#### 🛒 주문 · 결제
 - 주문 시점 데이터 스냅샷 저장으로 데이터 무결성 보장
 - 결제 시 동시성 제어 및 중복 결제 방지
 - 주문 상태 기반 취소/환불 처리
 
-### 🏪 가게 · 카테고리
-- 사용자 역할에 따른 조회 범위 제어
+#### 🏪 가게 · 카테고리
+- 사용자 역할에 따른 조회 범위 세분화
 - 카테고리 및 가게 검색 기능 (QueryDSL 동적 검색)
-- 소프트 삭제 및 중복 방지 정책 적용
+- 도메인 간 정합성 보호
 
-### 🔐 인증 · 사용자
+#### 🔐 인증 · 사용자
 - 이메일 인증 기반 회원가입
 - JWT + Refresh Token 인증 구조
 - 역할 기반 접근 제어
 
-### 🤖 메뉴 · AI
-- 메뉴 상태(노출/품절) 관리
+#### 🤖 메뉴 · AI
+- 역할별 메뉴 노출 정책
+- 품절·숨김 여부 별도 관리
 - AI 기반 메뉴 설명 자동 생성
 
-### 💳 결제 · 리뷰 · 배송지
-- 리뷰 및 평점 시스템
+#### 💳 결제 · 리뷰 · 배송지
+- 완료된 주문에 한해 리뷰 작성 및 가게별 평균 평점 제공
 - 배송지 관리
+
+---
+
+## 📐 ERD
+
+<div align="center">
+
+<img src="./images/erd.png" width="600"/>
+
+</div>
+
+---
+
+## 🏗️ Architecture
+
+### System Architecture
+
+<div align="center">
+
+<img src="./images/architecture.png" width="600"/>
+
+</div>
+
+### CI/CD Pipeline
+
+<div align="center">
+
+<img src="./images/cicd.png" width="600"/>
+
+</div>
 
 ---
 
@@ -135,16 +172,6 @@ docker-compose down
 | **Database** | ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-FF4438?style=flat&logo=redis&logoColor=white) |
 | **AI** | ![Gemini](https://img.shields.io/badge/Gemini%20AI-4285F4?style=flat&logo=google&logoColor=white) |
 | **Infra** | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white) ![Docker Compose](https://img.shields.io/badge/Docker%20Compose-2496ED?style=flat&logo=docker&logoColor=white) ![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat&logo=amazonwebservices&logoColor=white) |
-
-</div>
-
----
-
-## 📐 ERD
-
-<div align="center">
-
-<img src="./images/erd.png" width="600"/>
 
 </div>
 
