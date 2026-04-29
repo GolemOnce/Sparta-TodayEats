@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,9 +29,12 @@ public interface AddressRepository extends JpaRepository<Address, UUID> {
     Optional<Address> findActiveById(@Param("addressId") UUID addressId);
 
     @Modifying
-    @Query("UPDATE Address a " +
-            "SET a.deletedAt = NOW(), a.deletedBy = :currentUserId " +
-            "WHERE a.user.userId = :targetUserId AND a.deletedAt IS NULL")
+    @Query("""
+        UPDATE Address a
+        SET a.deletedAt = :now, a.deletedBy = :currentUserId
+        WHERE a.user.userId = :targetUserId AND a.deletedAt IS NULL
+    """)
     void softDeleteByUserId(@Param("targetUserId") UUID targetUserId,
-                            @Param("currentUserId") UUID currentUserId);
+                            @Param("currentUserId") UUID currentUserId,
+                            @Param("now") LocalDateTime now);
 }

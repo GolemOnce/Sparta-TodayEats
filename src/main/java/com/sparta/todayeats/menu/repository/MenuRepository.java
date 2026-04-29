@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.Optional;
@@ -92,11 +93,14 @@ public interface MenuRepository extends JpaRepository<Menu, UUID> {
     Optional<Menu> findActiveById(@Param("menuId") UUID menuId);
 
     @Modifying
-    @Query("UPDATE Menu m " +
-            "SET m.deletedAt = NOW(), m.deletedBy = :currentUserId " +
-            "WHERE m.store.id = :storeId AND m.deletedAt IS NULL")
+    @Query("""
+        UPDATE Menu m
+        SET m.deletedAt = :now, m.deletedBy = :currentUserId
+        WHERE m.store.id = :storeId AND m.deletedAt IS NULL
+    """)
     void softDeleteByStoreId(@Param("storeId") UUID storeId,
-                             @Param("currentUserId") UUID currentUserId);
+                             @Param("currentUserId") UUID currentUserId,
+                             @Param("now") LocalDateTime now);
 
     // 테스트 데이터 생성용
     boolean existsByNameAndStore(String name, Store store);
