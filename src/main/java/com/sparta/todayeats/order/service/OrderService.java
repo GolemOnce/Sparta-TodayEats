@@ -269,8 +269,15 @@ public class OrderService {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
 
-        // 주문 취소 시 환불 처리 같이 처리 (트랜잭션 묶음)
-        paymentService.refund(orderId);
+        // 주문 취소 시 환불 처리 (결제 없는 기존 주문은 무시)
+        try {
+            paymentService.refund(orderId);
+        } catch (BaseException e) {
+            if (e.getErrorCode() != PaymentErrorCode.PAYMENT_NOT_FOUND) {
+                throw e;
+            }
+            log.debug("No payment found for order {}, skipping refund", orderId);
+        }
 
         Order updated = findActiveOrder(orderId);
         log.info("주문 취소: orderId={}", orderId);
@@ -310,8 +317,15 @@ public class OrderService {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
 
-        // 주문 거절 시 환불 처리 같이 처리 (트랜잭션 묶음)
-        paymentService.refund(orderId);
+        // 주문 거절 시 환불 처리 (결제 없는 기존 주문은 무시)
+        try {
+            paymentService.refund(orderId);
+        } catch (BaseException e) {
+            if (e.getErrorCode() != PaymentErrorCode.PAYMENT_NOT_FOUND) {
+                throw e;
+            }
+            log.debug("No payment found for order {}, skipping refund", orderId);
+        }
 
         Order updated = findActiveOrder(orderId);
         log.info("주문 거절: orderId={}", orderId);
