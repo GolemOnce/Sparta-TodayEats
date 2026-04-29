@@ -333,8 +333,15 @@ public class OrderService {
 
         Order order = findActiveOrder(orderId);
 
-        // 결제 완료 상태면 환불 처리
-        paymentService.refund(orderId);
+        // 결제 완료 상태면 환불 처리 (결제 없는 기존 주문은 무시)
+        try {
+            paymentService.refund(orderId);
+        } catch (BaseException e) {
+            if (e.getErrorCode() != PaymentErrorCode.PAYMENT_NOT_FOUND) {
+                throw e;
+            }
+            log.debug("No payment found for order {}, skipping refund", orderId);
+        }
 
         order.delete(userId);
 
