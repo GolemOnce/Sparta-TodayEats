@@ -79,11 +79,13 @@ public interface MenuRepository extends JpaRepository<Menu, UUID> {
             Pageable pageable
     );
 
-    // 주문 서비스용 - 삭제되지 않은 메뉴 단건 조회
+    // 주문 서비스용 - 삭제/숨김/품절 제외 메뉴 단건 조회
     @Query("""
         SELECT m FROM Menu m
         WHERE m.id = :menuId
         AND m.deletedAt IS NULL
+        AND m.isHidden = false
+        AND m.soldOut = false
     """)
     Optional<Menu> findActiveById(@Param("menuId") UUID menuId);
 }
