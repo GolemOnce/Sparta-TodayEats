@@ -133,7 +133,7 @@ class OrderServiceTest {
             User mockUser = mock(User.class);
             given(mockUser.getUserId()).willReturn(userId);
             given(mockAddress.getUser()).willReturn(mockUser);
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId)).willReturn(Optional.of(mockAddress));
+            given(addressRepository.findActiveById(addressId)).willReturn(Optional.of(mockAddress));
 
             given(menuRepository.findActiveById(menuId))
                     .willReturn(Optional.of(mockMenu));
@@ -171,7 +171,7 @@ class OrderServiceTest {
             // given
             given(storeRepository.findById(storeId))
                     .willReturn(Optional.of(mock(Store.class)));
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId))
+            given(addressRepository.findActiveById(addressId))
                     .willReturn(Optional.empty());
 
             // when & then
@@ -192,8 +192,7 @@ class OrderServiceTest {
             User mockUser = mock(User.class);
             given(mockUser.getUserId()).willReturn(userId);
             given(mockAddress.getUser()).willReturn(mockUser);
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId))
-                    .willReturn(Optional.of(mockAddress));
+            given(addressRepository.findActiveById(addressId)).willReturn(Optional.of(mockAddress));
 
             given(menuRepository.findActiveById(menuId))
                     .willReturn(Optional.empty());
@@ -222,8 +221,7 @@ class OrderServiceTest {
             User mockUser = mock(User.class);
             given(mockUser.getUserId()).willReturn(userId);
             given(mockAddress.getUser()).willReturn(mockUser);
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId))
-                    .willReturn(Optional.of(mockAddress));
+            given(addressRepository.findActiveById(addressId)).willReturn(Optional.of(mockAddress));
 
             given(menuRepository.findActiveById(menuId))
                     .willReturn(Optional.of(mockMenu));
@@ -271,7 +269,8 @@ class OrderServiceTest {
             User otherUser = mock(User.class);
             given(otherUser.getUserId()).willReturn(UUID.randomUUID()); // 다른 유저 ID
             given(mockAddress.getUser()).willReturn(otherUser);
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId)).willReturn(Optional.of(mockAddress));
+            given(addressRepository.findActiveById(addressId)).willReturn(Optional.of(mockAddress));
+
             // when & then
             assertThatThrownBy(() -> orderService.createOrder(
                     createOrderRequest(), userId, UserRoleEnum.CUSTOMER))
