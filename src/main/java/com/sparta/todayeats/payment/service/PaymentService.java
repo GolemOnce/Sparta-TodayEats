@@ -41,27 +41,32 @@ public class PaymentService {
         Order order = orderRepository.findByIdWithLock(orderId)
                 .orElseThrow(() -> new BaseException(OrderErrorCode.ORDER_NOT_FOUND));
 
-        // 2. 본인 주문인지 검증
+        // 2. 동일 주문에 대한 중복 결제 방지
+        if (paymentRepository.findByOrder_OrderIdAndDeletedAtIsNull(orderId).isPresent()) {
+            throw new BaseException(PaymentErrorCode.PAYMENT_ALREADY_EXISTS);
+        }
+
+        // 3. 본인 주문인지 검증
         if (!order.getCustomerId().equals(userId)) {
             throw new BaseException(OrderErrorCode.ORDER_ACCESS_DENIED);
         }
 
-        // 3. 주문 상태 검증
+        // 4. 주문 상태 검증
         if (order.getStatus() == OrderStatus.CANCELED) {
             throw new BaseException(OrderErrorCode.ORDER_ALREADY_CANCELLED);
         }
 
-        // 4. 결제 엔티티 생성 (PENDING)
+        // 5. 결제 엔티티 생성 (PENDING)
         Payment payment = Payment.builder()
                 .order(order)
                 .amount(order.getTotalPrice())
                 .build();
         paymentRepository.save(payment);
 
-        // 5. 결제 처리 (실제 구현X)
+        // 6. 결제 처리 (실제 구현X)
         boolean success = true;
 
-        // 6. payment status 갱신
+        // 7. payment status 갱신
         if (success) {
             payment.updatePaymentStatus(PaymentStatus.COMPLETED);
         } else {
@@ -151,5 +156,13 @@ public class PaymentService {
                 .orElseThrow(() -> new BaseException(PaymentErrorCode.PAYMENT_NOT_FOUND));
 
         payment.softDelete(userId);
+    }
+
+    // 환불 처리 - 결제 상태를 CANCELLED로 변경 (실제 PG 연동 없이 DB 상태값만 변경)
+    @Transactional
+    public void refund(UUID orderId) {
+        Payment payment = paymentRepository.findByOrder_OrderIdAndDeletedAtIsNull(orderId)
+                .orElseThrow(() -> new BaseException(PaymentErrorCode.PAYMENT_NOT_FOUND));
+        payment.updatePaymentStatus(PaymentStatus.CANCELLED);
     }
 }

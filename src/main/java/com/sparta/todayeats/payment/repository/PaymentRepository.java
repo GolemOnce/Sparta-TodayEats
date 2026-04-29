@@ -25,4 +25,7 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
 
     // 단일 조회
     Optional<Payment> findByIdAndOrder_CustomerIdAndDeletedAtIsNull(UUID paymentId, UUID customerId);
+
+    // 주문 ID로 결제 조회 (환불 및 중복 결제 방지용)
+    Optional<Payment> findByOrder_OrderIdAndDeletedAtIsNull(UUID orderId);
 }

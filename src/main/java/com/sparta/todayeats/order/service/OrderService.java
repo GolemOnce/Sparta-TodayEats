@@ -11,6 +11,9 @@ import com.sparta.todayeats.order.entity.OrderStatus;
 import com.sparta.todayeats.order.repository.OrderRepository;
 import com.sparta.todayeats.order.dto.request.*;
 import com.sparta.todayeats.order.dto.response.*;
+import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
+import com.sparta.todayeats.payment.entity.PaymentMethod;
+import com.sparta.todayeats.payment.service.PaymentService;
 import com.sparta.todayeats.store.entity.Store;
 import com.sparta.todayeats.store.repository.StoreRepository;
 import com.sparta.todayeats.user.entity.UserRoleEnum;
@@ -36,6 +39,7 @@ public class OrderService {
     private final MenuRepository menuRepository;
     private final StoreRepository storeRepository;
     private final AddressRepository addressRepository;
+    private final PaymentService paymentService;
 
     /**
      * 주문 생성
@@ -105,9 +109,8 @@ public class OrderService {
         order.updateTotalPrice(total);
         Order saved = orderRepository.save(order);
 
-        // TODO: Payment 담당자 코드 완성 후 주석 해제
-        // 주문 생성 시 결제 생성 같이 처리 (트랜잭션 묶음)
-        // paymentService.createPayment(saved.getOrderId(), total);
+        // 주문 생성과 함께 결제 처리 (기본 결제 수단: CARD)
+        paymentService.createPayment(saved.getOrderId(), userId, new PaymentCreateRequest(PaymentMethod.CARD));
 
         log.info("주문 생성 완료: orderId={}, userId={}, total={}", saved.getOrderId(), userId, total);
         return CreateOrderResponse.from(saved);
@@ -266,9 +269,8 @@ public class OrderService {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
 
-        // TODO: Payment 코드 완성 후 주석 해제
         // 주문 취소 시 환불 처리 같이 처리 (트랜잭션 묶음)
-        // paymentService.refund(orderId);
+        paymentService.refund(orderId);
 
         Order updated = findActiveOrder(orderId);
         log.info("주문 취소: orderId={}", orderId);
@@ -308,9 +310,8 @@ public class OrderService {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
 
-        // TODO: Payment 코드 완성 후 주석 해제
         // 주문 거절 시 환불 처리 같이 처리 (트랜잭션 묶음)
-        // paymentService.refund(orderId);
+        paymentService.refund(orderId);
 
         Order updated = findActiveOrder(orderId);
         log.info("주문 거절: orderId={}", orderId);
@@ -332,9 +333,8 @@ public class OrderService {
 
         Order order = findActiveOrder(orderId);
 
-        // TODO: Payment 코드 완성 후 주석 해제
         // 결제 완료 상태면 환불 처리
-        // paymentService.refundIfPaid(orderId);
+        paymentService.refund(orderId);
 
         order.delete(userId);
 
