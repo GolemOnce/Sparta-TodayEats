@@ -1,4 +1,4 @@
-package com.sparta.todayeats.area.presentation.dto;
+package com.sparta.todayeats.area.dto.response;
 
 import lombok.Builder;
 import lombok.Getter;

@@ -1,6 +1,6 @@
-package com.sparta.todayeats.area.domain.repository;
+package com.sparta.todayeats.area.repository;
 
-import com.sparta.todayeats.area.domain.entity.Area;
+import com.sparta.todayeats.area.entity.Area;
 import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.domain.Pageable;

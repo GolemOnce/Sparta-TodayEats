@@ -1,7 +1,7 @@
 package com.sparta.todayeats.global.init;
 
-import com.sparta.todayeats.area.domain.entity.Area;
-import com.sparta.todayeats.area.domain.repository.AreaRepository;
+import com.sparta.todayeats.area.entity.Area;
+import com.sparta.todayeats.area.repository.AreaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;

@@ -1,10 +1,10 @@
-package com.sparta.todayeats.area.presentation.controller;
+package com.sparta.todayeats.area.controller;
 
-import com.sparta.todayeats.area.application.service.AreaService;
-import com.sparta.todayeats.area.presentation.dto.AreaCreateRequest;
-import com.sparta.todayeats.area.presentation.dto.AreaCreateResponse;
-import com.sparta.todayeats.area.presentation.dto.AreaResponse;
-import com.sparta.todayeats.area.presentation.dto.AreaUpdateRequest;
+import com.sparta.todayeats.area.service.AreaService;
+import com.sparta.todayeats.area.dto.request.AreaCreateRequest;
+import com.sparta.todayeats.area.dto.response.AreaCreateResponse;
+import com.sparta.todayeats.area.dto.response.AreaResponse;
+import com.sparta.todayeats.area.dto.request.AreaUpdateRequest;
 import com.sparta.todayeats.global.annotation.LoginUser;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.response.ApiResponse;
@@ -16,7 +16,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;

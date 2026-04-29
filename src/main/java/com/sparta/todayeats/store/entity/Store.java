@@ -1,6 +1,6 @@
 package com.sparta.todayeats.store.entity;
 
-import com.sparta.todayeats.area.domain.entity.Area;
+import com.sparta.todayeats.area.entity.Area;
 import com.sparta.todayeats.category.entity.Category;
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
 import com.sparta.todayeats.user.entity.User;

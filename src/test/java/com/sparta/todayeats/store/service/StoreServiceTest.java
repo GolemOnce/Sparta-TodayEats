@@ -1,7 +1,7 @@
 package com.sparta.todayeats.store.service;
 
-import com.sparta.todayeats.area.domain.entity.Area;
-import com.sparta.todayeats.area.domain.repository.AreaRepository;
+import com.sparta.todayeats.area.entity.Area;
+import com.sparta.todayeats.area.repository.AreaRepository;
 import com.sparta.todayeats.category.entity.Category;
 import com.sparta.todayeats.category.repository.CategoryRepository;
 import com.sparta.todayeats.global.exception.BaseException;
