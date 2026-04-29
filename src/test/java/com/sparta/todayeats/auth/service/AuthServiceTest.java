@@ -1,14 +1,16 @@
-package com.sparta.todayeats.auth.application.service;
+package com.sparta.todayeats.auth.service;
 
+import com.sparta.todayeats.auth.application.service.AuthMailService;
+import com.sparta.todayeats.auth.application.service.AuthService;
 import com.sparta.todayeats.auth.presentation.dto.request.SignupRequest;
 import com.sparta.todayeats.auth.presentation.dto.response.*;
 import com.sparta.todayeats.global.exception.AuthErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.UserErrorCode;
 import com.sparta.todayeats.global.infrastructure.config.security.JwtTokenProvider;
-import com.sparta.todayeats.user.domain.entity.User;
-import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
-import com.sparta.todayeats.user.domain.repository.UserRepository;
+import com.sparta.todayeats.user.entity.User;
+import com.sparta.todayeats.user.entity.UserRoleEnum;
+import com.sparta.todayeats.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -33,9 +35,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class AuthServiceV1Test {
+class AuthServiceTest {
     @InjectMocks
-    private AuthServiceV1 authServiceV1;
+    private AuthService authService;
 
     @Mock
     private UserRepository userRepository;
@@ -83,10 +85,10 @@ class AuthServiceV1Test {
 
             given(redisTemplate.hasKey(VERIFIED_PREFIX + EMAIL)).willReturn(true);
             given(userRepository.save(any())).willAnswer(i -> i.getArgument(0));
-            given(passwordEncoder.encode(any())).willReturn(ENCODED_PASSWORD);
+            given(passwordEncoder.encode(PASSWORD)).willReturn(ENCODED_PASSWORD);
 
             // when
-            SignupResponse response = authServiceV1.signup(request);
+            SignupResponse response = authService.signup(request);
 
             // then
             assertThat(response.getEmail()).isEqualTo(EMAIL);
@@ -101,7 +103,7 @@ class AuthServiceV1Test {
             given(redisTemplate.hasKey(VERIFIED_PREFIX + EMAIL)).willReturn(false);
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.signup(request))
+            assertThatThrownBy(() -> authService.signup(request))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(AuthErrorCode.EMAIL_NOT_VERIFIED.getMessage());
         }
@@ -114,7 +116,7 @@ class AuthServiceV1Test {
             given(redisTemplate.hasKey(VERIFIED_PREFIX + EMAIL)).willReturn(true);
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.signup(request))
+            assertThatThrownBy(() -> authService.signup(request))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(UserErrorCode.PASSWORD_MISMATCH.getMessage());
         }
@@ -140,7 +142,7 @@ class AuthServiceV1Test {
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
             // when
-            SendCodeResponse response = authServiceV1.sendSignupCode(EMAIL);
+            CodeResponse response = authService.sendSignupCode(EMAIL);
 
             // then
             assertThat(response.getEmail()).isEqualTo(EMAIL);
@@ -158,7 +160,7 @@ class AuthServiceV1Test {
             given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
             // when
-            SendCodeResponse response = authServiceV1.sendSignupCode(EMAIL);
+            CodeResponse response = authService.sendSignupCode(EMAIL);
 
             // then
             assertThat(response.getEmail()).isEqualTo(EMAIL);
@@ -169,12 +171,12 @@ class AuthServiceV1Test {
         @Test
         void 인증번호_전송_실패() {
             // given
-            User activeUser = User.builder().email(EMAIL).build();
+            User user = User.builder().email(EMAIL).build();
 
-            given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(activeUser));
+            given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(user));
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.sendSignupCode(EMAIL))
+            assertThatThrownBy(() -> authService.sendSignupCode(EMAIL))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(UserErrorCode.DUPLICATE_EMAIL.getMessage());
         }
@@ -193,7 +195,7 @@ class AuthServiceV1Test {
             given(valueOperations.get(signupKey)).willReturn(CODE);
 
             // when
-            ConfirmCodeResponse response = authServiceV1.confirmSignupCode(EMAIL, CODE);
+            CodeResponse response = authService.confirmSignupCode(EMAIL, CODE);
 
             // then
             assertThat(response.getEmail()).isEqualTo(EMAIL);
@@ -208,7 +210,7 @@ class AuthServiceV1Test {
             given(valueOperations.get(SIGNUP_PREFIX + EMAIL)).willReturn(null);
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.confirmSignupCode(EMAIL, CODE))
+            assertThatThrownBy(() -> authService.confirmSignupCode(EMAIL, CODE))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(AuthErrorCode.INVALID_VERIFICATION_CODE.getMessage());
         }
@@ -220,7 +222,7 @@ class AuthServiceV1Test {
             given(valueOperations.get(SIGNUP_PREFIX + EMAIL)).willReturn("wrong");
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.confirmSignupCode(EMAIL, CODE))
+            assertThatThrownBy(() -> authService.confirmSignupCode(EMAIL, CODE))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(AuthErrorCode.INVALID_VERIFICATION_CODE.getMessage());
         }
@@ -248,7 +250,7 @@ class AuthServiceV1Test {
             given(jwtTokenProvider.getRefreshTokenValidityDuration()).willReturn(Duration.ofDays(7));
 
             // when
-            LoginResponse response = authServiceV1.login(EMAIL, PASSWORD);
+            LoginResponse response = authService.login(EMAIL, PASSWORD);
 
             // then
             assertThat(response).isNotNull();
@@ -262,7 +264,7 @@ class AuthServiceV1Test {
             given(userRepository.findByEmail(EMAIL)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.login(EMAIL, PASSWORD))
+            assertThatThrownBy(() -> authService.login(EMAIL, PASSWORD))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(UserErrorCode.USER_NOT_FOUND.getMessage());
         }
@@ -276,7 +278,7 @@ class AuthServiceV1Test {
             given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(user));
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.login(EMAIL, PASSWORD))
+            assertThatThrownBy(() -> authService.login(EMAIL, PASSWORD))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(UserErrorCode.USER_NOT_FOUND.getMessage());
         }
@@ -290,7 +292,7 @@ class AuthServiceV1Test {
             given(passwordEncoder.matches(PASSWORD, ENCODED_PASSWORD)).willReturn(false);
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.login(EMAIL, PASSWORD))
+            assertThatThrownBy(() -> authService.login(EMAIL, PASSWORD))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(UserErrorCode.PASSWORD_MISMATCH.getMessage());
         }
@@ -317,7 +319,7 @@ class AuthServiceV1Test {
             given(jwtTokenProvider.getRefreshTokenValidityDuration()).willReturn(Duration.ofDays(7));
 
             // when
-            TokenResponse response = authServiceV1.reissue(REFRESH_TOKEN);
+            TokenResponse response = authService.reissue(REFRESH_TOKEN);
 
             // then
             assertThat(response.getAccessToken()).isEqualTo(ACCESS_TOKEN);
@@ -332,7 +334,7 @@ class AuthServiceV1Test {
             given(jwtTokenProvider.validateToken(PURE_REFRESH_TOKEN)).willReturn(false);
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.reissue(REFRESH_TOKEN))
+            assertThatThrownBy(() -> authService.reissue(REFRESH_TOKEN))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(AuthErrorCode.INVALID_TOKEN.getMessage());
         }
@@ -347,7 +349,7 @@ class AuthServiceV1Test {
             given(valueOperations.get(RT_KEY)).willReturn("other-token");
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.reissue(REFRESH_TOKEN))
+            assertThatThrownBy(() -> authService.reissue(REFRESH_TOKEN))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(AuthErrorCode.INVALID_TOKEN.getMessage());
         }
@@ -363,7 +365,7 @@ class AuthServiceV1Test {
             given(userRepository.findById(USER_ID)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.reissue(REFRESH_TOKEN))
+            assertThatThrownBy(() -> authService.reissue(REFRESH_TOKEN))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(UserErrorCode.USER_NOT_FOUND.getMessage());
         }
@@ -377,7 +379,7 @@ class AuthServiceV1Test {
         given(authentication.getName()).willReturn(USER_ID.toString());
 
         // when
-        authServiceV1.logout(authentication.getName());
+        authService.logout(authentication.getName());
 
         // then
         verify(redisTemplate).delete(RT_KEY);
@@ -393,7 +395,7 @@ class AuthServiceV1Test {
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
         // when
-        SendCodeResponse response = authServiceV1.sendPasswordResetLink(EMAIL);
+        CodeResponse response = authService.sendPasswordResetLink(EMAIL);
 
         // then
         assertThat(response.getEmail()).isEqualTo(EMAIL);
@@ -418,7 +420,7 @@ class AuthServiceV1Test {
             given(passwordEncoder.encode(NEW_PASSWORD)).willReturn("encoded-new");
 
             // when
-            ResetPasswordResponse response = authServiceV1.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD);
+            ResetPasswordResponse response = authService.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD);
 
             // then
             assertThat(response.getEmail()).isEqualTo(EMAIL);
@@ -433,7 +435,7 @@ class AuthServiceV1Test {
             given(valueOperations.get(resetKey())).willReturn(null);
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD))
+            assertThatThrownBy(() -> authService.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(AuthErrorCode.INVALID_VERIFICATION_CODE.getMessage());
         }
@@ -445,7 +447,7 @@ class AuthServiceV1Test {
             given(valueOperations.get(resetKey())).willReturn(EMAIL);
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.resetPassword(CODE, "a", "b"))
+            assertThatThrownBy(() -> authService.resetPassword(CODE, "a", "b"))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(UserErrorCode.PASSWORD_MISMATCH.getMessage());
         }
@@ -458,7 +460,7 @@ class AuthServiceV1Test {
             given(userRepository.findByEmail(EMAIL)).willReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD))
+            assertThatThrownBy(() -> authService.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(UserErrorCode.USER_NOT_FOUND.getMessage());
         }
@@ -475,7 +477,7 @@ class AuthServiceV1Test {
             given(userRepository.findByEmail(EMAIL)).willReturn(Optional.of(user));
 
             // when & then
-            assertThatThrownBy(() -> authServiceV1.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD))
+            assertThatThrownBy(() -> authService.resetPassword(CODE, NEW_PASSWORD, NEW_PASSWORD))
                     .isInstanceOf(BaseException.class)
                     .hasMessage(UserErrorCode.USER_NOT_FOUND.getMessage());
         }

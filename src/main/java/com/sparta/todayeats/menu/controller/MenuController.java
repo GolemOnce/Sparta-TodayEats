@@ -3,6 +3,7 @@ package com.sparta.todayeats.menu.controller;
 import com.sparta.todayeats.menu.service.MenuService;
 import com.sparta.todayeats.menu.entity.Menu;
 import com.sparta.todayeats.menu.dto.request.MenuCreateRequest;
+import com.sparta.todayeats.menu.dto.request.MenuStatusUpdateRequest;
 import com.sparta.todayeats.menu.dto.request.MenuUpdateRequest;
 import com.sparta.todayeats.menu.dto.response.MenuResponse;
 import lombok.RequiredArgsConstructor;
@@ -81,6 +82,7 @@ public class MenuController {
 
     // 메뉴 수정
     // PATCH /api/v1/menus/{menuId}
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @PatchMapping("/api/v1/menus/{menuId}")
     public void updateMenu(
             @PathVariable UUID menuId,
@@ -91,8 +93,21 @@ public class MenuController {
         menuService.updateMenu(menuId, userId, request);
     }
 
+    // 메뉴 상태 변경
+    // PATCH /api/v1/menus/{menuId}/status
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
+    @PatchMapping("/api/v1/menus/{menuId}/status")
+    public void updateMenuStatus(
+            @PathVariable UUID menuId,
+            @AuthenticationPrincipal UUID userId,
+            @Valid @RequestBody MenuStatusUpdateRequest request
+    ) {
+        menuService.updateMenuStatus(menuId, userId, request);
+    }
+
     // 메뉴 삭제
     // DELETE /api/v1/menus/{menuId}
+    @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @DeleteMapping("/api/v1/menus/{menuId}")
     public void deleteMenu(
             @PathVariable UUID menuId,

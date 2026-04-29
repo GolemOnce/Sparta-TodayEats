@@ -6,9 +6,9 @@ import com.sparta.todayeats.global.exception.AuthErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.UserErrorCode;
 import com.sparta.todayeats.global.infrastructure.config.security.JwtTokenProvider;
-import com.sparta.todayeats.user.domain.entity.User;
-import com.sparta.todayeats.user.domain.entity.UserRoleEnum;
-import com.sparta.todayeats.user.domain.repository.UserRepository;
+import com.sparta.todayeats.user.entity.User;
+import com.sparta.todayeats.user.entity.UserRoleEnum;
+import com.sparta.todayeats.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,7 +23,7 @@ import java.util.concurrent.ThreadLocalRandom;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class AuthServiceV1 {
+public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthMailService authMailService;
@@ -38,42 +38,7 @@ public class AuthServiceV1 {
     private static final long CODE_VALID_MINUTES = 5;
     private static final long VERIFIED_VALID_MINUTES = 10;
 
-    public SignupResponse signup(SignupRequest request) {
-        // 이메일 인증 여부 조회
-        String email = request.getEmail();
-        String verifiedKey = VERIFIED_PREFIX + email;
-        if (!redisTemplate.hasKey(verifiedKey)) {
-            throw new BaseException(AuthErrorCode.EMAIL_NOT_VERIFIED);
-        }
-
-        // 비밀번호 일치 확인
-        String password = request.getPassword();
-        if (!password.equals(request.getConfirmPassword())) {
-            throw new BaseException(UserErrorCode.PASSWORD_MISMATCH);
-        }
-
-        // 사용자 생성 및 저장
-        request.encodePassword(passwordEncoder.encode(password));
-        User user = userRepository.findByEmail(email).orElse(null);
-        if (user != null) {
-            user.restore(request);
-        } else {
-            user = User.builder()
-                    .email(email)
-                    .password(request.getPassword())
-                    .nickname(request.getNickname())
-                    .role(request.getRole())
-                    .build();
-        }
-        userRepository.save(user);
-
-        // Redis에 이메일 인증 여부 삭제
-        redisTemplate.delete(verifiedKey);
-
-        return new SignupResponse(user);
-    }
-
-    public SendCodeResponse sendSignupCode(String email) {
+    public CodeResponse sendSignupCode(String email) {
         // 이메일 중복 확인
         User user = userRepository.findByEmail(email).orElse(null);
         if (user != null && !user.isDeleted()) {
@@ -93,10 +58,10 @@ public class AuthServiceV1 {
                 Duration.ofMinutes(CODE_VALID_MINUTES)
         );
 
-        return new SendCodeResponse(email, LocalDateTime.now().plusMinutes(CODE_VALID_MINUTES));
+        return new CodeResponse(email, LocalDateTime.now().plusMinutes(CODE_VALID_MINUTES));
     }
 
-    public ConfirmCodeResponse confirmSignupCode(String email, String code) {
+    public CodeResponse confirmSignupCode(String email, String code) {
         // 인증번호 조회
         String signupKey = SIGNUP_PREFIX + email;
         String savedCode = redisTemplate.opsForValue().get(signupKey);
@@ -114,7 +79,45 @@ public class AuthServiceV1 {
                 Duration.ofMinutes(VERIFIED_VALID_MINUTES)
         );
 
-        return new ConfirmCodeResponse(email);
+        return new CodeResponse(email, LocalDateTime.now().plusMinutes(VERIFIED_VALID_MINUTES));
+    }
+
+    public SignupResponse signup(SignupRequest request) {
+        // 이메일 인증 여부 조회
+        String email = request.getEmail();
+        String verifiedKey = VERIFIED_PREFIX + email;
+        if (!redisTemplate.hasKey(verifiedKey)) {
+            throw new BaseException(AuthErrorCode.EMAIL_NOT_VERIFIED);
+        }
+
+        // 비밀번호 일치 확인
+        String password = request.getPassword();
+        if (!password.equals(request.getConfirmPassword())) {
+            throw new BaseException(UserErrorCode.PASSWORD_MISMATCH);
+        }
+
+        // 사용자 생성 및 저장
+        request.encodePassword(passwordEncoder.encode(password));
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user != null) {
+            if (!user.isDeleted()) {
+                throw new BaseException(UserErrorCode.DUPLICATE_EMAIL);
+            }
+            user.restore(request);
+        } else {
+            user = User.builder()
+                    .email(email)
+                    .password(request.getPassword())
+                    .nickname(request.getNickname())
+                    .role(request.getRole())
+                    .build();
+        }
+        userRepository.save(user);
+
+        // Redis에 이메일 인증 여부 삭제
+        redisTemplate.delete(verifiedKey);
+
+        return new SignupResponse(user);
     }
 
     public LoginResponse login(String email, String password) {
@@ -185,11 +188,15 @@ public class AuthServiceV1 {
     }
 
     public void logout(String userId) {
-        // Redis에서 순수 Refresh Token 삭제
+        deleteRefreshToken(userId);
+    }
+
+    public void deleteRefreshToken(String userId) {
+        // Redis에 Refresh Token 삭제
         redisTemplate.delete(RT_PREFIX + userId);
     }
 
-    public SendCodeResponse sendPasswordResetLink(String email) {
+    public CodeResponse sendPasswordResetLink(String email) {
         // 삭제되지 않은 사용자만
         User user = userRepository.findByEmail(email).orElse(null);
         if (user != null && !user.isDeleted()) {
@@ -207,7 +214,7 @@ public class AuthServiceV1 {
             authMailService.sendPasswordResetLink(email, code);
         }
 
-        return new SendCodeResponse(email, LocalDateTime.now().plusMinutes(CODE_VALID_MINUTES));
+        return new CodeResponse(email, LocalDateTime.now().plusMinutes(CODE_VALID_MINUTES));
     }
 
     @Transactional(readOnly = true)

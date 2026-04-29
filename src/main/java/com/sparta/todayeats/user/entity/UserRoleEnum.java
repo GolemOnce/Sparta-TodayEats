@@ -1,4 +1,4 @@
-package com.sparta.todayeats.user.domain.entity;
+package com.sparta.todayeats.user.entity;
 
 import lombok.Getter;
 

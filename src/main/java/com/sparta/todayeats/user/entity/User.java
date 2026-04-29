@@ -1,4 +1,4 @@
-package com.sparta.todayeats.user.domain.entity;
+package com.sparta.todayeats.user.entity;
 
 import com.sparta.todayeats.auth.presentation.dto.request.SignupRequest;
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
@@ -42,8 +42,17 @@ public class User extends BaseEntity {
         this.role = role;
     }
 
+    public void update(String nickname, boolean visible) {
+        this.nickname = nickname;
+        this.isPublic = visible;
+    }
+
     public void updatePassword(String password) {
         this.password = password;
+    }
+
+    public void updateRole(UserRoleEnum role) {
+        this.role = role;
     }
 
     public void restore(SignupRequest request) {
