@@ -31,6 +31,7 @@ public class AddressService {
     public AddressCreateResponse createAddress(UUID userId, AddressCreateRequest request) {
         // 1. userId로 User 조회
         User user = userRepository.findById(userId)
+                .filter(a -> !a.isDeleted())
                 .orElseThrow(() -> new BaseException(UserErrorCode.USER_NOT_FOUND));
         // 2. 배송지 생성
         Address address = Address.builder()
