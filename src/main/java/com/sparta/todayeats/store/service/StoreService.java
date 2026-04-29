@@ -18,6 +18,7 @@ import com.sparta.todayeats.user.entity.User;
 import com.sparta.todayeats.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -64,8 +65,13 @@ public class StoreService {
                 .phone(normalizePhone(request.getPhone()))
                 .build();
 
-        // DB 저장
-        Store saved = storeRepository.save(store);
+        // DB 저장 (동시성 문제 해결)
+        Store saved;
+        try {
+            saved = storeRepository.save(store);
+        } catch (DataIntegrityViolationException e) {
+            throw new BaseException(StoreErrorCode.STORE_ALREADY_EXISTS);
+        }
 
         return toCreateResponse(saved);
     }
