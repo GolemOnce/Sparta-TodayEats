@@ -12,6 +12,7 @@ import com.sparta.todayeats.order.entity.OrderStatus;
 import com.sparta.todayeats.order.entity.OrderType;
 import com.sparta.todayeats.order.repository.OrderRepository;
 import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
+import com.sparta.todayeats.payment.entity.PaymentMethod;
 import com.sparta.todayeats.payment.service.PaymentService;
 import com.sparta.todayeats.store.entity.Store;
 import com.sparta.todayeats.store.repository.StoreRepository;
@@ -139,7 +140,8 @@ class OrderServiceTest {
                     .willReturn(Optional.of(mockMenu));
             given(orderRepository.save(any(Order.class)))
                     .willAnswer(inv -> inv.getArgument(0));
-            given(paymentService.createPayment(any(), eq(userId), any()))
+            given(paymentService.createPayment(any(), eq(userId),
+                    argThat(req -> req.getPaymentMethod() == PaymentMethod.CARD)))
                     .willReturn(mock(PaymentCreateResponse.class));
 
             // when
@@ -1277,6 +1279,23 @@ class OrderServiceTest {
             assertThat(order.isDeleted()).isTrue();
             assertThat(order.getDeletedAt()).isNotNull();
             assertThat(order.getDeletedBy()).isEqualTo(userId);
+        }
+
+        @Test
+        @DisplayName("성공 - 결제 없는 주문 soft delete (레거시 호환)")
+        void 결제_없는_주문_soft_delete_성공() {
+            // given
+            Order order = pendingOrder();
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+            willThrow(new BaseException(PaymentErrorCode.PAYMENT_NOT_FOUND))
+                    .given(paymentService).refund(any());
+
+            // when
+            orderService.deleteOrder(orderId, userId, UserRoleEnum.MASTER);
+
+            // then
+            assertThat(order.isDeleted()).isTrue();
         }
 
         @Test
