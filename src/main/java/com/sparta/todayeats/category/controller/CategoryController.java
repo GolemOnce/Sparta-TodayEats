@@ -1,7 +1,10 @@
-package com.sparta.todayeats.category.presentation.controller;
+package com.sparta.todayeats.category.controller;
 
-import com.sparta.todayeats.category.application.service.CategoryService;
-import com.sparta.todayeats.category.presentation.dto.*;
+import com.sparta.todayeats.category.dto.request.CategoryCreateRequest;
+import com.sparta.todayeats.category.dto.response.CategoryCreateResponse;
+import com.sparta.todayeats.category.dto.response.CategoryResponse;
+import com.sparta.todayeats.category.dto.request.CategoryUpdateRequest;
+import com.sparta.todayeats.category.service.CategoryService;
 import com.sparta.todayeats.global.annotation.LoginUser;
 import com.sparta.todayeats.global.response.ApiResponse;
 import com.sparta.todayeats.global.response.PageResponse;
@@ -13,7 +16,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;

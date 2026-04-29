@@ -1,4 +1,4 @@
-package com.sparta.todayeats.category.domain.entity;
+package com.sparta.todayeats.category.entity;
 
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
 import jakarta.persistence.*;

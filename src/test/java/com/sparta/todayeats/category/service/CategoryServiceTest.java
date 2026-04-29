@@ -1,8 +1,13 @@
-package com.sparta.todayeats.category.application.service;
+package com.sparta.todayeats.category.service;
 
-import com.sparta.todayeats.category.domain.entity.Category;
-import com.sparta.todayeats.category.domain.repository.CategoryRepository;
+import com.sparta.todayeats.category.dto.request.CategoryCreateRequest;
+import com.sparta.todayeats.category.dto.response.CategoryCreateResponse;
+import com.sparta.todayeats.category.dto.response.CategoryResponse;
+import com.sparta.todayeats.category.dto.request.CategoryUpdateRequest;
+import com.sparta.todayeats.category.entity.Category;
+import com.sparta.todayeats.category.repository.CategoryRepository;
 import com.sparta.todayeats.category.presentation.dto.*;
+import com.sparta.todayeats.category.service.CategoryService;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.response.PageResponse;
 import org.junit.jupiter.api.DisplayName;
