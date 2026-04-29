@@ -2,27 +2,100 @@ package com.sparta.todayeats.menu.entity;
 
 import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
+import lombok.*;
+
+import com.sparta.todayeats.category.domain.entity.Category;
+import com.sparta.todayeats.store.entity.Store;
+
 import java.util.UUID;
 
 @Entity
 @Table(name = "p_menu")
 @Getter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Menu extends BaseEntity {
-
     @Id
-    @Column(name = "menu_id")
-    private UUID menuId;
+    @GeneratedValue(strategy = GenerationType.UUID)
 
-    @Column(name = "name")
+    // Id
+    @Column(name = "menu_id", updatable = false, nullable = false)
+    private UUID id;
+
+    // Name
+    @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(name = "store_id", nullable = false)
-    private UUID storeId;   // FK → p_store.store_id
+    // Price
+    @Column(nullable = false)
+    private Long price;
 
-    @Column(name = "price", nullable = false)
-    private Long price;     // BIGINT
+    // Description
+    @Column(length = 500)
+    private String description;
 
-    @Column(name = "is_hidden")
-    private Boolean isHidden;   // 숨김 여부
+    // Hidden
+    @Column(name = "is_hidden", nullable = false)
+    private boolean isHidden;
+
+    // Sold Out
+    @Column(name = "sold_out", nullable = false)
+    private boolean soldOut;
+
+    // Image URL
+    @Column(length = 255)
+    private String imageUrl;
+
+    // 카테고리
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
+
+    // 스토어
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id", nullable = false)
+    private Store store;
+
+    // 주문 서비스 호환용 메서드
+    public UUID getMenuId() {
+        return this.id;
+    }
+
+    public UUID getStoreId() {
+        return this.store.getId();
+    }
+
+    // 메서드
+    public void assignCategory(Category category) {
+        this.category = category;
+    }
+
+    public void assignStore(Store store) {
+        this.store = store;
+    }
+
+    public void update(String name, Long price, String description, String imageUrl) {
+        this.name = name;
+        this.price = price;
+        this.description = description;
+        this.imageUrl = imageUrl;
+    }
+
+    public void updateStatus(boolean isHidden, boolean soldOut) {
+        this.isHidden = isHidden;
+        this.soldOut = soldOut;
+    }
+
+    public void hide() {
+        this.isHidden = true;
+    }
+
+    public void show() {
+        this.isHidden = false;
+    }
+
+    public void delete(UUID userId) {
+        this.softDelete(userId);
+    }
 }
