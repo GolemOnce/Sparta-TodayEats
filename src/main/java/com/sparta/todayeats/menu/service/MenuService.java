@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -165,6 +166,6 @@ public class MenuService {
     // 메뉴 연쇄 삭제
     @Transactional
     public void deleteAllMenusByStoreId(UUID storeId, UUID currentUserId) {
-        menuRepository.softDeleteByStoreId(storeId, currentUserId);
+        menuRepository.softDeleteByStoreId(storeId, currentUserId, LocalDateTime.now());
     }
 }

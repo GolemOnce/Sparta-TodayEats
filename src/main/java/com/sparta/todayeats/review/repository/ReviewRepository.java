@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -39,9 +40,12 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
     Optional<Review> getReviewById(@Param("id") UUID id);
 
     @Modifying
-    @Query("UPDATE Review r " +
-            "SET r.deletedAt = NOW(), r.deletedBy = :currentUserId " +
-            "WHERE r.user.userId = :targetUserId AND r.deletedAt IS NULL")
+    @Query("""
+        UPDATE Review r
+        SET r.deletedAt = :now, r.deletedBy = :currentUserId
+        WHERE r.user.userId = :targetUserId AND r.deletedAt IS NULL
+    """)
     void softDeleteByUserId(@Param("targetUserId") UUID targetUserId,
-                            @Param("currentUserId") UUID currentUserId);
+                            @Param("currentUserId") UUID currentUserId,
+                            @Param("now") LocalDateTime now);
 }
