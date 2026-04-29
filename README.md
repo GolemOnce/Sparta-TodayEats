@@ -15,10 +15,9 @@
 3. [서비스 구성 및 실행 방법](#-서비스-구성-및-실행-방법)
 4. [프로젝트 목적 / 상세](#-프로젝트-목적--상세)
 5. [ERD](#-erd)
-6. [Architecture](#-architecture)
-7. [기술 스택](#-기술-스택)
-8. [API 명세서](#-api-명세서)
-9. [문서화](#-문서화)
+6. [기술 스택](#-기술-스택)
+7. [API 명세서](#-api-명세서)
+8. [문서화](#-문서화)
 
 ---
 
@@ -132,36 +131,6 @@ docker-compose down
 
 ---
 
-## 📐 ERD
-
-<div align="center">
-
-<img src="./images/erd.png" width="600"/>
-
-</div>
-
----
-
-## 🏗️ Architecture
-
-### System Architecture
-
-<div align="center">
-
-<img src="./images/architecture.png" width="600"/>
-
-</div>
-
-### CI/CD Pipeline
-
-<div align="center">
-
-<img src="./images/cicd.png" width="600"/>
-
-</div>
-
----
-
 ## 🛠️ 기술 스택
 
 <div align="center">
@@ -174,6 +143,17 @@ docker-compose down
 | **Infra** | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white) ![Docker Compose](https://img.shields.io/badge/Docker%20Compose-2496ED?style=flat&logo=docker&logoColor=white) ![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat&logo=amazonwebservices&logoColor=white) |
 
 </div>
+
+---
+
+## 📐 ERD
+
+<div align="center">
+
+<img src="./images/erd.png" width="600"/>
+
+</div>
+
 
 ---
 
