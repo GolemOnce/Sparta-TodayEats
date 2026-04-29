@@ -163,4 +163,10 @@ public class ReviewService {
         // 2. 소프트 딜리트
         review.softDelete(userId);
     }
+
+    // 리뷰 연쇄 삭제
+    @Transactional
+    public void deleteAllReviewsByUserId(UUID targetUserId, UUID currentUserId) {
+        reviewRepository.softDeleteByUserId(targetUserId, currentUserId);
+    }
 }

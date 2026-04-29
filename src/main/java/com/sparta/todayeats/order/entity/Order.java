@@ -151,4 +151,10 @@ public class Order extends BaseEntity {
     public void delete(UUID userId) {
         this.softDelete(userId);
     }
+
+    // 테스트 데이터 생성용
+    public void updateStatus(OrderStatus nextStatus) {
+        validateStatusTransition(nextStatus);
+        this.status = nextStatus;
+    }
 }
