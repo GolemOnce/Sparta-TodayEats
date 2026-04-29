@@ -19,5 +19,7 @@ public interface StoreRepository extends JpaRepository<Store, UUID>, StoreReposi
 
     // 카테고리에 속한 삭제되지 않은 가게 존재 여부 확인
     boolean existsByCategoryIdAndDeletedAtIsNull(UUID categoryId);
-    
+
+    // 운영지역에 속한 삭제되지 않은 가게 존재 여부 확인
+    boolean existsByAreaIdAndDeletedAtIsNull(UUID areaId);
 }

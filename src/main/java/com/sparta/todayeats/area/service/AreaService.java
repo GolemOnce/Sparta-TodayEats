@@ -9,6 +9,7 @@ import com.sparta.todayeats.area.dto.request.AreaUpdateRequest;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.exception.AreaErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
+import com.sparta.todayeats.store.repository.StoreRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,7 @@ import java.util.UUID;
 public class AreaService {
 
     private final AreaRepository areaRepository;
+    private final StoreRepository storeRepository;
 
     // 운영 지역 생성
     @Transactional
@@ -123,6 +125,12 @@ public class AreaService {
     @Transactional
     public void deleteArea(UUID areaId, UUID userId) {
         Area area = getAreaEntity(areaId);
+
+        // 연관 가게가 있으면 삭제 불가
+        if (storeRepository.existsByAreaIdAndDeletedAtIsNull(areaId)) {
+            throw new BaseException(AreaErrorCode.AREA_HAS_STORES);
+        }
+
         area.softDelete(userId);
     }
 
@@ -142,21 +150,6 @@ public class AreaService {
         }
     }
 
-    // Area 엔티티 → 목록 응답 DTO 변환
-    private AreaResponse toResponse(Area area) {
-        return AreaResponse.builder()
-                .areaId(area.getId())
-                .name(area.getName())
-                .city(area.getCity())
-                .district(area.getDistrict())
-                .isActive(area.getIsActive())
-                .createdAt(area.getCreatedAt())
-                .createdBy(area.getCreatedBy())
-                .updatedAt(area.getUpdatedAt())
-                .updatedBy(area.getUpdatedBy())
-                .build();
-    }
-
     // 운영지역 이름 정규화
     private String normalizeName(String name) {
         // null인 경우 예외 처리
@@ -172,6 +165,21 @@ public class AreaService {
     private Area getAreaEntity(UUID areaId) {
         return areaRepository.findById(areaId)
                 .orElseThrow(() -> new BaseException(AreaErrorCode.AREA_NOT_FOUND));
+    }
+
+    // Area 엔티티 → 목록 응답 DTO 변환
+    private AreaResponse toResponse(Area area) {
+        return AreaResponse.builder()
+                .areaId(area.getId())
+                .name(area.getName())
+                .city(area.getCity())
+                .district(area.getDistrict())
+                .isActive(area.getIsActive())
+                .createdAt(area.getCreatedAt())
+                .createdBy(area.getCreatedBy())
+                .updatedAt(area.getUpdatedAt())
+                .updatedBy(area.getUpdatedBy())
+                .build();
     }
 
 }
