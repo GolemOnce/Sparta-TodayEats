@@ -1,7 +1,7 @@
 package com.sparta.todayeats.address.controller;
 
-import com.sparta.todayeats.address.dto.reqeust.AddressCreateRequest;
-import com.sparta.todayeats.address.dto.reqeust.AddressUpdateRequest;
+import com.sparta.todayeats.address.dto.request.AddressCreateRequest;
+import com.sparta.todayeats.address.dto.request.AddressUpdateRequest;
 import com.sparta.todayeats.address.dto.response.*;
 import com.sparta.todayeats.address.service.AddressService;
 import com.sparta.todayeats.global.response.ApiResponse;
