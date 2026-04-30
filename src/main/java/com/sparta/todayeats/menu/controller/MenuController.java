@@ -1,14 +1,19 @@
 package com.sparta.todayeats.menu.controller;
 
+import com.sparta.todayeats.global.annotation.ApiNoContent;
+import com.sparta.todayeats.global.annotation.ApiPageable;
+import com.sparta.todayeats.global.annotation.LoginUser;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.menu.service.MenuService;
 import com.sparta.todayeats.menu.entity.Menu;
 import com.sparta.todayeats.menu.dto.request.MenuCreateRequest;
 import com.sparta.todayeats.menu.dto.request.MenuStatusUpdateRequest;
 import com.sparta.todayeats.menu.dto.request.MenuUpdateRequest;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import org.springframework.data.domain.Page;
@@ -25,19 +30,21 @@ import com.sparta.todayeats.menu.dto.response.MenuDetailResponse;
 import java.util.UUID;
 import jakarta.validation.Valid;
 
+@Tag(name = "Menu")
 @RestController
 @RequiredArgsConstructor
 public class MenuController {
 
     private final MenuService menuService;
 
-    // 메뉴 등록
     // POST /api/v1/stores/{storeId}/menus
+    @Operation(summary = "메뉴 등록")
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @PostMapping("/api/v1/stores/{storeId}/menus")
     public ResponseEntity<ApiResponse<MenuCreateResponse>> createMenu(
+            @Parameter(description = "가게 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID storeId,
-            @AuthenticationPrincipal UUID userId,
+            @Parameter(hidden = true) @LoginUser UUID userId,
             @Valid @RequestBody MenuCreateRequest request
     ) {
         Menu menu = menuService.createMenu(storeId, request, userId);
@@ -49,14 +56,17 @@ public class MenuController {
                 .body(ApiResponse.created(response));
     }
 
-    // 메뉴 목록 조회 - 고객용
     // GET /api/v1/stores/{storeId}/menus
+    @Operation(summary = "메뉴 목록 조회 - 고객용")
+    @ApiPageable
     @GetMapping("/api/v1/stores/{storeId}/menus")
     public ResponseEntity<ApiResponse<PageResponse<MenuDetailResponse>>> getMenusByStore(
+            @Parameter(description = "가게 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID storeId,
+            @Parameter(description = "메뉴 이름", example = "고기듬뿍 고향만두")
             @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @Parameter(hidden = true) @RequestParam(defaultValue = "0") int page,
+            @Parameter(hidden = true) @RequestParam(defaultValue = "10") int size
     ) {
         Pageable pageable = createPageable(page, size);
 
@@ -69,16 +79,19 @@ public class MenuController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    // 사장님 메뉴 조회
     // GET /api/v1/stores/{storeId}/menus/owner
+    @Operation(summary = "메뉴 목록 조회 - 가게 주인용")
+    @ApiPageable
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @GetMapping("/api/v1/stores/{storeId}/menus/owner")
     public ResponseEntity<ApiResponse<PageResponse<MenuDetailResponse>>> getOwnerMenusByStore(
+            @Parameter(description = "가게 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID storeId,
-            @AuthenticationPrincipal UUID userId,
+            @Parameter(hidden = true) @LoginUser UUID userId,
+            @Parameter(description = "메뉴 이름", example = "고기듬뿍 고향만두")
             @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @Parameter(hidden = true) @RequestParam(defaultValue = "0") int page,
+            @Parameter(hidden = true) @RequestParam(defaultValue = "10") int size
     ) {
         Pageable pageable = createPageable(page, size);
 
@@ -91,11 +104,13 @@ public class MenuController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    // 메뉴 상세 조회
     // GET /api/v1/stores/{storeId}/menus/{menuId}
+    @Operation(summary = "메뉴 상세 조회")
     @GetMapping("/api/v1/stores/{storeId}/menus/{menuId}")
     public ResponseEntity<ApiResponse<MenuDetailResponse>> getMenuDetail(
+            @Parameter(description = "가게 ID", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID storeId,
+            @Parameter(description = "메뉴 ID", example = "550e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID menuId
     ) {
         Menu menu = menuService.getMenuDetail(storeId, menuId);
@@ -105,14 +120,14 @@ public class MenuController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    // 메뉴 수정
     // PATCH /api/v1/menus/{menuId}
+    @Operation(summary = "메뉴 수정")
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @PatchMapping("/api/v1/menus/{menuId}")
     public ResponseEntity<ApiResponse<MenuDetailResponse>> updateMenu(
-            @PathVariable UUID storeId,
+            @Parameter(description = "메뉴 ID", example = "550e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID menuId,
-            @AuthenticationPrincipal UUID userId,
+            @Parameter(hidden = true) @LoginUser UUID userId,
             @Valid @RequestBody MenuUpdateRequest request
 
     ) {
@@ -123,14 +138,14 @@ public class MenuController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
-    // 메뉴 상태 변경
     // PATCH /api/v1/menus/{menuId}/status
+    @Operation(summary = "메뉴 상태 변경")
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @PatchMapping("/api/v1/menus/{menuId}/status")
     public ResponseEntity<ApiResponse<MenuDetailResponse>> updateMenuStatus(
-            @PathVariable UUID storeId,
+            @Parameter(description = "메뉴 ID", example = "550e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID menuId,
-            @AuthenticationPrincipal UUID userId,
+            @Parameter(hidden = true) @LoginUser UUID userId,
             @Valid @RequestBody MenuStatusUpdateRequest request
     ) {
         Menu menu = menuService.updateMenuStatus(menuId, userId, request);
@@ -142,12 +157,14 @@ public class MenuController {
 
     // 메뉴 삭제
     // DELETE /api/v1/menus/{menuId}
+    @Operation(summary = "메뉴 삭제")
+    @ApiNoContent
     @PreAuthorize("hasAnyRole('OWNER', 'MANAGER', 'MASTER')")
     @DeleteMapping("/api/v1/menus/{menuId}")
-    public ResponseEntity<ApiResponse<Void>> deleteMenu(
-            @PathVariable UUID storeId,
+    public ResponseEntity<Void> deleteMenu(
+            @Parameter(description = "메뉴 ID", example = "550e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID menuId,
-            @AuthenticationPrincipal UUID userId
+            @Parameter(hidden = true) @LoginUser UUID userId
     ) {
         menuService.deleteMenu(menuId, userId);
 
