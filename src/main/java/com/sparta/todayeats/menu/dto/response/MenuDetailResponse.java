@@ -36,7 +36,7 @@ public class MenuDetailResponse {
     @JsonProperty("is_sold_out")
     private boolean soldOut;
 
-    @Schema(description = "생성 일시", example = "2026-04-30T10:00:00")
+    @Schema(description = "생성 시간", example = "2026-04-30T10:00:00")
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
 
@@ -44,7 +44,7 @@ public class MenuDetailResponse {
     @JsonProperty("created_by")
     private String createdBy;
 
-    @Schema(description = "수정 일시", example = "2026-04-30T12:00:00")
+    @Schema(description = "수정 시간", example = "2026-04-30T12:00:00")
     @JsonProperty("updated_at")
     private LocalDateTime updatedAt;
 

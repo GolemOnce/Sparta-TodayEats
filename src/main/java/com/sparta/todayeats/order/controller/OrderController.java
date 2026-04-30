@@ -1,5 +1,8 @@
 package com.sparta.todayeats.order.controller;
 
+import com.sparta.todayeats.global.annotation.ApiNoContent;
+import com.sparta.todayeats.global.annotation.ApiPageable;
+import com.sparta.todayeats.global.annotation.LoginUser;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.CommonErrorCode;
 import com.sparta.todayeats.global.response.ApiResponse;
@@ -9,6 +12,9 @@ import com.sparta.todayeats.order.dto.response.*;
 import com.sparta.todayeats.order.entity.OrderStatus;
 import com.sparta.todayeats.order.service.OrderService;
 import com.sparta.todayeats.user.entity.UserRoleEnum;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +25,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -27,6 +32,7 @@ import java.util.UUID;
 /**
  * 주문 컨트롤러
  */
+@Tag(name = "Order")
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -40,10 +46,11 @@ public class OrderController {
      * POST /api/v1/orders
      * CUSTOMER만 주문 생성 가능
      */
+    @Operation(summary = "주문 생성")
     @PostMapping
     public ResponseEntity<ApiResponse<CreateOrderResponse>> createOrder(
             @Valid @RequestBody CreateOrderRequest request,
-            @AuthenticationPrincipal UUID userId,
+            @Parameter(hidden = true) @LoginUser UUID userId,
             Authentication authentication
     ) {
         UserRoleEnum role = extractRole(authentication);
@@ -58,14 +65,19 @@ public class OrderController {
      * CUSTOMER: 본인 주문만 조회, OWNER: 본인 가게 주문만 조회
      * MANAGER: 전체 조회(soft delete 제외), MASTER: 전체 조회(삭제 포함)
      */
+    @Operation(summary = "주문 목록 조회")
+    @ApiPageable
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<OrderSummaryResponse>>> getOrders(
-            @AuthenticationPrincipal UUID userId,
+            @Parameter(hidden = true) @LoginUser UUID userId,
             Authentication authentication,
+            @Parameter(description = "주문 상태 필터", example = "PENDING")
             @RequestParam(required = false) OrderStatus status,
+            @Parameter(description = "가게 이름", example = "맛있는 한식당")
             @RequestParam(required = false) String storeName,
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC)
-            Pageable pageable) {
+            @Parameter(hidden = true)
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
 
         // 페이지 사이즈 10/30/50 제한
         validatePageSize(pageable.getPageSize());
@@ -89,10 +101,12 @@ public class OrderController {
      * GET /api/v1/orders/{orderId}
      * CUSTOMER: 본인 주문만, OWNER: 본인 가게 주문만, MANAGER/MASTER: 전체
      */
+    @Operation(summary = "주문 상세 조회")
     @GetMapping("/{orderId}")
     public ResponseEntity<ApiResponse<OrderDetailResponse>> getOrder(
+            @Parameter(description = "주문 ID", example = "770e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID orderId,
-            @AuthenticationPrincipal UUID userId,
+            @Parameter(hidden = true) @LoginUser UUID userId,
             Authentication authentication
     ) {
         UserRoleEnum role = extractRole(authentication);
@@ -105,11 +119,13 @@ public class OrderController {
      * PUT /api/v1/orders/{orderId}
      * PENDING 상태에서 CUSTOMER 본인만 수정 가능
      */
+    @Operation(summary = "주문 요청사항 수정")
     @PutMapping("/{orderId}")
     public ResponseEntity<ApiResponse<UpdateOrderResponse>> updateOrder(
+            @Parameter(description = "주문 ID", example = "770e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID orderId,
             @Valid @RequestBody UpdateOrderRequest request,
-            @AuthenticationPrincipal UUID userId,
+            @Parameter(hidden = true) @LoginUser UUID userId,
             Authentication authentication
     ) {
         UserRoleEnum role = extractRole(authentication);
@@ -122,11 +138,13 @@ public class OrderController {
      * PATCH /api/v1/orders/{orderId}/status
      * OWNER: 본인 가게 주문만, MANAGER/MASTER: 전체, CUSTOMER: 불가
      */
+    @Operation(summary = "주문 상태 변경")
     @PatchMapping("/{orderId}/status")
     public ResponseEntity<ApiResponse<UpdateOrderStatusResponse>> updateOrderStatus(
+            @Parameter(description = "주문 ID", example = "770e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID orderId,
             @Valid @RequestBody UpdateOrderStatusRequest request,
-            @AuthenticationPrincipal UUID userId,
+            @Parameter(hidden = true) @LoginUser UUID userId,
             Authentication authentication
     ) {
         UserRoleEnum role = extractRole(authentication);
@@ -139,11 +157,13 @@ public class OrderController {
      * PATCH /api/v1/orders/{orderId}/cancel
      * PENDING 상태에서 5분 이내, CUSTOMER 본인 또는 MASTER만 가능
      */
+    @Operation(summary = "주문 취소")
     @PatchMapping("/{orderId}/cancel")
     public ResponseEntity<ApiResponse<CancelOrderResponse>> cancelOrder(
+            @Parameter(description = "주문 ID", example = "770e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID orderId,
             @RequestBody(required = false) @Valid CancelOrderRequest request,
-            @AuthenticationPrincipal UUID userId,
+            @Parameter(hidden = true) @LoginUser UUID userId,
             Authentication authentication
     ) {
         UserRoleEnum role = extractRole(authentication);
@@ -156,11 +176,13 @@ public class OrderController {
      * PATCH /api/v1/orders/{orderId}/reject
      * PENDING 상태에서 OWNER: 본인 가게만, MANAGER/MASTER: 전체, CUSTOMER: 불가
      */
+    @Operation(summary = "주문 거절")
     @PatchMapping("/{orderId}/reject")
     public ResponseEntity<ApiResponse<RejectOrderResponse>> rejectOrder(
+            @Parameter(description = "주문 ID", example = "770e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID orderId,
             @RequestBody(required = false) @Valid RejectOrderRequest request,
-            @AuthenticationPrincipal UUID userId,
+            @Parameter(hidden = true) @LoginUser UUID userId,
             Authentication authentication
     ) {
         UserRoleEnum role = extractRole(authentication);
@@ -173,10 +195,13 @@ public class OrderController {
      * DELETE /api/v1/orders/{orderId}
      * MASTER만 가능
      */
+    @Operation(summary = "주문 삭제")
+    @ApiNoContent
     @DeleteMapping("/{orderId}")
-    public ResponseEntity<ApiResponse<Void>> deleteOrder(
+    public ResponseEntity<Void> deleteOrder(
+            @Parameter(description = "주문 ID", example = "770e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID orderId,
-            @AuthenticationPrincipal UUID userId,
+            @Parameter(hidden = true) @LoginUser UUID userId,
             Authentication authentication
     ) {
         UserRoleEnum role = extractRole(authentication);
