@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@Schema(description = "주문 정보 상세 응답")
+@Schema(description = "주문 상세 정보 응답")
 public record OrderDetailResponse(
         @Schema(description = "주문 ID", example = "770e8400-e29b-41d4-a716-446655440000")
         UUID orderId,
@@ -27,7 +27,7 @@ public record OrderDetailResponse(
         @Schema(description = "총 주문 금액", example = "11000")
         Long totalPrice,
 
-        @Schema(description = "주문 시간", example = "2026-04-30T15:00:00")
+        @Schema(description = "생성 시간", example = "2026-04-30T15:00:00")
         LocalDateTime createdAt,
 
         @Schema(description = "수정 시간", example = "2026-04-30T15:20:00")
