@@ -11,6 +11,10 @@ import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.order.entity.OrderStatus;
 import com.sparta.todayeats.order.entity.OrderType;
 import com.sparta.todayeats.order.repository.OrderRepository;
+import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
+import com.sparta.todayeats.payment.entity.PaymentMethod;
+import com.sparta.todayeats.payment.entity.PaymentStatus;
+import com.sparta.todayeats.payment.service.PaymentService;
 import com.sparta.todayeats.store.entity.Store;
 import com.sparta.todayeats.store.repository.StoreRepository;
 import com.sparta.todayeats.user.entity.User;
@@ -60,6 +64,8 @@ class OrderServiceTest {
     private StoreRepository storeRepository;
     @Mock
     private AddressRepository addressRepository;
+    @Mock
+    private PaymentService paymentService;
 
     private CreateOrderRequest createOrderRequest() {
         return new CreateOrderRequest(
@@ -129,12 +135,17 @@ class OrderServiceTest {
             User mockUser = mock(User.class);
             given(mockUser.getUserId()).willReturn(userId);
             given(mockAddress.getUser()).willReturn(mockUser);
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId)).willReturn(Optional.of(mockAddress));
+            given(addressRepository.findActiveById(addressId)).willReturn(Optional.of(mockAddress));
 
             given(menuRepository.findActiveById(menuId))
                     .willReturn(Optional.of(mockMenu));
             given(orderRepository.save(any(Order.class)))
                     .willAnswer(inv -> inv.getArgument(0));
+            given(paymentService.createPayment(any(), eq(userId),
+                    argThat(req -> req.getPaymentMethod() == PaymentMethod.CARD)))
+                    .willReturn(PaymentCreateResponse.builder()
+                            .status(PaymentStatus.COMPLETED)
+                            .build());
 
             // when
             CreateOrderResponse result = orderService.createOrder(createOrderRequest(), userId, UserRoleEnum.CUSTOMER);
@@ -165,7 +176,7 @@ class OrderServiceTest {
             // given
             given(storeRepository.findById(storeId))
                     .willReturn(Optional.of(mock(Store.class)));
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId))
+            given(addressRepository.findActiveById(addressId))
                     .willReturn(Optional.empty());
 
             // when & then
@@ -186,8 +197,7 @@ class OrderServiceTest {
             User mockUser = mock(User.class);
             given(mockUser.getUserId()).willReturn(userId);
             given(mockAddress.getUser()).willReturn(mockUser);
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId))
-                    .willReturn(Optional.of(mockAddress));
+            given(addressRepository.findActiveById(addressId)).willReturn(Optional.of(mockAddress));
 
             given(menuRepository.findActiveById(menuId))
                     .willReturn(Optional.empty());
@@ -216,8 +226,7 @@ class OrderServiceTest {
             User mockUser = mock(User.class);
             given(mockUser.getUserId()).willReturn(userId);
             given(mockAddress.getUser()).willReturn(mockUser);
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId))
-                    .willReturn(Optional.of(mockAddress));
+            given(addressRepository.findActiveById(addressId)).willReturn(Optional.of(mockAddress));
 
             given(menuRepository.findActiveById(menuId))
                     .willReturn(Optional.of(mockMenu));
@@ -265,7 +274,8 @@ class OrderServiceTest {
             User otherUser = mock(User.class);
             given(otherUser.getUserId()).willReturn(UUID.randomUUID()); // 다른 유저 ID
             given(mockAddress.getUser()).willReturn(otherUser);
-            given(addressRepository.findByUserUserIdAndIsDefaultTrue(userId)).willReturn(Optional.of(mockAddress));
+            given(addressRepository.findActiveById(addressId)).willReturn(Optional.of(mockAddress));
+
             // when & then
             assertThatThrownBy(() -> orderService.createOrder(
                     createOrderRequest(), userId, UserRoleEnum.CUSTOMER))
@@ -870,6 +880,7 @@ class OrderServiceTest {
                     .willReturn(Optional.of(canceledOrder));
             given(orderRepository.cancelConditionally(eq(orderId), eq("단순 변심"), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name()), eq(userId)))
                     .willReturn(1);
+            willDoNothing().given(paymentService).refund(any());
 
             // when
             CancelOrderResponse result = orderService.cancelOrder(
@@ -877,6 +888,7 @@ class OrderServiceTest {
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.CANCELED);
+            then(paymentService).should().refund(orderId);
         }
 
         @Test
@@ -893,12 +905,14 @@ class OrderServiceTest {
                     .willReturn(Optional.of(canceledOrder));
             given(orderRepository.cancelConditionally(eq(orderId), isNull(), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name()), eq(userId)))
                     .willReturn(1);
+            willDoNothing().given(paymentService).refund(any());
 
             // when
             CancelOrderResponse result = orderService.cancelOrder(orderId, null, userId, UserRoleEnum.CUSTOMER);
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.CANCELED);
+            then(paymentService).should().refund(orderId);
         }
 
         @Test
@@ -1071,6 +1085,7 @@ class OrderServiceTest {
                     .willReturn(Optional.of(canceledOrder));
             given(orderRepository.cancelConditionally(eq(orderId), eq("단순 변심"), eq(OrderStatus.PENDING.name()), eq(OrderStatus.CANCELED.name()), eq(userId)))
                     .willReturn(1);
+            willDoNothing().given(paymentService).refund(any());
 
             // when
             CancelOrderResponse result = orderService.cancelOrder(
@@ -1078,6 +1093,7 @@ class OrderServiceTest {
 
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.CANCELED);
+            then(paymentService).should().refund(orderId);
         }
     }
 
@@ -1107,6 +1123,7 @@ class OrderServiceTest {
                     .willReturn(Optional.of(pendingOrder()))
                     .willReturn(Optional.of(rejectedOrder));
             given(orderRepository.rejectConditionally(eq(orderId), eq("재료 소진"), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED), eq(userId))).willReturn(1);
+            willDoNothing().given(paymentService).refund(any());
 
             // when
             RejectOrderResponse result = orderService.rejectOrder(orderId, new RejectOrderRequest("재료 소진"), userId, UserRoleEnum.OWNER);
@@ -1114,6 +1131,7 @@ class OrderServiceTest {
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.REJECTED);
             assertThat(result.rejectReason()).isEqualTo("재료 소진");
+            then(paymentService).should().refund(orderId);
         }
 
         @Test
@@ -1133,6 +1151,7 @@ class OrderServiceTest {
                     .willReturn(Optional.of(pendingOrder()))
                     .willReturn(Optional.of(rejectedOrder));
             given(orderRepository.rejectConditionally(eq(orderId), isNull(), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED), eq(userId))).willReturn(1);
+            willDoNothing().given(paymentService).refund(any());
 
             // when
             RejectOrderResponse result = orderService.rejectOrder(orderId, null, userId, UserRoleEnum.OWNER);
@@ -1140,6 +1159,7 @@ class OrderServiceTest {
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.REJECTED);
             assertThat(result.rejectReason()).isNull();
+            then(paymentService).should().refund(orderId);
         }
 
         @Test
@@ -1155,6 +1175,7 @@ class OrderServiceTest {
                     .willReturn(Optional.of(rejectedOrder));
             given(orderRepository.rejectConditionally(eq(orderId), eq("운영자 거절"), eq(OrderStatus.PENDING), eq(OrderStatus.REJECTED), eq(userId)))
                     .willReturn(1);
+            willDoNothing().given(paymentService).refund(any());
 
             // when
             RejectOrderResponse result = orderService.rejectOrder(orderId, new RejectOrderRequest("운영자 거절"), userId, UserRoleEnum.MASTER);
@@ -1162,6 +1183,7 @@ class OrderServiceTest {
             // then
             assertThat(result.status()).isEqualTo(OrderStatus.REJECTED);
             assertThat(result.rejectReason()).isEqualTo("운영자 거절");
+            then(paymentService).should().refund(orderId);
         }
 
         @Test
@@ -1257,6 +1279,7 @@ class OrderServiceTest {
             Order order = pendingOrder();
             given(orderRepository.findActiveById(orderId))
                     .willReturn(Optional.of(order));
+            willDoNothing().given(paymentService).refund(any());
 
             // when
             orderService.deleteOrder(orderId, userId, UserRoleEnum.MASTER);
@@ -1265,6 +1288,24 @@ class OrderServiceTest {
             assertThat(order.isDeleted()).isTrue();
             assertThat(order.getDeletedAt()).isNotNull();
             assertThat(order.getDeletedBy()).isEqualTo(userId);
+            then(paymentService).should().refund(orderId);
+        }
+
+        @Test
+        @DisplayName("성공 - 결제 없는 주문 soft delete (레거시 호환)")
+        void 결제_없는_주문_soft_delete_성공() {
+            // given
+            Order order = pendingOrder();
+            given(orderRepository.findActiveById(orderId))
+                    .willReturn(Optional.of(order));
+            willThrow(new BaseException(PaymentErrorCode.PAYMENT_NOT_FOUND))
+                    .given(paymentService).refund(any());
+
+            // when
+            orderService.deleteOrder(orderId, userId, UserRoleEnum.MASTER);
+
+            // then
+            assertThat(order.isDeleted()).isTrue();
         }
 
         @Test

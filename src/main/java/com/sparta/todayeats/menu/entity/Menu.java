@@ -4,7 +4,7 @@ import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import com.sparta.todayeats.category.domain.entity.Category;
+import com.sparta.todayeats.category.entity.Category;
 import com.sparta.todayeats.store.entity.Store;
 
 import java.util.UUID;

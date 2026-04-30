@@ -1,5 +1,6 @@
 package com.sparta.todayeats.user.service;
 
+import com.sparta.todayeats.address.service.AddressService;
 import com.sparta.todayeats.auth.application.service.AuthService;
 import com.sparta.todayeats.global.exception.AuthErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
@@ -7,6 +8,8 @@ import com.sparta.todayeats.global.exception.CommonErrorCode;
 import com.sparta.todayeats.global.exception.UserErrorCode;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.order.service.OrderService;
+import com.sparta.todayeats.review.service.ReviewService;
+import com.sparta.todayeats.store.service.StoreService;
 import com.sparta.todayeats.user.entity.User;
 import com.sparta.todayeats.user.entity.UserRoleEnum;
 import com.sparta.todayeats.user.repository.UserRepository;
@@ -51,6 +54,15 @@ class UserServiceTest {
 
     @Mock
     private OrderService orderService;
+
+    @Mock
+    private AddressService addressService;
+
+    @Mock
+    private StoreService storeService;
+
+    @Mock
+    private ReviewService reviewService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -332,6 +344,9 @@ class UserServiceTest {
             // then
             assertThat(response).isNull();
             assertThat(user.getDeletedAt()).isNotNull();
+            verify(addressService).deleteAllAddressesByUserId(CURRENT_USER_ID, CURRENT_USER_ID);
+            verify(storeService).deleteAllStoresByUserId(CURRENT_USER_ID, CURRENT_USER_ID);
+            verify(reviewService).deleteAllReviewsByUserId(CURRENT_USER_ID, CURRENT_USER_ID);
             verify(authService).deleteRefreshToken(CURRENT_USER_ID.toString());
         }
 
@@ -353,6 +368,9 @@ class UserServiceTest {
             assertThat(response.getDeletedAt()).isNotNull();
             assertThat(targetUser.getDeletedAt()).isNotNull();
             assertThat(currentUser.getDeletedAt()).isNull();
+            verify(addressService).deleteAllAddressesByUserId(TARGET_USER_ID, CURRENT_USER_ID);
+            verify(storeService).deleteAllStoresByUserId(TARGET_USER_ID, CURRENT_USER_ID);
+            verify(reviewService).deleteAllReviewsByUserId(TARGET_USER_ID, CURRENT_USER_ID);
             verify(authService).deleteRefreshToken(TARGET_USER_ID.toString());
         }
 

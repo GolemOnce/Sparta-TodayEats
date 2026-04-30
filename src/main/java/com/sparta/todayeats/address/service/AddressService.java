@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -136,5 +137,11 @@ public class AddressService {
 
         // 3. 소프트 딜리트
         address.softDelete(userId);
+    }
+
+    // 배송지 연쇄 삭제
+    @Transactional
+    public void deleteAllAddressesByUserId(UUID targetUserId, UUID currentUserId) {
+        addressRepository.softDeleteByUserId(targetUserId, currentUserId, LocalDateTime.now());
     }
 }

@@ -1,7 +1,7 @@
 package com.sparta.todayeats.menu.service;
 
-import com.sparta.todayeats.category.domain.entity.Category;
-import com.sparta.todayeats.category.domain.repository.CategoryRepository;
+import com.sparta.todayeats.category.entity.Category;
+import com.sparta.todayeats.category.repository.CategoryRepository;
 import com.sparta.todayeats.menu.entity.Menu;
 import com.sparta.todayeats.menu.repository.MenuRepository;
 import com.sparta.todayeats.menu.dto.request.MenuCreateRequest;
@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -160,5 +161,11 @@ public class MenuService {
         if (!store.getOwner().getUserId().equals(userId)) {
             throw new IllegalArgumentException("해당 가게의 사장님만 접근할 수 있습니다.");
         }
+    }
+
+    // 메뉴 연쇄 삭제
+    @Transactional
+    public void deleteAllMenusByStoreId(UUID storeId, UUID currentUserId) {
+        menuRepository.softDeleteByStoreId(storeId, currentUserId, LocalDateTime.now());
     }
 }

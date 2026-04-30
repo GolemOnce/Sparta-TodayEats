@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,4 +17,16 @@ public interface StoreRepository extends JpaRepository<Store, UUID>, StoreReposi
     // store 조회 시 owner도 한번에 가져오기
     @Query("SELECT s FROM Store s JOIN FETCH s.owner WHERE s.id = :storeId")
     Optional<Store> findByIdWithOwner(@Param("storeId") UUID storeId);
+
+    // 카테고리에 속한 삭제되지 않은 가게 존재 여부 확인
+    boolean existsByCategoryIdAndDeletedAtIsNull(UUID categoryId);
+
+    // 운영지역에 속한 삭제되지 않은 가게 존재 여부 확인
+    boolean existsByAreaIdAndDeletedAtIsNull(UUID areaId);
+
+    List<Store> findAllByOwnerUserId(UUID userId);
+
+    // 테스트 데이터 생성용
+    boolean existsByName(String name);
+    Optional<Store> findByName(String name);
 }

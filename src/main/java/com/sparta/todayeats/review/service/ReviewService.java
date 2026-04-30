@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 
@@ -162,5 +163,11 @@ public class ReviewService {
 
         // 2. 소프트 딜리트
         review.softDelete(userId);
+    }
+
+    // 리뷰 연쇄 삭제
+    @Transactional
+    public void deleteAllReviewsByUserId(UUID targetUserId, UUID currentUserId) {
+        reviewRepository.softDeleteByUserId(targetUserId, currentUserId, LocalDateTime.now());
     }
 }

@@ -1,9 +1,9 @@
 package com.sparta.todayeats.store.service;
 
-import com.sparta.todayeats.area.domain.entity.Area;
-import com.sparta.todayeats.area.domain.repository.AreaRepository;
-import com.sparta.todayeats.category.domain.entity.Category;
-import com.sparta.todayeats.category.domain.repository.CategoryRepository;
+import com.sparta.todayeats.area.entity.Area;
+import com.sparta.todayeats.area.repository.AreaRepository;
+import com.sparta.todayeats.category.entity.Category;
+import com.sparta.todayeats.category.repository.CategoryRepository;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.store.dto.request.StoreCreateRequest;
@@ -29,7 +29,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Collection;

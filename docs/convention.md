@@ -58,9 +58,9 @@
 ```
 상태 코드 규칙
 
+- 200: SUCCESS
 - 201: CREATED
 - 204: NO_CONTENT
-- 200: SUCCESS
 
 ---
 #### Service
@@ -112,7 +112,7 @@ log.info("User created: {}", userId);
 ### 4. 테스트 코드
 
 - JUnit5 + Mockito 사용
-- Service / Repository 단위 테스트 필수
+- Service 단위 테스트 필수
 - Given - When - Then 패턴 사용
 
 ```java
@@ -163,7 +163,14 @@ class UserServiceTest {
 ---
 ## Github Rules
 
-### 1. 브랜치 전략
+### 1. github issue + github Projects(Kanban)
+* [이슈 템플릿](../.github/ISSUE_TEMPLATE/issue-template.md) 활용
+1. `New issue` - `issue template`으로 제목/본문(설명/To-do/기타 등) 작성 후 `create`
+   - Projects의 Kanban보드에 이슈 자동 등록
+2. 생성된 이슈에서 Development-create a branch로 `develop`에서 `feature/#이슈번호-*`브랜치 생성 
+3. PR시 본문에 `Closes #이슈번호` 작성하고 Merge 시 Projects Kanban보드에서 자동으로 Done 전환
+
+### 2. 브랜치 전략
 
 * `main` : 운영(배포) 브랜치 (CI/CD 트리거)
 * `develop` : 개발 통합 브랜치 (CI 트리거)
@@ -174,16 +181,16 @@ class UserServiceTest {
 
 ---
 
-### 2. 브랜치 흐름
+### 3. 브랜치 흐름
 
 1. `develop`에서 `feature/#이슈번호-*` 브랜치 생성
-2. 기능 개발 후 `develop`으로 PR (PR시 `Closes #이슈번호`)
-3. 코드 리뷰(CodeRabbit활용) 후 머지
-4. `develop` -> `main`으로 PR, 머지(CI/CD 자동 배포)
+2. 기능 개발 후 `develop`으로 PR (PR시 본문에 `Closes #이슈번호` 추가)
+3. 코드 리뷰(CodeRabbit활용), CI 테스트 후 `Rebase and merge`
+4. `develop` -> `main`으로 PR, `merge` (CD - AWS EC2 자동 배포)
 
 ---
 
-### 3. 커밋 메시지 규칙
+### 4. 커밋 메시지 규칙
 
 ```
 타입: 간단한 설명
@@ -211,7 +218,7 @@ class UserServiceTest {
 
 ---
 
-### 4. Pull Request 규칙
+### 5. Pull Request 규칙
 
 * 제목: `[타입] 작업 내용`
     * 예: `[feat] 로그인 API 구현`
@@ -222,7 +229,7 @@ class UserServiceTest {
 
 ---
 
-### 5. Pull 규칙
+### 6. Pull 규칙
 * pull시 rebase merge
 ```bash
 // 기본 설정 변경
@@ -235,7 +242,7 @@ git pull --rebase origin <브랜치명>
 
 ---
 
-### 6. 금지 사항
+### 7. 금지 사항
 
 * `main`에 직접 push 금지
 * 너무 큰 PR 금지

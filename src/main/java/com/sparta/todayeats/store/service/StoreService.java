@@ -1,11 +1,12 @@
 package com.sparta.todayeats.store.service;
 
-import com.sparta.todayeats.area.domain.entity.Area;
-import com.sparta.todayeats.area.domain.repository.AreaRepository;
-import com.sparta.todayeats.category.domain.entity.Category;
-import com.sparta.todayeats.category.domain.repository.CategoryRepository;
+import com.sparta.todayeats.area.entity.Area;
+import com.sparta.todayeats.area.repository.AreaRepository;
+import com.sparta.todayeats.category.entity.Category;
+import com.sparta.todayeats.category.repository.CategoryRepository;
 import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.exception.*;
+import com.sparta.todayeats.menu.service.MenuService;
 import com.sparta.todayeats.store.dto.request.StoreCreateRequest;
 import com.sparta.todayeats.store.dto.request.StoreHiddenRequest;
 import com.sparta.todayeats.store.dto.request.StoreUpdateRequest;
@@ -18,6 +19,7 @@ import com.sparta.todayeats.user.entity.User;
 import com.sparta.todayeats.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -34,6 +36,7 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class StoreService {
 
+    private final MenuService menuService;
     private final StoreRepository storeRepository;
     private final AreaRepository areaRepository;
     private final CategoryRepository categoryRepository;
@@ -64,8 +67,13 @@ public class StoreService {
                 .phone(normalizePhone(request.getPhone()))
                 .build();
 
-        // DB 저장
-        Store saved = storeRepository.save(store);
+        // DB 저장 (동시성 문제 해결)
+        Store saved;
+        try {
+            saved = storeRepository.save(store);
+        } catch (DataIntegrityViolationException e) {
+            throw new BaseException(StoreErrorCode.STORE_ALREADY_EXISTS);
+        }
 
         return toCreateResponse(saved);
     }
@@ -318,5 +326,20 @@ public class StoreService {
                 .updatedAt(store.getUpdatedAt())
                 .updatedBy(store.getUpdatedBy())
                 .build();
+    }
+
+    // 가게 연쇄 삭제
+    @Transactional
+    public void deleteAllStoresByUserId(UUID targetUserId, UUID currentUserId) {
+        // 가게 목록
+        List<Store> ownerStores = storeRepository.findAllByOwnerUserId(targetUserId);
+
+        for (Store store : ownerStores) {
+            // 가게 메뉴 Soft Delete
+            menuService.deleteAllMenusByStoreId(store.getId(), currentUserId);
+
+            // 가게 Soft Delete
+            store.softDelete(currentUserId);
+        }
     }
 }

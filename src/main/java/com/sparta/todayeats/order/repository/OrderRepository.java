@@ -176,10 +176,11 @@ public interface OrderRepository extends JpaRepository<Order, UUID> {
      * 사용자 삭제 전 검증에 사용
      */
     @Query("SELECT COUNT(o) > 0 FROM Order o " +
-            "WHERE o.customerId = :customerId " +
+            "WHERE (o.customerId = :userId OR o.storeId IN " +
+            "      (SELECT s.id FROM Store s WHERE s.owner.userId = :userId AND s.deletedAt IS NULL)) " +
             "AND o.status NOT IN (com.sparta.todayeats.order.entity.OrderStatus.COMPLETED, " +
             "                     com.sparta.todayeats.order.entity.OrderStatus.CANCELED, " +
             "                     com.sparta.todayeats.order.entity.OrderStatus.REJECTED) " +
             "AND o.deletedAt IS NULL")
-    boolean existsActiveOrderByCustomerId(@Param("customerId") UUID customerId);
+    boolean existsActiveOrderByUserId(@Param("userId") UUID userId);
 }

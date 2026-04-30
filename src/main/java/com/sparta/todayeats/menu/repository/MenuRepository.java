@@ -1,12 +1,15 @@
 package com.sparta.todayeats.menu.repository;
 
 import com.sparta.todayeats.menu.entity.Menu;
+import com.sparta.todayeats.store.entity.Store;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.Optional;
@@ -79,11 +82,26 @@ public interface MenuRepository extends JpaRepository<Menu, UUID> {
             Pageable pageable
     );
 
-    // 주문 서비스용 - 삭제되지 않은 메뉴 단건 조회
+    // 주문 서비스용 - 삭제/숨김/품절 제외 메뉴 단건 조회
     @Query("""
         SELECT m FROM Menu m
         WHERE m.id = :menuId
         AND m.deletedAt IS NULL
+        AND m.isHidden = false
+        AND m.soldOut = false
     """)
     Optional<Menu> findActiveById(@Param("menuId") UUID menuId);
+
+    @Modifying
+    @Query("""
+        UPDATE Menu m
+        SET m.deletedAt = :now, m.deletedBy = :currentUserId
+        WHERE m.store.id = :storeId AND m.deletedAt IS NULL
+    """)
+    void softDeleteByStoreId(@Param("storeId") UUID storeId,
+                             @Param("currentUserId") UUID currentUserId,
+                             @Param("now") LocalDateTime now);
+
+    // 테스트 데이터 생성용
+    boolean existsByNameAndStore(String name, Store store);
 }

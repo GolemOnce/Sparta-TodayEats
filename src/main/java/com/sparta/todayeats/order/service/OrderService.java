@@ -11,6 +11,11 @@ import com.sparta.todayeats.order.entity.OrderStatus;
 import com.sparta.todayeats.order.repository.OrderRepository;
 import com.sparta.todayeats.order.dto.request.*;
 import com.sparta.todayeats.order.dto.response.*;
+import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
+import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
+import com.sparta.todayeats.payment.entity.PaymentMethod;
+import com.sparta.todayeats.payment.entity.PaymentStatus;
+import com.sparta.todayeats.payment.service.PaymentService;
 import com.sparta.todayeats.store.entity.Store;
 import com.sparta.todayeats.store.repository.StoreRepository;
 import com.sparta.todayeats.user.entity.UserRoleEnum;
@@ -36,6 +41,7 @@ public class OrderService {
     private final MenuRepository menuRepository;
     private final StoreRepository storeRepository;
     private final AddressRepository addressRepository;
+    private final PaymentService paymentService;
 
     /**
      * 주문 생성
@@ -58,7 +64,7 @@ public class OrderService {
         }
 
         // 배송지 조회 및 검증 (주소 스냅샷용)
-        Address address = addressRepository.findByUserUserIdAndIsDefaultTrue(userId)
+        Address address = addressRepository.findActiveById(request.addressId())
                 .orElseThrow(() -> new BaseException(AddressErrorCode.ADDRESS_NOT_FOUND));
         if (!address.getUser().getUserId().equals(userId)) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
@@ -105,9 +111,12 @@ public class OrderService {
         order.updateTotalPrice(total);
         Order saved = orderRepository.save(order);
 
-        // TODO: Payment 담당자 코드 완성 후 주석 해제
-        // 주문 생성 시 결제 생성 같이 처리 (트랜잭션 묶음)
-        // paymentService.createPayment(saved.getOrderId(), total);
+        // 주문 생성과 함께 결제 처리 (기본 결제 수단: CARD)
+        PaymentCreateResponse payment = paymentService.createPayment(
+                saved.getOrderId(), userId, new PaymentCreateRequest(PaymentMethod.CARD));
+        if (payment.getStatus() != PaymentStatus.COMPLETED) {
+            throw new BaseException(PaymentErrorCode.PAYMENT_FAILED);
+        }
 
         log.info("주문 생성 완료: orderId={}, userId={}, total={}", saved.getOrderId(), userId, total);
         return CreateOrderResponse.from(saved);
@@ -266,9 +275,8 @@ public class OrderService {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
 
-        // TODO: Payment 코드 완성 후 주석 해제
-        // 주문 취소 시 환불 처리 같이 처리 (트랜잭션 묶음)
-        // paymentService.refund(orderId);
+        // 주문 취소 시 환불 처리
+        refundIfPossible(orderId);
 
         Order updated = findActiveOrder(orderId);
         log.info("주문 취소: orderId={}", orderId);
@@ -308,9 +316,8 @@ public class OrderService {
             throw new BaseException(OrderErrorCode.ORDER_CONFLICT);
         }
 
-        // TODO: Payment 코드 완성 후 주석 해제
-        // 주문 거절 시 환불 처리 같이 처리 (트랜잭션 묶음)
-        // paymentService.refund(orderId);
+        // 주문 거절 시 환불 처리
+        refundIfPossible(orderId);
 
         Order updated = findActiveOrder(orderId);
         log.info("주문 거절: orderId={}", orderId);
@@ -332,9 +339,8 @@ public class OrderService {
 
         Order order = findActiveOrder(orderId);
 
-        // TODO: Payment 코드 완성 후 주석 해제
-        // 결제 완료 상태면 환불 처리
-        // paymentService.refundIfPaid(orderId);
+        // 주문 삭제 시 환불 처리
+        refundIfPossible(orderId);
 
         order.delete(userId);
 
@@ -346,7 +352,7 @@ public class OrderService {
      * UserService에서 사용자 삭제 전 호출
      */
     public boolean hasActiveOrders(UUID userId) {
-        return orderRepository.existsActiveOrderByCustomerId(userId);
+        return orderRepository.existsActiveOrderByUserId(userId);
     }
 
     /**
@@ -370,6 +376,24 @@ public class OrderService {
                 .orElseThrow(() -> new BaseException(StoreErrorCode.STORE_NOT_FOUND));
         if (!store.getOwner().getUserId().equals(userId)) {
             throw new BaseException(CommonErrorCode.FORBIDDEN);
+        }
+    }
+
+    /**
+     * 환불 처리 (결제 상태에 따라 무시 가능)
+     * - PAYMENT_NOT_FOUND: 결제가 없는 주문 (현재 구현상 발생 불가, 확장 대비) → 무시
+     * - INVALID_PAYMENT_STATUS: 아직 결제가 완료되지 않은 상태 (PENDING 등) → 무시
+     * - 그 외 예외는 그대로 전파
+     */
+    private void refundIfPossible(UUID orderId) {
+        try {
+            paymentService.refund(orderId);
+        } catch (BaseException e) {
+            if (e.getErrorCode() != PaymentErrorCode.PAYMENT_NOT_FOUND
+                    && e.getErrorCode() != PaymentErrorCode.INVALID_PAYMENT_STATUS) {
+                throw e;
+            }
+            log.debug("Skipping refund for order {} due to payment state: {}", orderId, e.getErrorCode());
         }
     }
 }

@@ -1,11 +1,14 @@
 package com.sparta.todayeats.user.service;
 
+import com.sparta.todayeats.address.service.AddressService;
 import com.sparta.todayeats.auth.application.service.AuthService;
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.UserErrorCode;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.global.util.PageableUtils;
 import com.sparta.todayeats.order.service.OrderService;
+import com.sparta.todayeats.review.service.ReviewService;
+import com.sparta.todayeats.store.service.StoreService;
 import com.sparta.todayeats.user.entity.User;
 import com.sparta.todayeats.user.entity.UserRoleEnum;
 import com.sparta.todayeats.user.repository.UserRepository;
@@ -29,6 +32,9 @@ public class UserService {
     private final UserAuthorizationService userAuthorizationService;
     private final AuthService authService;
     private final OrderService orderService;
+    private final AddressService addressService;
+    private final StoreService storeService;
+    private final ReviewService reviewService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -144,7 +150,11 @@ public class UserService {
         }
 
         targetUser.softDelete(currentUserId);
-        // TODO: 관련 도메인에서 soft delete 처리 필요
+
+        // 관련 도메인 soft delete 처리
+        addressService.deleteAllAddressesByUserId(targetUserId, currentUserId);
+        storeService.deleteAllStoresByUserId(targetUserId, currentUserId);
+        reviewService.deleteAllReviewsByUserId(targetUserId, currentUserId);
 
         // Redis에 Refresh Token 삭제
         authService.deleteRefreshToken(targetUserId.toString());

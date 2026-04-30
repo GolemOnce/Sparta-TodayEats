@@ -4,9 +4,11 @@ import com.sparta.todayeats.review.entity.Review;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -36,4 +38,14 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
             "JOIN FETCH r.order " +
             "WHERE r.id = :id AND r.deletedAt IS NULL")
     Optional<Review> getReviewById(@Param("id") UUID id);
+
+    @Modifying
+    @Query("""
+        UPDATE Review r
+        SET r.deletedAt = :now, r.deletedBy = :currentUserId
+        WHERE r.user.userId = :targetUserId AND r.deletedAt IS NULL
+    """)
+    void softDeleteByUserId(@Param("targetUserId") UUID targetUserId,
+                            @Param("currentUserId") UUID currentUserId,
+                            @Param("now") LocalDateTime now);
 }

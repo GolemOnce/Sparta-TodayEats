@@ -43,5 +43,8 @@
 
 ### 6. ERD (Entity Relationship Diagram)
 
-> 아래 ERD는 전체 도메인 간 관계 구조를 시각화
+<div align="center">
 
+<img src="../images/erd.png" width="600"/>
+
+</div>
