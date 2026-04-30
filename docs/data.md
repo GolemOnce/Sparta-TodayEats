@@ -48,9 +48,3 @@
 <img src="../images/erd.png" width="600"/>
 
 </div>
-
-<div align="center">
-
-<img src="../images/erd.png" width="600"/>
-
-</div>
