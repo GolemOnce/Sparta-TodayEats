@@ -21,6 +21,12 @@
 
 ## 아키텍처
 
+<div align="center">
+
+<img src="../images/erd.png" width="600"/>
+
+</div>
+
 ### 1. 구조 방식
 - 모놀리식 아키텍처
 
@@ -33,8 +39,11 @@
 
 ---
 ## 패키지 구조
+
+- 도메인형 패키지 구조와 3 Layer Architecture로 구성
+
 ```text
-src/main/java/com/example/delivery
+src/main/java/com/sparta/todayeats
 │
 ├── global
 │   └── infrastructure
@@ -51,21 +60,33 @@ src/main/java/com/example/delivery
 │           └── BaseEntity.java
 │
 ├── user
-│   ├── application/service/UserServiceV1.java
-│   ├── domain
-│   │   ├── entity/UserEntity.java
-│   │   └── repository/UserRepository.java
-│   └── presentation
-│       ├── controller/UserControllerV1.java
-│       └── dto
-│           ├── request/ReqSignupDto.java
-│           └── response/ResUserDto.java
+│   ├── controller/UserController.java
+│   ├── dto
+│   │   ├── request/*Request.java
+│   │   └── response/*Response.java
+│   ├── entity
+│   │   ├── UserEntity.java
+│   │   └── UserRoleEnum.java
+│   ├── repository/UserRepository.java
+│   └── service/UserService.java
 │
 ├── auth
-│   ├── application/service/AuthServiceV1.java
+│   ├── application/service
+│   │   ├── AuthMailService.java
+│   │   └── AuthService.java
 │   └── presentation
-│       ├── controller/AuthControllerV1.java
+│       ├── controller/AuthController.java
 │       └── dto
-│           ├── request/ReqLoginDto.java
-│           └── response/ResLoginDto.java
+│           ├── request/*Request.java
+│           └── response/*Response.java
 │
+├── address
+│   ├── controller/UserController.java
+│   ├── dto
+│   │   ├── request/*Request.java
+│   │   └── response/*Response.java
+│   ├── entity/Address.java
+│   ├── repository/AddressRepository.java
+│   └── service/AddressService.java
+│
+...
