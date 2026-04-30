@@ -49,6 +49,7 @@ docker-compose up -d --build
 
 ### 4. 환경변수 목록
 ```
+.env.example
 # Postgres
 POSTGRES_DB=
 POSTGRES_USER=
@@ -62,20 +63,33 @@ SPRING_DATASOURCE_PASSWORD=
 
 # Redis
 REDIS_PASSWORD=
+
+# Gemini
+GEMINI_API_KEY=
+GEMINI_API_URL=
 ```
 
 ---
 
 ### 5. CI/CD 파이프라인
+
+<div align="center">
+
+<img src="../images/cicd.png" width="600"/>
+
+</div>
+
 #### 트리거 
-  - main, develop(CI) 브랜치에 push(머지) 시 자동 실행
+  - develop 브랜치에 Pull Request시 CI 테스트 진행
+  - main 브랜치에 push(merge) 시 배포(CD) 자동 실행
 <br></br>
 #### 파이프라인 흐름
 ```
+# CI
 1. 코드 체크아웃
 2. JDK 17 세팅
 3. 테스트 실행 (실패 시 중단)
-(develop(CI)은 여기서 종료)
+# CD
 4. bootJar 빌드
 5. SCP로 jar 파일 EC2 전송
 6. EC2 SSH 접속
