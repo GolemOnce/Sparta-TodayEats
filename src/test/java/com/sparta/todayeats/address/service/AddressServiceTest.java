@@ -185,7 +185,7 @@ class AddressServiceTest {
             given(addressRepository.findById(addressId)).willReturn(Optional.of(address));
 
             // when
-            AddressDetailResponse response = addressService.getDetailAddress(userId, addressId);
+            AddressResponse response = addressService.getDetailAddress(userId, addressId);
 
             // then
             assertThat(response.getAlias()).isEqualTo("집");

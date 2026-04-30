@@ -77,7 +77,7 @@ public class AddressService {
 
     // 배송지 상세 조회
     @Transactional(readOnly = true)
-    public AddressDetailResponse getDetailAddress(UUID userId, UUID addressId) {
+    public AddressResponse getDetailAddress(UUID userId, UUID addressId) {
         // 1. 배송지 조회
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new BaseException(AddressErrorCode.ADDRESS_NOT_FOUND));
@@ -85,7 +85,7 @@ public class AddressService {
         // 2. 권한 확인
         userAuthorizationService.validateSelf(userId, address.getUser().getUserId());
 
-        return AddressDetailResponse.from(address);
+        return AddressResponse.from(address);
     }
 
     // 배송지 수정

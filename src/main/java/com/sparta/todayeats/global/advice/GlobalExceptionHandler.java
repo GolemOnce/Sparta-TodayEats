@@ -44,7 +44,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(Exception e) {
-        e.printStackTrace();
         return buildResponse(CommonErrorCode.INTERNAL_SERVER_ERROR);
     }
 
