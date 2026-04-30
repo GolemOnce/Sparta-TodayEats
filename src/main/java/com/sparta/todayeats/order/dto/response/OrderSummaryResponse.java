@@ -21,10 +21,10 @@ public record OrderSummaryResponse(
         @Schema(description = "총 주문 금액", example = "11000")
         Long totalPrice,
 
-        @Schema(description = "주문 시간", example = "2026-04-30T15:00:00")
+        @Schema(description = "생성 시간", example = "2026-04-30T15:00:00")
         LocalDateTime createdAt,
 
-        @Schema(description = "주문자 ID", example = "550e8400-e29b-41d4-a716-446655441111")
+        @Schema(description = "생성자 ID", example = "550e8400-e29b-41d4-a716-446655441111")
         UUID createdBy,
 
         @Schema(description = "수정 시간", example = "2026-04-30T15:20:00")
