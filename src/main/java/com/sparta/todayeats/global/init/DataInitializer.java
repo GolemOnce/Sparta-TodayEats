@@ -58,11 +58,11 @@ public class DataInitializer implements ApplicationRunner {
         // MASTER 계정 생성
         createUser("master@test.com", "Master123!", "마스터", UserRoleEnum.MASTER);
 
-        // OWNER 계정 생성 - 직접 삭제 시도
+        // OWNER 계정 생성
         User owner1 = createUser("owner@test.com", "Owner123!", "삭제", UserRoleEnum.OWNER);
         User owner2 = createUser("owner2@test.com", "Owner456!", "삭제안함", UserRoleEnum.OWNER);
 
-        // CUSTOMER 계정 생성 - 관리자 삭제 시도
+        // CUSTOMER 계정 생성
         User customer1 = createUser("customer@test.com", "User123!", "삭제", UserRoleEnum.CUSTOMER);
         User customer2 = createUser("customer2@test.com", "User456!", "삭제안함", UserRoleEnum.CUSTOMER);
 

@@ -2,7 +2,7 @@ package com.sparta.todayeats.review.entity;
 
 import com.sparta.todayeats.global.exception.BaseException;
 import com.sparta.todayeats.global.exception.ReviewErrorCode;
-import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
+import com.sparta.todayeats.global.entity.BaseEntity;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.store.entity.Store;
 import com.sparta.todayeats.user.entity.User;

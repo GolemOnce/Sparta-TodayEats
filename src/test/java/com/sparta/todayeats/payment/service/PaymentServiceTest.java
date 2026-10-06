@@ -2,6 +2,7 @@ package com.sparta.todayeats.payment.service;
 
 import com.sparta.todayeats.global.exception.AuthErrorCode;
 import com.sparta.todayeats.global.exception.BaseException;
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.order.entity.OrderStatus;
@@ -9,10 +10,7 @@ import com.sparta.todayeats.order.entity.OrderType;
 import com.sparta.todayeats.order.repository.OrderRepository;
 import com.sparta.todayeats.payment.dto.request.PaymentCreateRequest;
 import com.sparta.todayeats.payment.dto.request.PaymentUpdateRequest;
-import com.sparta.todayeats.payment.dto.response.PaymentCreateResponse;
-import com.sparta.todayeats.payment.dto.response.PaymentDetailResponse;
-import com.sparta.todayeats.payment.dto.response.PaymentPageResponse;
-import com.sparta.todayeats.payment.dto.response.PaymentUpdateResponse;
+import com.sparta.todayeats.payment.dto.response.*;
 import com.sparta.todayeats.payment.entity.Payment;
 import com.sparta.todayeats.payment.entity.PaymentStatus;
 import com.sparta.todayeats.payment.repository.PaymentRepository;
@@ -174,12 +172,12 @@ class PaymentServiceTest {
             given(paymentRepository.findByUserId(userId, pageable)).willReturn(paymentPage);
 
             // when
-            PaymentPageResponse response = paymentService.getPagedPayments(userId, null, pageable);
+            PageResponse<PaymentResponse> response = paymentService.getPagedPayments(userId, null, pageable);
 
             // then
             assertThat(response).isNotNull();
-            assertThat(response.getPayments()).hasSize(1);
-            assertThat(response.getPayments().get(0).getAmount()).isEqualTo(15000L);
+            assertThat(response.getContent()).hasSize(1);
+            assertThat(response.getContent().get(0).getAmount()).isEqualTo(15000L);
         }
 
         @Test
@@ -192,10 +190,10 @@ class PaymentServiceTest {
                     .willReturn(Page.empty(pageable));
 
             // when
-            PaymentPageResponse response = paymentService.getPagedPayments(userId, null, pageable);
+            PageResponse<PaymentResponse> response = paymentService.getPagedPayments(userId, null, pageable);
 
             // then
-            assertThat(response.getPayments()).isEmpty();
+            assertThat(response.getContent()).isEmpty();
         }
     }
 

@@ -1,15 +1,13 @@
 package com.sparta.todayeats.review.service;
 
 import com.sparta.todayeats.global.exception.*;
+import com.sparta.todayeats.global.response.PageResponse;
 import com.sparta.todayeats.global.service.UserAuthorizationService;
 import com.sparta.todayeats.order.repository.OrderRepository;
 import com.sparta.todayeats.order.entity.Order;
 import com.sparta.todayeats.review.dto.request.ReviewCreateRequest;
 import com.sparta.todayeats.review.dto.request.ReviewUpdateRequest;
-import com.sparta.todayeats.review.dto.response.ReviewCreateResponse;
-import com.sparta.todayeats.review.dto.response.ReviewDetailResponse;
-import com.sparta.todayeats.review.dto.response.ReviewPageResponse;
-import com.sparta.todayeats.review.dto.response.ReviewUpdateResponse;
+import com.sparta.todayeats.review.dto.response.*;
 import com.sparta.todayeats.review.entity.Review;
 import com.sparta.todayeats.review.repository.ReviewRepository;
 import com.sparta.todayeats.store.entity.Store;
@@ -81,7 +79,7 @@ public class ReviewService {
 
     // 리뷰 목록 조회
     @Transactional(readOnly = true)
-    public ReviewPageResponse getPagedReviews(UUID userId, UUID targetId, UserRoleEnum role, Pageable pageable) {
+    public PageResponse<ReviewResponse> getPagedReviews(UUID userId, UUID targetId, UserRoleEnum role, Pageable pageable) {
         Page<Review> reviews;
         UUID queryUserId = targetId != null ? targetId : userId;
 
@@ -104,12 +102,14 @@ public class ReviewService {
             default -> throw new BaseException(ReviewErrorCode.REVIEW_ACCESS_DENIED);
         }
 
-        return ReviewPageResponse.from(reviews);
+        return PageResponse.from(
+                reviews, reviews.map(ReviewResponse::from).getContent()
+        );
     }
 
     // 특정 가게 리뷰 목록 조회
     @Transactional(readOnly = true)
-    public ReviewPageResponse getStoreReviews(UUID storeId, Pageable pageable) {
+    public PageResponse<ReviewResponse> getStoreReviews(UUID storeId, Pageable pageable) {
         // storeId 유효성 검증
         if (!storeRepository.existsById(storeId)) {
             throw new BaseException(StoreErrorCode.STORE_NOT_FOUND);
@@ -117,7 +117,9 @@ public class ReviewService {
 
         Page<Review> reviews =  reviewRepository.findByStoreId(storeId, pageable);
 
-        return ReviewPageResponse.from(reviews);
+        return PageResponse.from(
+                reviews, reviews.map(ReviewResponse::from).getContent()
+        );
     }
 
     // 리뷰 상세 조회

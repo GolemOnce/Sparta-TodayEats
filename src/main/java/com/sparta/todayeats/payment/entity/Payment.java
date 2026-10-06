@@ -1,6 +1,6 @@
 package com.sparta.todayeats.payment.entity;
 
-import com.sparta.todayeats.global.infrastructure.entity.BaseEntity;
+import com.sparta.todayeats.global.entity.BaseEntity;
 import com.sparta.todayeats.order.entity.Order;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
