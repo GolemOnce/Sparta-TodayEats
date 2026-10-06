@@ -159,7 +159,159 @@ docker-compose down
 
 ## 📄 API 명세서
 
-> 추후 작성 예정
+## 📌 API 명세
+
+### 권한(Role) 구분
+
+| Role | 설명 |
+|------|------|
+| `CUSTOMER` | 일반 고객 |
+| `OWNER` | 가게 사장님 |
+| `MANAGER` | 서비스 관리자 |
+| `MASTER` | 최고 관리자 |
+| `ALL` | 인증 여부/권한 무관 접근 가능 |
+| `본인` | 요청자가 해당 리소스의 소유자인 경우 |
+
+---
+
+### 🔐 Auth
+
+| Method | Endpoint | 설명 | 권한 | 비고 |
+|--------|----------|------|------|------|
+| `POST` | `/api/v1/auth/verify-code/send` | 회원가입 인증번호 발송 | ALL | |
+| `POST` | `/api/v1/auth/verify-code/confirm` | 회원가입 인증번호 확인 | ALL | |
+| `POST` | `/api/v1/auth/signup` | 회원가입 | ALL | 인증 완료된 이메일만 가능 |
+| `POST` | `/api/v1/auth/login` | 로그인 | ALL | |
+| `POST` | `/api/v1/auth/reissue` | 토큰 재발급 | ALL | |
+| `POST` | `/api/v1/auth/logout` | 로그아웃 | ALL | |
+| `POST` | `/api/v1/auth/reset-password/send` | 비밀번호 재설정 링크 발송 | ALL | |
+| `GET` | `/api/v1/auth/reset-password` | 비밀번호 재설정 링크 확인 | ALL | |
+| `PATCH` | `/api/v1/auth/reset-password` | 비밀번호 재설정 | ALL | |
+
+#### Redis Key 설계
+
+| 용도 | Key | Value | 사용 API |
+|------|-----|-------|----------|
+| 회원가입 인증번호 | `AUTH_SIGNUP:{email}` | `{code}` | 인증번호 발송 |
+| 이메일 인증 완료 여부 | `AUTH_VERIFIED:{email}` | `true` | 인증번호 확인 |
+| Refresh Token | `AUTH_RT:{email}` | `{refreshToken}` | 로그인, 토큰 재발급, 로그아웃 |
+| 비밀번호 재설정 코드 | `AUTH_RESET_PASSWORD:{code}` | `{email}` | 재설정 링크 발송 |
+
+---
+
+### 👤 User
+
+| Method | Endpoint | 설명 | 권한 | 비고 |
+|--------|----------|------|------|------|
+| `GET` | `/api/v1/users` | 사용자 목록 조회 | MANAGER, MASTER | |
+| `GET` | `/api/v1/users/{userId}` | 사용자 상세 조회 | MANAGER, MASTER, 본인 | |
+| `PUT` | `/api/v1/users` | 사용자 정보 수정 | ALL | 로그인한 사용자 본인 정보 |
+| `PATCH` | `/api/v1/users/password` | 비밀번호 변경 | ALL | |
+| `PATCH` | `/api/v1/users/{userId}/role` | 사용자 권한 변경 | MASTER | |
+| `DELETE` | `/api/v1/users/{userId}` | 사용자 삭제 | MASTER, 본인 | 진행 중인 주문이 없을 때만 가능 |
+
+---
+
+### 🗺️ Area
+
+| Method | Endpoint | 설명 | 권한 | 비고 |
+|--------|----------|------|------|------|
+| `POST` | `/api/v1/areas` | 지역 등록 | MANAGER, MASTER | |
+| `GET` | `/api/v1/areas` | 지역 목록 조회 | ALL | |
+| `GET` | `/api/v1/areas/{areaId}` | 지역 상세 조회 | ALL | |
+| `PUT` | `/api/v1/areas/{areaId}` | 지역 수정 | MANAGER, MASTER | |
+| `DELETE` | `/api/v1/areas/{areaId}` | 지역 삭제 | MASTER | |
+
+---
+
+### 🏠 Address
+
+| Method | Endpoint | 설명 | 권한 | 비고 |
+|--------|----------|------|------|------|
+| `POST` | `/api/v1/addresses` | 배송지 등록 | CUSTOMER | |
+| `GET` | `/api/v1/addresses` | 배송지 목록 조회 | CUSTOMER | |
+| `GET` | `/api/v1/addresses/{addressId}` | 배송지 상세 조회 | CUSTOMER | |
+| `PUT` | `/api/v1/addresses/{addressId}` | 배송지 수정 | CUSTOMER | |
+| `PATCH` | `/api/v1/addresses/{addressId}/default` | 기본 배송지 설정 | CUSTOMER | |
+| `DELETE` | `/api/v1/addresses/{addressId}` | 배송지 삭제 | CUSTOMER, MASTER | |
+
+---
+
+### 🏷️ Category
+
+| Method | Endpoint | 설명 | 권한 | 비고 |
+|--------|----------|------|------|------|
+| `POST` | `/api/v1/categories` | 카테고리 등록 | MANAGER, MASTER | |
+| `GET` | `/api/v1/categories` | 카테고리 목록 조회 | ALL | |
+| `GET` | `/api/v1/categories/{categoryId}` | 카테고리 상세 조회 | ALL | |
+| `PUT` | `/api/v1/categories/{categoryId}` | 카테고리 수정 | MANAGER, MASTER | |
+| `DELETE` | `/api/v1/categories/{categoryId}` | 카테고리 삭제 | MASTER | |
+
+---
+
+### 🏪 Store
+
+| Method | Endpoint | 설명 | 권한 | 비고 |
+|--------|----------|------|------|------|
+| `POST` | `/api/v1/stores` | 가게 등록 | OWNER | 본인 가게만 가능 |
+| `GET` | `/api/v1/stores` | 가게 목록 조회 | ALL | |
+| `GET` | `/api/v1/stores/{storeId}` | 가게 상세 조회 | ALL | |
+| `PATCH` | `/api/v1/stores/{storeId}` | 가게 수정 | MANAGER, MASTER, OWNER | OWNER는 본인 가게만 가능 |
+| `PATCH` | `/api/v1/stores/{storeId}/hide` | 가게 숨김 처리 | MANAGER, MASTER, OWNER | |
+| `DELETE` | `/api/v1/stores/{storeId}` | 가게 삭제 | MASTER, OWNER | OWNER는 본인 가게만 가능 |
+
+---
+
+### 🍽️ Menu
+
+| Method | Endpoint | 설명 | 권한 | 비고 |
+|--------|----------|------|------|------|
+| `POST` | `/api/v1/stores/{storeId}/menus` | 메뉴 등록 | MANAGER, MASTER, OWNER | OWNER는 본인 가게만 가능 |
+| `GET` | `/api/v1/stores/{storeId}/menus` | 메뉴 목록 조회 | ALL | |
+| `GET` | `/api/v1/stores/{storeId}/menus/manage` | 사장님 메뉴 조회 | MANAGER, MASTER, OWNER | OWNER는 본인 가게만 가능 |
+| `GET` | `/api/v1/stores/{storeId}/menus/{menuId}` | 메뉴 상세 조회 | ALL | |
+| `PATCH` | `/api/v1/menus/{menuId}` | 메뉴 수정 | MANAGER, MASTER, OWNER | OWNER는 본인 메뉴만 가능 |
+| `DELETE` | `/api/v1/menus/{menuId}` | 메뉴 삭제 | MASTER, OWNER | OWNER는 본인 메뉴만 가능 |
+| `POST` | `/api/v1/ai/product-description` | AI 메뉴 설명 생성 | MANAGER, MASTER, OWNER | |
+
+---
+
+### 🧾 Order
+
+| Method | Endpoint | 설명 | 권한 | 비고 |
+|--------|----------|------|------|------|
+| `POST` | `/api/v1/orders` | 주문 생성 | CUSTOMER | |
+| `GET` | `/api/v1/orders` | 주문 내역 조회 | CUSTOMER, MANAGER, MASTER | |
+| `GET` | `/api/v1/orders/{orderId}` | 주문 상세 조회 | CUSTOMER, MANAGER, MASTER | |
+| `PUT` | `/api/v1/orders/{orderId}` | 주문 수정 (요청사항) | CUSTOMER | `PENDING` 상태에서만 가능 |
+| `PATCH` | `/api/v1/orders/{orderId}/status` | 주문 상태 변경 | MANAGER, MASTER, OWNER | |
+| `PATCH` | `/api/v1/orders/{orderId}/cancel` | 주문 취소 | CUSTOMER, MASTER | CUSTOMER는 주문 후 5분 이내 + `PENDING` 상태에서만 가능 |
+| `PATCH` | `/api/v1/orders/{orderId}/reject` | 주문 거절 | MANAGER, MASTER, OWNER | `PENDING` 상태에서만 가능 |
+| `DELETE` | `/api/v1/orders/{orderId}` | 주문 삭제 | MASTER | Soft Delete |
+
+---
+
+### 💳 Payment
+
+| Method | Endpoint | 설명 | 권한 | 비고 |
+|--------|----------|------|------|------|
+| `POST` | `/api/v1/orders/{orderId}/payments` | 결제 처리 | 본인 | |
+| `GET` | `/api/v1/payments` | 결제 목록 조회 | MANAGER, MASTER, 본인 | |
+| `GET` | `/api/v1/payments/{paymentId}` | 결제 상세 조회 | MANAGER, MASTER, 본인 | |
+| `PUT` | `/api/v1/payments/{paymentId}` | 결제 상태 변경 | MANAGER, MASTER | |
+| `DELETE` | `/api/v1/payments/{paymentId}` | 결제 삭제 | MASTER | |
+
+---
+
+### ⭐ Review
+
+| Method | Endpoint | 설명 | 권한 | 비고 |
+|--------|----------|------|------|------|
+| `POST` | `/api/v1/orders/{orderId}/reviews` | 리뷰 등록 | CUSTOMER | 본인 주문에 대해서만 작성 가능 |
+| `GET` | `/api/v1/reviews` | 리뷰 목록 조회 | ALL | MANAGER, MASTER: 가게/사용자별 조회<br>CUSTOMER, OWNER: 가게 리뷰 / 내 리뷰 조회 |
+| `GET` | `/api/v1/reviews/{reviewId}` | 리뷰 상세 조회 | ALL | |
+| `PUT` | `/api/v1/reviews/{reviewId}` | 리뷰 수정 | CUSTOMER | |
+| `DELETE` | `/api/v1/reviews/{reviewId}` | 리뷰 삭제 | CUSTOMER, MANAGER, MASTER | CUSTOMER는 본인 리뷰만 가능 |
 
 ---
 
